@@ -9,7 +9,7 @@ The Raptoreum Asset Explorer is a modern, high-performance blockchain explorer a
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                            Frontend Layer                            │
-│                     Next.js 14+ / Tailwind CSS                      │
+│                     Next.js 16+ / Tailwind CSS                      │
 │                    (Port 3000, reverse proxied)                     │
 └────────────────────────┬────────────────────────────────────────────┘
                          │ HTTPS
@@ -22,7 +22,7 @@ The Raptoreum Asset Explorer is a modern, high-performance blockchain explorer a
                          ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │                            API Layer                                 │
-│                  Node.js / Express (Port 4000)                      │
+│                  Node.js / Express (Port 4004)                      │
 │         Rate Limiting / Auth / Validation / Caching                 │
 └──┬─────────────────┬────────────────┬───────────────────────────────┘
    │                 │                │
@@ -40,14 +40,14 @@ The Raptoreum Asset Explorer is a modern, high-performance blockchain explorer a
                      ┌──────────────┐
                      │ Raptoreumd   │
                      │  RPC Server  │
-                     │  (Port 8332) │
+                     │  (Port 10225) │
                      └──────────────┘
 ```
 
 ## Technology Stack
 
 ### Frontend
-- **Next.js 14+** (App Router)
+- **Next.js 16+** (App Router)
   - Server-side rendering for SEO
   - Static generation for performance
   - API routes for server-side operations
@@ -82,12 +82,12 @@ The Raptoreum Asset Explorer is a modern, high-performance blockchain explorer a
 
 ### Backend
 
-- **Node.js 20 LTS**
+- **Node.js 24 LTS**
   - Stable, long-term support
   - Modern JavaScript features
   - Excellent performance
 
-- **Express.js 4.x**
+- **Express.js 5.x**
   - Mature, well-documented
   - Large middleware ecosystem
   - RESTful API design
@@ -98,7 +98,7 @@ The Raptoreum Asset Explorer is a modern, high-performance blockchain explorer a
   - Middleware hooks
   - Query building
 
-- **Redis 7.x**
+- **Redis 8.x**
   - In-memory caching
   - Rate limiting
   - Session storage
@@ -123,7 +123,7 @@ The Raptoreum Asset Explorer is a modern, high-performance blockchain explorer a
   - Metadata and media hosting
   - Local pinning for reliability
 
-- **MongoDB 7.x**
+- **MongoDB 8.x**
   - Document database
   - Flexible schema
   - Powerful aggregation
@@ -158,11 +158,12 @@ The Raptoreum Asset Explorer is a modern, high-performance blockchain explorer a
 **Configuration**:
 ```ini
 # raptoreum.conf
+daemon=1
 server=1
 rpcuser=rtm_explorer
 rpcpassword=<secure_password>
 rpcallowip=127.0.0.1
-rpcport=8332
+rpcport=10225
 txindex=1
 addressindex=1
 timestampindex=1
@@ -174,33 +175,31 @@ assetindex=1
 - `getblockchaininfo` - Sync status
 - `getblock` - Block data
 - `getrawtransaction` - Transaction details
-- `getasset` - Asset information
-- `listassets` - Asset enumeration
-- `verifyasset` - Asset verification
+- `getassetdetailsbyid` - Asset information by tranbsaction ID
+- `getassetdetailsbyname` - Raptoreum has unique named assets, get asset information by name
+- `listassets` - Asset enumeration, this command lists all assets on the blockchain
 
 **Critical Operations** (Always from Blockchain):
-- Asset ownership verification
+- Asset ownership verification (there is no RPC command for this, so we may need to fund another way)
 - Transaction confirmations
 - Current blockchain state
 - Asset creation/transfer validation
 
 ### 2. IPFS Node
 
-**Purpose**: Retrieve and pin asset metadata
+**Purpose**: To list asset attached files information and pin state
 
 **Configuration**:
 - Follow-only node (doesn't need to be publicly accessible)
-- Pin all asset-related content
 - Local gateway for fast access
 
 **Operations**:
 - Fetch metadata by hash
-- Pin important content
 - Verify content integrity
 - Cache frequently accessed data
 
 **Fallbacks**:
-- Public IPFS gateways (ipfs.io, dweb.link)
+- Secondary remote follower node
 - Multiple gateway attempts
 - Timeout handling
 
