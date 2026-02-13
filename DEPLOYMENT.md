@@ -119,7 +119,7 @@ sudo timedatectl set-timezone UTC
 
 ## Installing Dependencies
 
-### 1. Install Node.js 20 LTS
+### 1. Install Node.js 24 LTS
 
 ```bash
 # Install NVM
@@ -128,10 +128,10 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
 # Load NVM
 source ~/.bashrc
 
-# Install Node.js 20 LTS
-nvm install 20
-nvm use 20
-nvm alias default 20
+# Install Node.js 24 LTS
+nvm install 24
+nvm use 24
+nvm alias default 24
 
 # Verify installation
 node --version
@@ -208,7 +208,7 @@ server=1
 rpcuser=rtm_explorer_rpc_user
 rpcpassword=CHANGE_THIS_TO_SECURE_PASSWORD_123
 rpcallowip=127.0.0.1
-rpcport=8332
+rpcport=10225
 rpcbind=127.0.0.1
 
 # Network Settings
@@ -257,14 +257,14 @@ watch -n 10 'raptoreum-cli getblockchaininfo | grep -E "blocks|headers|verificat
 
 ## MongoDB Setup
 
-### 1. Install MongoDB 7.x
+### 1. Install MongoDB 8.x
 
 ```bash
 # Import MongoDB GPG key
-wget -qO - https://www.mongodb.org/static/pgp/server-7.0.asc | sudo apt-key add -
+wget -qO - https://www.mongodb.org/static/pgp/server-8.0.asc | sudo apt-key add -
 
 # Add MongoDB repository
-echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
 
 # Update and install
 sudo apt update
@@ -605,7 +605,7 @@ module.exports = {
       exec_mode: 'cluster',
       env: {
         NODE_ENV: 'production',
-        PORT: 4000
+        PORT: 4004
       },
       error_file: '/var/log/rtm-explorer/api-error.log',
       out_file: '/var/log/rtm-explorer/api-out.log',
@@ -713,7 +713,7 @@ limit_req_zone $binary_remote_addr zone=frontend_limit:10m rate=30r/s;
 # Upstream servers
 upstream api_backend {
     least_conn;
-    server 127.0.0.1:4000 max_fails=3 fail_timeout=30s;
+    server 127.0.0.1:4004 max_fails=3 fail_timeout=30s;
     keepalive 64;
 }
 
@@ -915,7 +915,7 @@ nano .env
 NODE_ENV=production
 
 # Server
-PORT=4000
+PORT=4004
 HOST=0.0.0.0
 
 # Database
@@ -930,7 +930,7 @@ REDIS_DB=0
 
 # Blockchain RPC
 RPC_HOST=127.0.0.1
-RPC_PORT=8332
+RPC_PORT=10225
 RPC_USER=rtm_explorer_rpc_user
 RPC_PASSWORD=YOUR_RPC_PASSWORD
 RPC_TIMEOUT=30000
@@ -1311,7 +1311,7 @@ pm2 list
 # Check API health endpoint
 echo
 echo -n "API Health: "
-HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:4000/api/health)
+HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:4004/api/health)
 if [ "$HTTP_CODE" = "200" ]; then
     echo "✓ Healthy"
 else
@@ -1347,7 +1347,7 @@ nano /opt/rtm-explorer/scripts/alert.sh
 # alert.sh - Send alerts when issues detected
 
 # Check if API is down
-if ! curl -sf http://localhost:4000/api/health > /dev/null; then
+if ! curl -sf http://localhost:4004/api/health > /dev/null; then
     # Send email alert
     echo "API is down!" | mail -s "ALERT: RTM Explorer API Down" $ADMIN_EMAIL
     
@@ -1442,7 +1442,7 @@ pm2 start ecosystem.config.js --only rtm-api
 
 ```bash
 # Check if backend is running
-curl http://localhost:4000/api/health
+curl http://localhost:4004/api/health
 
 # Check Nginx error logs
 sudo tail -f /var/log/nginx/rtm-explorer-error.log

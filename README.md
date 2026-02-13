@@ -3,9 +3,9 @@
 A modern, high-performance blockchain explorer and asset viewer for the Raptoreum blockchain, featuring comprehensive asset discovery, IPFS-integrated metadata, and a professional UI for artists, musicians, and collectors.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Node.js](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen)
-![MongoDB](https://img.shields.io/badge/mongodb-7.0-green)
-![Next.js](https://img.shields.io/badge/next.js-14+-black)
+![Node.js](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen)
+![MongoDB](https://img.shields.io/badge/mongodb-8.0-green)
+![Next.js](https://img.shields.io/badge/next.js-16+-black)
 
 ---
 
@@ -59,7 +59,7 @@ The system consists of multiple integrated components:
        │
        ↓
 ┌─────────────┐
-│   Node.js   │  ← API Server (Port 4000)
+│   Node.js   │  ← API Server (Port 4004)
 │   Express   │
 └──┬────┬─────┘
    │    │
@@ -71,10 +71,10 @@ The system consists of multiple integrated components:
 ```
 
 **Key Technologies:**
-- **Frontend**: Next.js 14+ (App Router), Tailwind CSS, shadcn/ui, React Query, Zustand
-- **Backend**: Node.js 20 LTS, Express.js, Mongoose, Winston
-- **Database**: MongoDB 7.x with strategic indexing
-- **Cache**: Redis 7.x for API responses and rate limiting
+- **Frontend**: Next.js 16+ (App Router), Tailwind CSS, shadcn/ui, React Query, Zustand
+- **Backend**: Node.js 24 LTS, Express.js, Mongoose, Winston
+- **Database**: MongoDB 8.x with strategic indexing
+- **Cache**: Redis 8.x for API responses and rate limiting
 - **Storage**: IPFS (Kubo) for decentralized content
 - **Blockchain**: Raptoreumd with full indexing enabled
 - **Infrastructure**: PM2 (process management), Nginx (reverse proxy), Backblaze B2 (backups)
@@ -83,9 +83,9 @@ The system consists of multiple integrated components:
 
 ### Prerequisites
 
-- Node.js 20 LTS
-- MongoDB 7.x
-- Redis 7.x
+- Node.js 24 LTS
+- MongoDB 8.x
+- Redis 8.x
 - Raptoreumd (full node)
 - IPFS (Kubo)
 
@@ -132,7 +132,7 @@ npm run dev
 
 5. **Access the application**
 - Frontend: http://localhost:3000
-- API: http://localhost:4000/api/v1
+- API: http://localhost:4004/api/v1
 
 For detailed development setup, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
@@ -190,17 +190,17 @@ To request an API key, contact the Raptoreum team or apply through the website.
 ## 🛠️ Technology Stack
 
 ### Frontend
-- **Framework**: Next.js 14+ with App Router
+- **Framework**: Next.js 16+ with App Router
 - **Styling**: Tailwind CSS + shadcn/ui components
 - **State Management**: React Query (server state) + Zustand (client state)
 - **Animations**: Framer Motion
 - **Language**: TypeScript
 
 ### Backend
-- **Runtime**: Node.js 20 LTS
-- **Framework**: Express.js 4.x
-- **Database**: MongoDB 7.x with Mongoose ODM
-- **Cache**: Redis 7.x
+- **Runtime**: Node.js 24 LTS
+- **Framework**: Express.js 5.x
+- **Database**: MongoDB 8.x with Mongoose ODM
+- **Cache**: Redis 8.x
 - **Logging**: Winston
 - **Language**: JavaScript (with JSDoc types)
 

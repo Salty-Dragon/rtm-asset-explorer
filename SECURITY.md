@@ -594,7 +594,7 @@ const corsOptions = {
     // Development
     if (process.env.NODE_ENV === 'development') {
       allowedOrigins.push('http://localhost:3000');
-      allowedOrigins.push('http://localhost:4000');
+      allowedOrigins.push('http://localhost:4004');
     }
     
     if (allowedOrigins.indexOf(origin) !== -1) {
@@ -943,7 +943,7 @@ REDIS_PASSWORD=secure_password_here
 
 # Blockchain RPC
 RPC_HOST=127.0.0.1
-RPC_PORT=8332
+RPC_PORT=10225
 RPC_USER=rtm_explorer
 RPC_PASSWORD=secure_rpc_password_here
 
@@ -952,7 +952,7 @@ IPFS_HOST=127.0.0.1
 IPFS_PORT=5001
 
 # API
-API_PORT=4000
+API_PORT=4004
 API_SECRET=random_secret_key_here
 
 # Backblaze B2

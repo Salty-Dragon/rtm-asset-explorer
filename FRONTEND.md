@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Raptoreum Asset Explorer frontend is built with **Next.js 14+** using the App Router, **Tailwind CSS** for styling, and modern React patterns for state management. The interface provides a professional, responsive, and accessible experience for viewing blockchain data and assets.
+The Raptoreum Asset Explorer frontend is built with **Next.js 16+** using the App Router, **Tailwind CSS** for styling, and modern React patterns for state management. The interface provides a professional, responsive, and accessible experience for viewing blockchain data and assets.
 
 ## Table of Contents
 
