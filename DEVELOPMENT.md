@@ -23,9 +23,9 @@ This guide covers local development setup, workflow, and best practices for cont
 
 ### Required Software
 
-- **Node.js 20 LTS**: JavaScript runtime
-- **MongoDB 7.x**: Database
-- **Redis 7.x**: Caching and rate limiting
+- **Node.js 24 LTS**: JavaScript runtime
+- **MongoDB 8.x**: Database
+- **Redis 8.x**: Caching and rate limiting
 - **Git**: Version control
 - **Code Editor**: VS Code (recommended)
 
@@ -55,13 +55,13 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
 # Restart terminal or run:
 source ~/.bashrc  # or ~/.zshrc on macOS
 
-# Install Node.js 20 LTS
-nvm install 20
-nvm use 20
-nvm alias default 20
+# Install Node.js 24 LTS
+nvm install 24
+nvm use 24
+nvm alias default 24
 
 # Verify installation
-node --version  # Should be v20.x.x
+node --version  # Should be v24.x.x
 npm --version
 ```
 
@@ -73,14 +73,14 @@ https://nodejs.org/en/download/
 **macOS (using Homebrew)**:
 ```bash
 brew tap mongodb/brew
-brew install mongodb-community@7.0
-brew services start mongodb-community@7.0
+brew install mongodb-community@8.0
+brew services start mongodb-community@8.0
 ```
 
 **Ubuntu/Debian**:
 ```bash
-wget -qO - https://www.mongodb.org/static/pgp/server-7.0.asc | sudo apt-key add -
-echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+wget -qO - https://www.mongodb.org/static/pgp/server-8.0.asc | sudo apt-key add -
+echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
 sudo apt update
 sudo apt install -y mongodb-org
 sudo systemctl start mongod
@@ -182,7 +182,7 @@ Create `backend/.env.development`:
 NODE_ENV=development
 
 # Server
-PORT=4000
+PORT=4004
 HOST=localhost
 
 # Database
@@ -197,7 +197,7 @@ REDIS_DB=0
 
 # Blockchain RPC (optional - use mock data if not available)
 RPC_HOST=localhost
-RPC_PORT=8332
+RPC_PORT=10225
 RPC_USER=rtm_dev
 RPC_PASSWORD=dev_password
 RPC_TIMEOUT=30000
@@ -212,7 +212,7 @@ USE_PUBLIC_IPFS_GATEWAY=true
 
 # API
 API_SECRET=dev_secret_key_change_in_production
-API_BASE_URL=http://localhost:4000/api/v1
+API_BASE_URL=http://localhost:4004/api/v1
 
 # Rate Limiting (relaxed for development)
 RATE_LIMIT_FREE=1000
@@ -232,7 +232,7 @@ ENABLE_MOCK_DATA=true
 
 Create `frontend/.env.local`:
 ```bash
-NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
+NEXT_PUBLIC_API_URL=http://localhost:4004/api/v1
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_IPFS_GATEWAY=https://ipfs.io/ipfs/
 NEXT_TELEMETRY_DISABLED=1
@@ -354,7 +354,7 @@ seedData().catch(console.error);
 ```bash
 cd backend
 npm run dev
-# API will run on http://localhost:4000
+# API will run on http://localhost:4004
 ```
 
 **Terminal 2 - Frontend**:
@@ -384,7 +384,7 @@ module.exports = {
       ignore_watch: ['node_modules', 'logs', '.git'],
       env: {
         NODE_ENV: 'development',
-        PORT: 4000
+        PORT: 4004
       }
     },
     {
@@ -542,7 +542,7 @@ Create `.vscode/launch.json`:
 **API Testing**:
 ```bash
 # Test API endpoints
-curl http://localhost:4000/api/health
+curl http://localhost:4004/api/health
 
 # Or use tools like:
 # - Postman
