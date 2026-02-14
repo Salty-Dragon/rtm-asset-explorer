@@ -29,7 +29,7 @@ if [ -f "$ENV_FILE" ]; then
     echo "DEBUG: RAPTOREUMD_HOST=$RAPTOREUMD_HOST"
     echo "DEBUG: RAPTOREUMD_PORT=$RAPTOREUMD_PORT"
     echo "DEBUG: RAPTOREUMD_USER=$RAPTOREUMD_USER"
-    echo "DEBUG: RAPTOREUMD_PASSWORD=${RAPTOREUMD_PASSWORD:0:3}***"
+    echo "DEBUG: RAPTOREUMD_PASSWORD set: $([ -n "$RAPTOREUMD_PASSWORD" ] && echo "yes" || echo "no")"
     echo "DEBUG: MONGODB_URI set: $([ -n "$MONGODB_URI" ] && echo "yes" || echo "no")"
   fi
 else
