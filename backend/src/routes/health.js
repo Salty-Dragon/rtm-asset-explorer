@@ -2,8 +2,13 @@ import express from 'express';
 import { checkDatabaseHealth } from '../services/database.js';
 import { checkCacheHealth } from '../services/cache.js';
 import blockchainService from '../services/blockchain.js';
+import exportSigner from '../services/exportSigner.js';
+import { rateLimit } from '../middleware/rateLimit.js';
 
 const router = express.Router();
+
+// Rate limit for signer health check (60 requests per minute)
+const signerHealthRateLimit = rateLimit(60, 60);
 
 router.get('/', async (req, res) => {
   try {
@@ -45,6 +50,45 @@ router.get('/', async (req, res) => {
         timestamp: new Date().toISOString(),
         requestId: req.id || 'req_' + Date.now()
       }
+    });
+  }
+});
+
+// Rate-limited signer health check endpoint
+router.get('/signer', signerHealthRateLimit, async (req, res) => {
+  try {
+    const signerInitialized = exportSigner.isInitialized();
+    
+    if (!signerInitialized) {
+      return res.status(503).json({
+        success: false,
+        service: 'export-signer',
+        status: 'not initialized',
+        message: 'Export signing keys not configured or failed to load'
+      });
+    }
+
+    // Test signature
+    const testData = 'health-check-' + Date.now();
+    const signature = await exportSigner.signExport(testData);
+    const verified = await exportSigner.verifySignature(testData, signature);
+
+    if (verified) {
+      return res.json({
+        success: true,
+        service: 'export-signer',
+        status: 'healthy',
+        message: 'Export signing operational'
+      });
+    } else {
+      throw new Error('Signature verification failed');
+    }
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      service: 'export-signer',
+      status: 'error',
+      message: error.message
     });
   }
 });

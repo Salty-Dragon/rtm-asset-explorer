@@ -162,7 +162,24 @@ const startServer = async () => {
     const { default: paymentMonitor } = await import('./services/paymentMonitor.js');
 
     await exportGenerator.initialize();
-    await exportSigner.initialize();
+    
+    // Initialize export signer (if keys are configured)
+    const hasSigningKeys = (process.env.EXPORT_SIGNING_PRIVATE_KEY_PATH || process.env.EXPORT_SIGNING_PRIVATE_KEY) &&
+                           (process.env.EXPORT_SIGNING_PUBLIC_KEY_PATH || process.env.EXPORT_SIGNING_PUBLIC_KEY);
+    const hasLegacyKeys = (process.env.EXPORT_PRIVATE_KEY_PATH && process.env.EXPORT_PUBLIC_KEY_PATH);
+    
+    if (hasSigningKeys || hasLegacyKeys) {
+      try {
+        await exportSigner.initialize();
+        logger.info('Export signer initialized');
+      } catch (error) {
+        logger.error('Failed to initialize export signer:', error.message);
+        logger.warn('Export functionality will be disabled');
+      }
+    } else {
+      logger.warn('Export signing keys not configured - export functionality disabled');
+    }
+    
     await queueProcessor.initialize();
     
     // Start payment monitoring
