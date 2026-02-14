@@ -1,8 +1,8 @@
-#!/usr/bin/env node
-
 /**
  * Test script to verify environment variable validation
  * Tests that the sync daemon properly validates required environment variables
+ * 
+ * Note: Removed shebang as this uses ES modules and should be run with: node test-env-validation.js
  */
 
 import dotenv from 'dotenv';

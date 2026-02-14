@@ -47,7 +47,7 @@ class SyncDaemon {
         'RAPTOREUMD_PASSWORD'
       ];
       
-      const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+      const missingVars = requiredEnvVars.filter(varName => !process.env[varName]?.trim());
       if (missingVars.length > 0) {
         throw new Error(`Missing required environment variables: ${missingVars.join(', ')}. Please check your .env file or PM2 configuration.`);
       }
@@ -110,7 +110,7 @@ class SyncDaemon {
       console.warn('SYNC DISABLED');
       console.warn('==========================================');
       console.warn('SYNC_ENABLED is not set to "true"');
-      console.warn(`Current value: ${process.env.SYNC_ENABLED}`);
+      console.warn(`Current value: ${process.env.SYNC_ENABLED || '(not set)'}`);
       console.warn('\nTo enable sync, set SYNC_ENABLED=true in:');
       console.warn('- Your .env file, OR');
       console.warn('- PM2 ecosystem.config.js, OR');
