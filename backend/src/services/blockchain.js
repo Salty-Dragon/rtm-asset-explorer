@@ -6,15 +6,17 @@ class BlockchainService {
     this.port = process.env.RAPTOREUMD_PORT || 10225;
     this.user = process.env.RAPTOREUMD_USER || 'rtm_explorer';
     this.password = process.env.RAPTOREUMD_PASSWORD || '';
-    this.url = `http://${this.user}:${this.password}@${this.host}:${this.port}`;
   }
 
   async rpcCall(method, params = []) {
     try {
-      const response = await fetch(this.url, {
+      const auth = Buffer.from(`${this.user}:${this.password}`).toString('base64');
+      
+      const response = await fetch(`http://${this.host}:${this.port}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Basic ${auth}`
         },
         body: JSON.stringify({
           jsonrpc: '1.0',

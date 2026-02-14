@@ -22,7 +22,7 @@ export const connectDatabase = async () => {
     logger.info('MongoDB connected successfully');
 
     mongoose.connection.on('error', (err) => {
-      logger.error('MongoDB connection error:', err);
+      logger.error('MongoDB connection error:', err.message);
       isConnected = false;
     });
 
@@ -32,8 +32,9 @@ export const connectDatabase = async () => {
     });
 
   } catch (error) {
-    logger.error('Failed to connect to MongoDB:', error);
-    throw error;
+    logger.error('Failed to connect to MongoDB:', error.message);
+    logger.warn('Continuing without MongoDB');
+    isConnected = false;
   }
 };
 

@@ -46,10 +46,7 @@ const addressSchema = new mongoose.Schema({
     default: 0
   },
   profile: {
-    username: {
-      type: String,
-      sparse: true
-    },
+    username: String,
     displayName: String,
     bio: String,
     avatar: String,

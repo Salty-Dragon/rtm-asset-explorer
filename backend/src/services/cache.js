@@ -17,12 +17,17 @@ export const connectCache = async () => {
     redisClient = createClient({
       socket: {
         host: redisHost,
-        port: redisPort
+        port: redisPort,
+        connectTimeout: 3000,
+        reconnectStrategy: false // Disable auto-reconnect during initial connection
       }
     });
 
     redisClient.on('error', (err) => {
-      logger.error('Redis Client Error:', err);
+      // Only log once, not on every retry
+      if (!err.message.includes('ECONNREFUSED')) {
+        logger.error('Redis Client Error:', err.message);
+      }
       isConnected = false;
     });
 
@@ -41,8 +46,11 @@ export const connectCache = async () => {
     
     return redisClient;
   } catch (error) {
-    logger.error('Failed to connect to Redis:', error);
-    throw error;
+    logger.error('Failed to connect to Redis:', error.message);
+    logger.warn('Continuing without Redis cache');
+    redisClient = null;
+    isConnected = false;
+    return null;
   }
 };
 
