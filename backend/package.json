@@ -1,0 +1,29 @@
+{
+  "name": "rtm-asset-explorer-backend",
+  "version": "1.0.0",
+  "description": "REST API server for Raptoreum Asset Explorer",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "keywords": ["raptoreum", "blockchain", "explorer", "api"],
+  "author": "Salty-Dragon",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^5.0.0",
+    "mongoose": "^8.0.0",
+    "redis": "^4.6.0",
+    "winston": "^3.11.0",
+    "helmet": "^7.1.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "zod": "^3.22.4",
+    "compression": "^1.7.4"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
