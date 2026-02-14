@@ -109,9 +109,21 @@ app.use(errorHandler);
 
 // Graceful shutdown
 let server;
+let syncDaemon = null;
 
 const gracefulShutdown = async (signal) => {
   logger.info(`${signal} received, starting graceful shutdown`);
+  
+  // Stop sync daemon if running
+  if (syncDaemon) {
+    try {
+      logger.info('Stopping sync daemon...');
+      await syncDaemon.stop();
+      logger.info('Sync daemon stopped');
+    } catch (error) {
+      logger.error('Error stopping sync daemon:', error);
+    }
+  }
   
   if (!server) {
     process.exit(0);
@@ -148,6 +160,54 @@ const gracefulShutdown = async (signal) => {
     logger.error('Forced shutdown after timeout');
     process.exit(1);
   }, 10000);
+};
+
+/**
+ * Start the sync daemon in-process so data synchronization works
+ * without needing PM2 or a separate process.
+ */
+const startSyncDaemon = async () => {
+  try {
+    const { SyncDaemon } = await import('./services/sync-daemon.js');
+    syncDaemon = new SyncDaemon();
+
+    logger.info('==========================================');
+    logger.info('Sync Daemon - Initializing');
+    logger.info('==========================================');
+    logger.info(`SYNC_ENABLED: ${process.env.SYNC_ENABLED || '(not set)'}`);
+    logger.info(`RAPTOREUMD_HOST: ${process.env.RAPTOREUMD_HOST || '127.0.0.1 (default)'}`);
+    logger.info(`RAPTOREUMD_PORT: ${process.env.RAPTOREUMD_PORT || '10225 (default)'}`);
+    logger.info(`RAPTOREUMD_USER: ${process.env.RAPTOREUMD_USER ? '✓ Set' : '✗ Missing'}`);
+    logger.info(`RAPTOREUMD_PASSWORD: ${process.env.RAPTOREUMD_PASSWORD ? '✓ Set' : '✗ Missing'}`);
+
+    if (syncDaemon.syncEnabled) {
+      await syncDaemon.initialize();
+      // Start sync in background (don't await - it runs indefinitely)
+      syncDaemon.start().catch(error => {
+        logger.error('Sync daemon stopped unexpectedly:', error);
+        console.error('[SYNC DAEMON] Stopped unexpectedly:', error.message);
+        console.error('[SYNC DAEMON] Stack:', error.stack);
+      });
+      logger.info('Sync daemon started successfully in-process');
+    } else {
+      logger.warn('==========================================');
+      logger.warn('SYNC DISABLED - No data will be synchronized');
+      logger.warn('==========================================');
+      logger.warn(`SYNC_ENABLED is not set to "true" (current value: ${process.env.SYNC_ENABLED || '(not set)'})`);
+      logger.warn('To enable sync, set SYNC_ENABLED=true in your .env file or environment');
+      logger.warn('==========================================');
+    }
+  } catch (error) {
+    logger.error('==========================================');
+    logger.error('SYNC DAEMON FAILED TO START');
+    logger.error('==========================================');
+    logger.error(`Error: ${error.message}`);
+    logger.error(`Stack: ${error.stack}`);
+    logger.error('The API server will continue running but no data will be synchronized.');
+    logger.error('Check your blockchain RPC configuration and try restarting.');
+    logger.error('==========================================');
+    // Don't exit - let the API server continue running
+  }
 };
 
 // Start server
@@ -195,6 +255,9 @@ const startServer = async () => {
       logger.info('Export system initialized');
     });
 
+    // Start sync daemon in-process (no separate process needed)
+    await startSyncDaemon();
+
     // Handle shutdown signals
     process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
     process.on('SIGINT', () => gracefulShutdown('SIGINT'));
@@ -208,6 +271,19 @@ const startServer = async () => {
 
 // Export for testing
 export { app };
+
+// Global error handlers to prevent silent failures
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Promise Rejection:', reason);
+  console.error('[UNHANDLED REJECTION]', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  console.error('[UNCAUGHT EXCEPTION]', error);
+  // Give logger time to flush, then exit
+  setTimeout(() => process.exit(1), 1000);
+});
 
 // Start server if running directly
 if (import.meta.url === `file://${process.argv[1]}`) {

@@ -520,62 +520,68 @@ class SyncDaemon {
   }
 }
 
-// Main execution
-const daemon = new SyncDaemon();
+// Export class for use when imported by server.js
+export { SyncDaemon };
+export default SyncDaemon;
 
-// Handle graceful shutdown
-process.on('SIGINT', async () => {
-  logger.info('Received SIGINT, shutting down gracefully...');
-  await daemon.stop();
-  await mongoose.disconnect();
-  process.exit(0);
-});
+// Standalone execution - only runs when this file is the entry point
+const isMainModule = process.argv[1] && import.meta.url === `file://${process.argv[1]}`;
 
-process.on('SIGTERM', async () => {
-  logger.info('Received SIGTERM, shutting down gracefully...');
-  await daemon.stop();
-  await mongoose.disconnect();
-  process.exit(0);
-});
+if (isMainModule) {
+  const daemon = new SyncDaemon();
 
-// Start daemon
-(async () => {
-  try {
-    console.log('==========================================');
-    console.log('RTM Asset Explorer - Sync Daemon Starting');
-    console.log('==========================================');
-    console.log(`SYNC_ENABLED: ${process.env.SYNC_ENABLED}`);
-    console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
-    console.log(`Working Directory: ${process.cwd()}`);
-    console.log('\nEnvironment Variables Check:');
-    console.log(`- MONGODB_URI: ${process.env.MONGODB_URI ? '✓ Set' : '✗ Missing'}`);
-    console.log(`- RAPTOREUMD_HOST: ${process.env.RAPTOREUMD_HOST || '127.0.0.1 (default)'}`);
-    console.log(`- RAPTOREUMD_PORT: ${process.env.RAPTOREUMD_PORT || '10225 (default)'}`);
-    console.log(`- RAPTOREUMD_USER: ${process.env.RAPTOREUMD_USER ? '✓ Set' : '✗ Missing'}`);
-    console.log(`- RAPTOREUMD_PASSWORD: ${process.env.RAPTOREUMD_PASSWORD ? '✓ Set' : '✗ Missing'}`);
-    console.log('==========================================\n');
-    
-    await daemon.initialize();
-    await daemon.start();
-  } catch (error) {
-    console.error('\n==========================================');
-    console.error('FATAL ERROR: Failed to start sync daemon');
-    console.error('==========================================');
-    console.error('Error:', error.message);
-    if (error.stack) {
-      console.error('\nStack trace:');
-      console.error(error.stack);
+  // Handle graceful shutdown
+  process.on('SIGINT', async () => {
+    logger.info('Received SIGINT, shutting down gracefully...');
+    await daemon.stop();
+    await mongoose.disconnect();
+    process.exit(0);
+  });
+
+  process.on('SIGTERM', async () => {
+    logger.info('Received SIGTERM, shutting down gracefully...');
+    await daemon.stop();
+    await mongoose.disconnect();
+    process.exit(0);
+  });
+
+  // Start daemon
+  (async () => {
+    try {
+      console.log('==========================================');
+      console.log('RTM Asset Explorer - Sync Daemon Starting');
+      console.log('==========================================');
+      console.log(`SYNC_ENABLED: ${process.env.SYNC_ENABLED}`);
+      console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+      console.log(`Working Directory: ${process.cwd()}`);
+      console.log('\nEnvironment Variables Check:');
+      console.log(`- MONGODB_URI: ${process.env.MONGODB_URI ? '✓ Set' : '✗ Missing'}`);
+      console.log(`- RAPTOREUMD_HOST: ${process.env.RAPTOREUMD_HOST || '127.0.0.1 (default)'}`);
+      console.log(`- RAPTOREUMD_PORT: ${process.env.RAPTOREUMD_PORT || '10225 (default)'}`);
+      console.log(`- RAPTOREUMD_USER: ${process.env.RAPTOREUMD_USER ? '✓ Set' : '✗ Missing'}`);
+      console.log(`- RAPTOREUMD_PASSWORD: ${process.env.RAPTOREUMD_PASSWORD ? '✓ Set' : '✗ Missing'}`);
+      console.log('==========================================\n');
+      
+      await daemon.initialize();
+      await daemon.start();
+    } catch (error) {
+      console.error('\n==========================================');
+      console.error('FATAL ERROR: Failed to start sync daemon');
+      console.error('==========================================');
+      console.error('Error:', error.message);
+      if (error.stack) {
+        console.error('\nStack trace:');
+        console.error(error.stack);
+      }
+      console.error('\nPlease check:');
+      console.error('1. MongoDB is running and MONGODB_URI is correct');
+      console.error('2. Raptoreumd is running and RPC credentials are correct');
+      console.error('3. SYNC_ENABLED is set to "true" in your environment');
+      console.error('4. All required environment variables are set');
+      console.error('==========================================\n');
+      
+      logger.error('Failed to start sync daemon:', error);
+      process.exit(1);
     }
-    console.error('\nPlease check:');
-    console.error('1. MongoDB is running and MONGODB_URI is correct');
-    console.error('2. Raptoreumd is running and RPC credentials are correct');
-    console.error('3. SYNC_ENABLED is set to "true" in your environment');
-    console.error('4. All required environment variables are set');
-    console.error('==========================================\n');
-    
-    logger.error('Failed to start sync daemon:', error);
-    process.exit(1);
-  }
-})();
-
-export default daemon;
+  })();
+}
