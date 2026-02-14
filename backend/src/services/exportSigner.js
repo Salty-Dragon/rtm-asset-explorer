@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import fs from 'fs/promises';
+import { createReadStream } from 'fs';
 import path from 'path';
 import { logger } from '../utils/logger.js';
 
@@ -139,7 +140,7 @@ class ExportSigner {
   calculateFileHash(filePath) {
     return new Promise((resolve, reject) => {
       const hash = crypto.createHash('sha256');
-      const stream = require('fs').createReadStream(filePath);
+      const stream = createReadStream(filePath);
       
       stream.on('data', (chunk) => hash.update(chunk));
       stream.on('end', () => resolve(hash.digest('hex')));
