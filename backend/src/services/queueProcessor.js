@@ -10,6 +10,9 @@ class QueueProcessor {
   constructor() {
     this.redisHost = process.env.REDIS_HOST || '127.0.0.1';
     this.redisPort = parseInt(process.env.REDIS_PORT || '6379');
+    this.redisPassword = process.env.REDIS_PASSWORD;
+    const redisDb = parseInt(process.env.REDIS_DB || '0');
+    this.redisDb = isNaN(redisDb) ? 0 : redisDb;
     this.concurrentLimit = parseInt(process.env.EXPORT_CONCURRENT_LIMIT || '3');
     this.queue = null;
   }
@@ -20,7 +23,9 @@ class QueueProcessor {
       this.queue = new Bull('export-processing', {
         redis: {
           host: this.redisHost,
-          port: this.redisPort
+          port: this.redisPort,
+          password: this.redisPassword || undefined, // Only add if password is set
+          db: this.redisDb
         },
         defaultJobOptions: {
           removeOnComplete: 100, // Keep last 100 completed jobs
