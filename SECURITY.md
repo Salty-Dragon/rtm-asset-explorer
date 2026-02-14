@@ -13,11 +13,12 @@ Security is paramount for the Raptoreum Asset Explorer. This document outlines s
 5. [CORS Configuration](#cors-configuration)
 6. [Audit Logging](#audit-logging)
 7. [Data Verification](#data-verification)
-8. [Security Headers](#security-headers)
-9. [Sensitive Data Protection](#sensitive-data-protection)
-10. [Incident Response](#incident-response)
-11. [Security Best Practices](#security-best-practices)
-12. [Vulnerability Management](#vulnerability-management)
+8. [Export System Security](#export-system-security)
+9. [Security Headers](#security-headers)
+10. [Sensitive Data Protection](#sensitive-data-protection)
+11. [Incident Response](#incident-response)
+12. [Security Best Practices](#security-best-practices)
+13. [Vulnerability Management](#vulnerability-management)
 
 ---
 
@@ -924,6 +925,302 @@ export function securityHeaders(app) {
   });
 }
 ```
+
+---
+
+## Export System Security
+
+The export system implements multiple security layers to ensure authenticity, integrity, and secure payment processing.
+
+### Digital Signatures
+
+All exports are digitally signed using the Raptoreum Asset Explorer signing key to provide cryptographic proof of authenticity.
+
+**Server Public Key (RSA-4096):**
+```
+-----BEGIN PUBLIC KEY-----
+[To be generated during deployment]
+-----END PUBLIC KEY-----
+```
+
+**Signature Implementation:**
+```javascript
+// services/export-signing.js
+import crypto from 'crypto';
+import fs from 'fs';
+
+export class ExportSigner {
+  constructor(privateKeyPath) {
+    this.privateKey = fs.readFileSync(privateKeyPath, 'utf8');
+  }
+  
+  signExport(exportData) {
+    const sign = crypto.createSign('RSA-SHA256');
+    sign.update(JSON.stringify(exportData));
+    const signature = sign.sign(this.privateKey, 'hex');
+    
+    return {
+      data: exportData,
+      signature: signature,
+      algorithm: 'RSA-SHA256',
+      keyId: 'export-signing-key-v1'
+    };
+  }
+}
+
+export function verifyExportSignature(exportData, signature, publicKey) {
+  try {
+    const verify = crypto.createVerify('RSA-SHA256');
+    verify.update(JSON.stringify(exportData));
+    return verify.verify(publicKey, signature, 'hex');
+  } catch (error) {
+    console.error('Signature verification failed:', error);
+    return false;
+  }
+}
+```
+
+**Signature Verification:**
+
+Users can verify export authenticity by:
+1. **Checking on-chain token asset** (RTM_EXPORTS/...)
+2. **Verifying IPFS content hash** matches
+3. **Validating digital signature** with public key
+4. **Using verification endpoint**: `/api/export/verify/:assetName`
+
+**Public Key Distribution:**
+- Published in this SECURITY.md document
+- Available via API endpoint: `/api/export/public-key`
+- Included in export ZIP files
+- Versioned for key rotation
+
+### Payment Security
+
+**Litecoin Payment Processing:**
+
+The system uses a pruned Litecoin node for secure payment processing without exposing hot wallet risks.
+
+```javascript
+// services/payment.js
+import { LitecoinRPC } from './litecoin-rpc';
+
+export class PaymentProcessor {
+  constructor() {
+    this.ltcRPC = new LitecoinRPC({
+      host: process.env.LITECOIN_RPC_HOST,
+      port: process.env.LITECOIN_RPC_PORT,
+      user: process.env.LITECOIN_RPC_USER,
+      pass: process.env.LITECOIN_RPC_PASS
+    });
+  }
+  
+  async generatePaymentAddress(exportId) {
+    // Generate new address for this specific export
+    const address = await this.ltcRPC.getNewAddress(`export_${exportId}`);
+    
+    // Store mapping in database
+    await PaymentAddress.create({
+      exportId: exportId,
+      address: address,
+      amount: await this.calculateAmount(),
+      expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes
+      status: 'pending'
+    });
+    
+    return address;
+  }
+  
+  async calculateAmount() {
+    // Get current LTC/USD rate from CoinGecko
+    const rate = await this.getExchangeRate();
+    const usdAmount = parseFloat(process.env.EXPORT_PRICE_USD) || 2.00;
+    
+    return {
+      usd: usdAmount,
+      ltc: (usdAmount / rate).toFixed(8),
+      rate: rate,
+      validFor: 1800 // 30 minutes
+    };
+  }
+}
+```
+
+**Security Measures:**
+- **Pruned Litecoin node** running on server (no hot wallet exposure)
+- **Payment addresses generated per-request** (single-use)
+- **30-minute payment window** with automatic expiration
+- **±1% variance tolerance** for price fluctuations
+- **All payment transactions** logged to audit trail
+
+**Payment Monitoring:**
+```javascript
+export class PaymentMonitor {
+  async monitorPayments() {
+    // Watch for incoming transactions
+    const pendingPayments = await PaymentAddress.find({ status: 'pending' });
+    
+    for (const payment of pendingPayments) {
+      // Check if payment expired
+      if (new Date() > payment.expiresAt) {
+        await this.expirePayment(payment);
+        continue;
+      }
+      
+      // Check for transaction
+      const received = await this.ltcRPC.getReceivedByAddress(payment.address, 1);
+      const expectedAmount = parseFloat(payment.amount.ltc);
+      const tolerance = expectedAmount * 0.01; // 1% tolerance
+      
+      if (received >= (expectedAmount - tolerance)) {
+        await this.confirmPayment(payment);
+        await this.startExportProcessing(payment.exportId);
+      }
+    }
+  }
+}
+```
+
+### Attack Vector Mitigation
+
+**Rate Limiting:**
+```javascript
+// middleware/export-rate-limit.js
+export const exportRateLimit = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: process.env.EXPORT_RATE_LIMIT_PER_HOUR || 10,
+  message: 'Too many export requests from this IP, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    // Use IP address for rate limiting
+    return req.ip || req.connection.remoteAddress;
+  }
+});
+```
+
+**Queue System:**
+```javascript
+// services/export-queue.js
+export class ExportQueue {
+  constructor() {
+    this.maxConcurrent = parseInt(process.env.EXPORT_CONCURRENT_LIMIT) || 3;
+    this.maxQueueSize = parseInt(process.env.EXPORT_QUEUE_MAX_SIZE) || 50;
+    this.processing = new Set();
+    this.queue = [];
+  }
+  
+  async addToQueue(exportRequest) {
+    if (this.queue.length >= this.maxQueueSize) {
+      throw new Error('Export queue is full, please try again later');
+    }
+    
+    this.queue.push(exportRequest);
+    this.processQueue();
+  }
+  
+  async processQueue() {
+    while (this.processing.size < this.maxConcurrent && this.queue.length > 0) {
+      const request = this.queue.shift();
+      this.processing.add(request.exportId);
+      
+      this.processExport(request)
+        .finally(() => {
+          this.processing.delete(request.exportId);
+          this.processQueue();
+        });
+    }
+  }
+}
+```
+
+**Resource Limits:**
+- **File size limits**: 100MB maximum (configurable)
+- **Processing timeout**: 10 minutes maximum (configurable)
+- **Queue size limits**: 50 maximum pending exports (configurable)
+- **Concurrent processing**: 3 exports simultaneously (configurable)
+- All limits configurable via environment variables
+
+### Token Asset Security
+
+**Remote Raptoreumd for Asset Creation:**
+
+Export tokens are created on a separate, secured Raptoreumd instance to isolate asset creation from the read-only explorer node.
+
+```javascript
+// services/token-asset.js
+import { RaptoreumRPC } from './raptoreum-rpc';
+
+export class TokenAssetCreator {
+  constructor() {
+    this.remoteRPC = new RaptoreumRPC({
+      host: process.env.REMOTE_RAPTOREUMD_HOST,
+      port: process.env.REMOTE_RAPTOREUMD_PORT,
+      user: process.env.REMOTE_RAPTOREUMD_USER,
+      pass: process.env.REMOTE_RAPTOREUMD_PASS
+    });
+    
+    this.ownerAddress = process.env.REMOTE_RAPTOREUM_OWNER_ADDRESS;
+  }
+  
+  async createExportToken(exportData) {
+    // Generate token name
+    const tokenName = this.generateTokenName(exportData);
+    
+    // Create sub-asset
+    const txid = await this.remoteRPC.issueAsset({
+      asset_name: tokenName,
+      qty: 1,
+      to_address: this.ownerAddress,
+      is_unique: true,
+      maxMintCount: 1,
+      referenceHash: exportData.ipfsHash,
+      ipfs_hash: exportData.ipfsHash
+    });
+    
+    return {
+      assetName: tokenName,
+      txid: txid,
+      ownerAddress: this.ownerAddress
+    };
+  }
+  
+  generateTokenName(exportData) {
+    const type = exportData.type.toUpperCase();
+    const date = new Date().toISOString().split('T')[0].replace(/-/g, '');
+    
+    // Generate 8-char hash from export content
+    const hash = crypto
+      .createHash('sha256')
+      .update(JSON.stringify(exportData))
+      .digest('hex')
+      .substring(0, 8);
+    
+    return `RTM_EXPORTS/${type}_${date}_${hash}`;
+  }
+}
+```
+
+**Security Architecture:**
+- **Export tokens created on separate, secured Raptoreumd instance**
+- **Local explorer node is read-only** (no private keys)
+- **Owner address holds all RTM_EXPORTS sub-assets**
+- **Each export is unique NFT** (is_unique: true, maxMintCount: 1)
+- **referenceHash links to IPFS content** (immutable)
+
+**Token Properties:**
+- **Uniqueness**: Each token is a unique NFT (cannot be minted again)
+- **Ownership**: All tokens owned by controlled address
+- **Immutability**: referenceHash cannot be changed after creation
+- **Verification**: On-chain proof of export existence and integrity
+
+**Token Naming Convention:**
+- Format: `RTM_EXPORTS/[TYPE]_[YYYYMMDD]_[HASH]`
+- Maximum 128 characters (Raptoreum limit)
+- Hash derived from export content (deterministic)
+- Examples:
+  - `RTM_EXPORTS/ASSET_20260214_a3f2c1b9`
+  - `RTM_EXPORTS/LEGAL_20260214_f7e9c2d1`
+  - `RTM_EXPORTS/MULTI_20260214_b4a8e6f3`
 
 ---
 

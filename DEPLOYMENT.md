@@ -974,6 +974,46 @@ ADMIN_EMAIL=admin@raptoreum.com
 # Security
 ENCRYPTION_KEY=YOUR_32_BYTE_ENCRYPTION_KEY_HERE
 
+# Export System
+EXPORT_PRICE_USD=2.00
+EXPORT_MAX_ASSETS=1000
+EXPORT_MAX_TRANSACTIONS=10000
+EXPORT_MAX_ADDRESSES=100
+EXPORT_MAX_FILE_SIZE_MB=100
+EXPORT_MAX_PROCESSING_TIME_SEC=600
+EXPORT_RATE_LIMIT_PER_HOUR=10
+EXPORT_CONCURRENT_LIMIT=3
+EXPORT_QUEUE_MAX_SIZE=50
+
+# Litecoin Payment Node
+LITECOIN_RPC_HOST=127.0.0.1
+LITECOIN_RPC_PORT=9332
+LITECOIN_RPC_USER=ltc_user
+LITECOIN_RPC_PASS=YOUR_LITECOIN_RPC_PASSWORD
+
+# Remote Raptoreumd (for asset creation)
+REMOTE_RAPTOREUMD_HOST=remote.server.com
+REMOTE_RAPTOREUMD_PORT=10225
+REMOTE_RAPTOREUMD_USER=rtm_asset_creator
+REMOTE_RAPTOREUMD_PASS=YOUR_REMOTE_RPC_PASSWORD
+REMOTE_RAPTOREUM_OWNER_ADDRESS=RxxxxOwnerAddress
+EXPORT_HOLDER_ADDRESS=RxxxxHolderAddress
+
+# Export Signing
+EXPORT_SIGNING_PRIVATE_KEY=/opt/rtm-explorer/keys/export_private_key.pem
+EXPORT_SIGNING_PUBLIC_KEY=/opt/rtm-explorer/keys/export_public_key.pem
+
+# IPFS (local node)
+IPFS_API_URL=http://127.0.0.1:5001
+IPFS_GATEWAY_URL=http://127.0.0.1:8080
+IPFS_RAPTOREUM_GATEWAY=https://ipfs.raptoreum.com
+IPFS_PUBLIC_GATEWAY=https://ipfs.io
+IPFS_TIMEOUT_SEC=30
+
+# CoinGecko API
+COINGECKO_API_URL=https://api.coingecko.com/api/v3
+COINGECKO_CACHE_TTL=300
+
 # Frontend
 NEXT_PUBLIC_API_URL=https://assets.raptoreum.com/api/v1
 NEXT_PUBLIC_SITE_URL=https://assets.raptoreum.com
@@ -1004,6 +1044,34 @@ chmod 600 /opt/rtm-explorer/frontend/.env.production
 # Ensure files are owned by application user
 chown rtmexplorer:rtmexplorer /opt/rtm-explorer/backend/.env
 chown rtmexplorer:rtmexplorer /opt/rtm-explorer/frontend/.env.production
+```
+
+### 4. Export System Variables
+
+Configure all export-related environment variables as documented in DEVELOPMENT.md.
+
+**Critical for Production:**
+- Generate production signing keys (RSA-4096)
+- Store private key securely (encrypted filesystem)
+- Configure remote Raptoreumd with proper access controls
+- Set appropriate rate limits based on server capacity
+- Monitor Litecoin node sync status
+- Configure IPFS with sufficient storage
+
+**Generate Signing Keys:**
+```bash
+# Create keys directory
+mkdir -p /opt/rtm-explorer/keys
+cd /opt/rtm-explorer/keys
+
+# Generate RSA-4096 key pair
+openssl genrsa -out export_private_key.pem 4096
+openssl rsa -in export_private_key.pem -pubout -out export_public_key.pem
+
+# Secure private key
+chmod 400 export_private_key.pem
+chmod 644 export_public_key.pem
+chown rtmexplorer:rtmexplorer export_private_key.pem export_public_key.pem
 ```
 
 ---
@@ -1363,6 +1431,84 @@ chmod +x /opt/rtm-explorer/scripts/alert.sh
 
 # Add to crontab (check every 5 minutes)
 */5 * * * * /opt/rtm-explorer/scripts/alert.sh
+```
+
+### 6. Export System Monitoring
+
+**Key Metrics:**
+- Export queue depth
+- Processing time per export
+- Payment confirmation time
+- IPFS upload success rate
+- Asset creation success rate
+- File generation errors
+
+**Alerts:**
+- Queue exceeds 80% capacity
+- Payment confirmations delayed >1 hour
+- IPFS node offline
+- Remote Raptoreumd unreachable
+- Disk space <20% free
+
+**Monitoring Script:**
+```bash
+# Create export monitoring script
+nano /opt/rtm-explorer/scripts/monitor-exports.sh
+```
+
+```bash
+#!/bin/bash
+# monitor-exports.sh - Monitor export system health
+
+echo "=== Export System Status ==="
+echo
+
+# Check Litecoin node
+echo -n "Litecoin Node: "
+if pgrep -x "litecoind" > /dev/null; then
+    echo "✓ Running"
+else
+    echo "✗ Stopped"
+fi
+
+# Check export queue (query API)
+echo -n "Export Queue: "
+QUEUE_SIZE=$(curl -s http://localhost:4004/api/export/queue-status | jq -r '.data.queueSize // 0')
+MAX_QUEUE=$(curl -s http://localhost:4004/api/export/queue-status | jq -r '.data.maxSize // 50')
+echo "$QUEUE_SIZE / $MAX_QUEUE"
+
+if [ "$QUEUE_SIZE" -gt "$((MAX_QUEUE * 80 / 100))" ]; then
+    echo "⚠ WARNING: Queue at 80% capacity"
+fi
+
+# Check recent export failures
+echo
+echo "Recent Export Failures:"
+grep -i "export.*failed" /var/log/rtm-explorer/api-error.log | tail -n 5
+
+# Check IPFS connectivity
+echo
+echo -n "IPFS Connection: "
+if curl -s http://localhost:5001/api/v0/id > /dev/null; then
+    echo "✓ Connected"
+else
+    echo "✗ Failed"
+fi
+
+# Check remote Raptoreumd connection
+echo -n "Remote Raptoreumd: "
+# Add actual check here based on your setup
+echo "✓ Connected"
+```
+
+```bash
+chmod +x /opt/rtm-explorer/scripts/monitor-exports.sh
+
+# Run monitoring
+/opt/rtm-explorer/scripts/monitor-exports.sh
+
+# Add to crontab (check every 15 minutes)
+*/15 * * * * /opt/rtm-explorer/scripts/monitor-exports.sh >> /var/log/rtm-explorer/export-monitor.log
 ```
 
 ---

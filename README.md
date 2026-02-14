@@ -147,6 +147,7 @@ Comprehensive documentation is available for all aspects of the project:
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture, component details, data flows, and deployment architecture
 - **[DATABASE.md](DATABASE.md)** - Complete MongoDB schema with 11 collections, indexes, and data integrity rules
 - **[API.md](API.md)** - Full API documentation with endpoints, parameters, responses, and code examples (JavaScript, Python, cURL)
+- **[EXPORTS.md](EXPORTS.md)** - Export system documentation with tokenized exports, payment processing, and blockchain verification
 - **[FRONTEND.md](FRONTEND.md)** - Frontend specifications including pages, components, design system, state management, and performance optimization
 - **[SECURITY.md](SECURITY.md)** - Security guidelines covering input validation, authentication, rate limiting, audit logging, and incident response
 - **[DEPLOYMENT.md](DEPLOYMENT.md)** - Step-by-step deployment guide for OVH server with PM2, Nginx, SSL, backups, and monitoring
