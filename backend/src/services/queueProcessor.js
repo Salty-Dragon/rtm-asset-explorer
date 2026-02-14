@@ -10,7 +10,7 @@ class QueueProcessor {
   constructor() {
     this.redisHost = process.env.REDIS_HOST || '127.0.0.1';
     this.redisPort = parseInt(process.env.REDIS_PORT || '6379');
-    this.redisPassword = process.env.REDIS_PASSWORD || '';
+    this.redisPassword = process.env.REDIS_PASSWORD;
     this.redisDb = parseInt(process.env.REDIS_DB || '0');
     this.concurrentLimit = parseInt(process.env.EXPORT_CONCURRENT_LIMIT || '3');
     this.queue = null;

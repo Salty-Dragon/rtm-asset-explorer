@@ -13,7 +13,7 @@ export const connectCache = async () => {
   try {
     const redisHost = process.env.REDIS_HOST || '127.0.0.1';
     const redisPort = process.env.REDIS_PORT || 6379;
-    const redisPassword = process.env.REDIS_PASSWORD || '';
+    const redisPassword = process.env.REDIS_PASSWORD;
 
     redisClient = createClient({
       socket: {
