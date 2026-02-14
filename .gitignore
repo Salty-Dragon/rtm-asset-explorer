@@ -76,6 +76,12 @@ backups/
 *.key
 *.crt
 
+# Export System
+exports/
+keys/
+backend/exports/
+backend/keys/
+
 # Local config
 config/local.json
 test-imports.js

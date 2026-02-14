@@ -273,9 +273,11 @@ router.get('/download/:exportId', async (req, res) => {
 });
 
 // GET /api/export/verify/:assetName - Verify export
-router.get('/verify/:assetName(*)', async (req, res) => {
+// Note: Asset name should be URL encoded (e.g., RTM_EXPORTS%2FASSET_20260214_hash)
+router.get('/verify/:assetName', async (req, res) => {
   try {
-    const { assetName } = req.params;
+    // Decode URL-encoded asset name
+    const assetName = decodeURIComponent(req.params.assetName);
     
     // Find export by asset name
     const exportRecord = await Export.findOne({ assetName });
