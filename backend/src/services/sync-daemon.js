@@ -9,9 +9,23 @@ import Transaction from '../models/Transaction.js';
 import SyncState from '../models/SyncState.js';
 import { logger } from '../utils/logger.js';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Load environment variables
-dotenv.config();
+// Get directory name for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables from backend/.env
+const envPath = path.resolve(__dirname, '../../.env');
+console.log(`[ENV] Loading environment from: ${envPath}`);
+const envResult = dotenv.config({ path: envPath });
+if (envResult.error) {
+  console.warn(`[ENV WARNING] Could not load .env file from ${envPath}:`, envResult.error.message);
+  console.warn('[ENV WARNING] Will use environment variables from system or PM2 config');
+} else {
+  console.log('[ENV] Environment variables loaded successfully');
+}
 
 class SyncDaemon {
   constructor() {
@@ -528,6 +542,12 @@ process.on('SIGTERM', async () => {
     console.log(`SYNC_ENABLED: ${process.env.SYNC_ENABLED}`);
     console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
     console.log(`Working Directory: ${process.cwd()}`);
+    console.log('\nEnvironment Variables Check:');
+    console.log(`- MONGODB_URI: ${process.env.MONGODB_URI ? '✓ Set' : '✗ Missing'}`);
+    console.log(`- RAPTOREUMD_HOST: ${process.env.RAPTOREUMD_HOST || '(using default)'}`);
+    console.log(`- RAPTOREUMD_PORT: ${process.env.RAPTOREUMD_PORT || '(using default)'}`);
+    console.log(`- RAPTOREUMD_USER: ${process.env.RAPTOREUMD_USER ? '✓ Set' : '✗ Missing'}`);
+    console.log(`- RAPTOREUMD_PASSWORD: ${process.env.RAPTOREUMD_PASSWORD ? '✓ Set' : '✗ Missing'}`);
     console.log('==========================================\n');
     
     await daemon.initialize();
