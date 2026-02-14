@@ -12,7 +12,10 @@ class BlockchainService {
     try {
       const auth = Buffer.from(`${this.user}:${this.password}`).toString('base64');
       
-      const response = await fetch(`http://${this.host}:${this.port}`, {
+      const url = `http://${this.host}:${this.port}`;
+      console.log(`[BLOCKCHAIN RPC] Calling ${method} at ${url}`);
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -27,17 +30,23 @@ class BlockchainService {
       });
 
       if (!response.ok) {
-        throw new Error(`RPC call failed: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error(`[BLOCKCHAIN RPC ERROR] ${method} failed: ${response.status} ${response.statusText}`);
+        console.error(`[BLOCKCHAIN RPC ERROR] Response: ${errorText}`);
+        throw new Error(`RPC call failed: ${response.statusText} - ${errorText}`);
       }
 
       const data = await response.json();
 
       if (data.error) {
+        console.error(`[BLOCKCHAIN RPC ERROR] ${method} returned error:`, data.error);
         throw new Error(`RPC error: ${data.error.message}`);
       }
 
+      console.log(`[BLOCKCHAIN RPC] ${method} succeeded`);
       return data.result;
     } catch (error) {
+      console.error(`[BLOCKCHAIN RPC EXCEPTION] ${method}:`, error.message);
       logger.error(`Blockchain RPC error (${method}):`, error);
       throw error;
     }
@@ -83,7 +92,9 @@ class BlockchainService {
 
   async checkHealth() {
     try {
+      console.log('[BLOCKCHAIN HEALTH] Checking blockchain health...');
       const info = await this.getBlockchainInfo();
+      console.log(`[BLOCKCHAIN HEALTH] Connected to ${info.chain} at block ${info.blocks}`);
       return {
         status: 'connected',
         message: 'Blockchain connection healthy',
@@ -93,6 +104,7 @@ class BlockchainService {
         verificationProgress: info.verificationprogress
       };
     } catch (error) {
+      console.error('[BLOCKCHAIN HEALTH ERROR]', error.message);
       return {
         status: 'error',
         message: error.message
