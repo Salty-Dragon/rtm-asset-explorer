@@ -185,9 +185,14 @@ class SyncDaemon {
       console.error('==========================================\n');
       
       logger.error('Sync daemon error:', error);
-      await this.updateSyncState({ status: 'error', lastError: error.message }).catch(err => {
-        console.error('[SYNC STATE ERROR] Failed to save error state:', err.message);
-      });
+      
+      // Try to save error state, but don't let this failure stop retry logic
+      try {
+        await this.updateSyncState({ status: 'error', lastError: error.message });
+      } catch (stateError) {
+        console.error('[SYNC STATE ERROR] Failed to save error state (non-fatal):', stateError.message);
+        console.error('[SYNC STATE ERROR] This will not prevent retry attempts');
+      }
       
       // Retry after delay
       if (this.isRunning && this.retryAttempts > 0) {
@@ -544,8 +549,8 @@ process.on('SIGTERM', async () => {
     console.log(`Working Directory: ${process.cwd()}`);
     console.log('\nEnvironment Variables Check:');
     console.log(`- MONGODB_URI: ${process.env.MONGODB_URI ? '✓ Set' : '✗ Missing'}`);
-    console.log(`- RAPTOREUMD_HOST: ${process.env.RAPTOREUMD_HOST || '(using default)'}`);
-    console.log(`- RAPTOREUMD_PORT: ${process.env.RAPTOREUMD_PORT || '(using default)'}`);
+    console.log(`- RAPTOREUMD_HOST: ${process.env.RAPTOREUMD_HOST || '127.0.0.1 (default)'}`);
+    console.log(`- RAPTOREUMD_PORT: ${process.env.RAPTOREUMD_PORT || '10225 (default)'}`);
     console.log(`- RAPTOREUMD_USER: ${process.env.RAPTOREUMD_USER ? '✓ Set' : '✗ Missing'}`);
     console.log(`- RAPTOREUMD_PASSWORD: ${process.env.RAPTOREUMD_PASSWORD ? '✓ Set' : '✗ Missing'}`);
     console.log('==========================================\n');
