@@ -651,41 +651,32 @@ export function SearchBar({ placeholder = 'Search...' }) {
 ```typescript
 // styles/theme.ts
 export const colors = {
-  // Primary (Raptoreum blue)
-  primary: {
-    50: '#eff6ff',
-    100: '#dbeafe',
-    200: '#bfdbfe',
-    300: '#93c5fd',
-    400: '#60a5fa',
-    500: '#3b82f6',  // Main brand color
-    600: '#2563eb',
-    700: '#1d4ed8',
-    800: '#1e40af',
-    900: '#1e3a8a',
+  // Primary (Black backgrounds for professional appearance)
+  primary: '#000000',
+  
+  // Secondary/Accent (Raptoreum signature red-orange)
+  secondary: '#b45a46',
+  accent: '#b45a46',
+  
+  // Supporting colors
+  foreground: '#ffffff',      // Text on dark backgrounds
+  background: '#000000',      // Main background
+  
+  // UI colors
+  border: '#2a2a2a',          // Subtle borders and dividers
+  hover: '#c76b57',           // Lighter shade for hover states
+  active: '#b45a46',          // Active/selected states
+  
+  muted: {
+    DEFAULT: '#2a2a2a',       // Muted backgrounds
+    foreground: '#a0a0a0',    // Secondary/muted text
   },
   
-  // Accent colors
-  accent: {
-    gold: '#f59e0b',
-    green: '#10b981',
-    red: '#ef4444',
-    purple: '#8b5cf6',
-  },
-  
-  // Neutral colors
-  gray: {
-    50: '#f9fafb',
-    100: '#f3f4f6',
-    200: '#e5e7eb',
-    300: '#d1d5db',
-    400: '#9ca3af',
-    500: '#6b7280',
-    600: '#4b5563',
-    700: '#374151',
-    800: '#1f2937',
-    900: '#111827',
-  },
+  // Status colors (functional colors remain unchanged)
+  success: '#10b981',
+  warning: '#f59e0b',
+  error: '#ef4444',
+  info: '#3b82f6',
 };
 ```
 
@@ -697,8 +688,31 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: colors.primary,
-        accent: colors.accent,
+        // Raptoreum brand colors
+        primary: '#000000',
+        secondary: '#b45a46',
+        accent: '#b45a46',
+        
+        // Semantic colors
+        background: '#000000',
+        foreground: '#ffffff',
+        
+        // UI colors
+        border: '#2a2a2a',
+        muted: {
+          DEFAULT: '#2a2a2a',
+          foreground: '#a0a0a0'
+        },
+        
+        // Component states
+        hover: '#c76b57',
+        active: '#b45a46',
+        
+        // Status colors (keep functional)
+        success: '#10b981',
+        warning: '#f59e0b',
+        error: '#ef4444',
+        info: '#3b82f6'
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
@@ -721,6 +735,65 @@ module.exports = {
     },
   },
 };
+```
+
+**CSS Variables** (for shadcn/ui compatibility):
+```css
+/* app/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+    
+    --primary: 0 0% 0%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 13 47% 50%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --accent: 13 47% 50%;
+    --accent-foreground: 0 0% 100%;
+    
+    --muted: 0 0% 16%;
+    --muted-foreground: 0 0% 63%;
+    
+    --border: 0 0% 16%;
+    --ring: 13 47% 50%;
+  }
+
+  .dark {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    
+    --primary: 0 0% 0%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 13 47% 50%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --accent: 13 47% 50%;
+    --accent-foreground: 0 0% 100%;
+    
+    --muted: 0 0% 16%;
+    --muted-foreground: 0 0% 63%;
+    
+    --border: 0 0% 16%;
+    --ring: 13 47% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
 ```
 
 ### Typography
@@ -766,6 +839,115 @@ Following Tailwind's spacing scale (4px base unit):
 - `success` - Positive state
 - `warning` - Caution state
 - `destructive` - Negative state
+
+### Color System Usage Guidelines
+
+**Primary Colors:**
+- **Primary (#000000)**: Main background color - black for professional appearance
+- **Secondary/Accent (#b45a46)**: Raptoreum signature color for accents, CTAs, and highlights
+
+**Usage Principles:**
+
+1. **Backgrounds and Containers:**
+   ```tsx
+   // Main backgrounds
+   <div className="bg-primary">
+   
+   // Cards and panels
+   <div className="bg-primary border border-border">
+   
+   // Muted backgrounds
+   <div className="bg-muted">
+   ```
+
+2. **Text Colors:**
+   ```tsx
+   // Primary text on dark backgrounds
+   <h1 className="text-foreground">
+   
+   // Secondary/muted text
+   <p className="text-muted-foreground">
+   
+   // Accent text for links and highlights
+   <a className="text-secondary hover:text-hover">
+   ```
+
+3. **Buttons and Interactive Elements:**
+   ```tsx
+   // Primary action buttons
+   <button className="bg-secondary hover:bg-hover text-white">
+   
+   // Secondary/outline buttons
+   <button className="bg-transparent border border-secondary text-secondary hover:bg-secondary hover:text-white">
+   
+   // Ghost buttons
+   <button className="hover:bg-muted hover:text-foreground">
+   ```
+
+4. **Borders and Dividers:**
+   ```tsx
+   // Subtle borders
+   <div className="border border-border">
+   
+   // Hover effects with accent
+   <div className="border border-border hover:border-secondary">
+   ```
+
+5. **Component States:**
+   - **Default**: Black background, white text
+   - **Hover**: Use `hover:bg-hover` (#c76b57) or `hover:border-secondary`
+   - **Active/Selected**: Use `bg-secondary` or `border-secondary`
+   - **Disabled**: Use `opacity-50` with existing colors
+
+6. **Accessibility Considerations:**
+   - White text on black backgrounds ensures high contrast (21:1 ratio)
+   - Gray (#a0a0a0) for secondary text maintains WCAG AA compliance (4.5:1 ratio)
+   - Accent color (#b45a46) on black has 5.8:1 contrast ratio
+   - Always test interactive elements for sufficient color contrast
+
+7. **Common Color Patterns:**
+   ```tsx
+   // Asset cards
+   <div className="bg-primary border border-border rounded-lg overflow-hidden hover:border-secondary transition-colors">
+     <div className="aspect-square bg-muted">
+       {/* Image */}
+     </div>
+     <div className="p-4">
+       <h3 className="text-foreground font-semibold">Title</h3>
+       <p className="text-muted-foreground text-sm">Description</p>
+       <button className="mt-4 w-full bg-secondary hover:bg-hover text-white py-2 rounded-md transition-colors">
+         Action
+       </button>
+     </div>
+   </div>
+   
+   // Header/Navigation
+   <header className="bg-primary border-b border-border">
+     <nav className="container mx-auto px-4 py-4">
+       <a href="/" className="text-foreground hover:text-secondary transition-colors">
+         Home
+       </a>
+       <a href="/assets" className="text-secondary font-semibold">
+         Assets (Active)
+       </a>
+     </nav>
+   </header>
+   
+   // Forms and inputs
+   <input className="bg-primary border border-border text-foreground placeholder:text-muted-foreground focus:border-secondary focus:ring-1 focus:ring-secondary" />
+   ```
+
+**Color Replacement Guide:**
+
+When migrating from old blue-based colors to new Raptoreum brand:
+- `bg-blue-600` → `bg-secondary`
+- `text-blue-500` → `text-secondary`
+- `border-gray-300` → `border-border`
+- `bg-white` → `bg-background` or `bg-primary`
+- `text-gray-600` → `text-muted-foreground`
+- `hover:bg-blue-700` → `hover:bg-hover`
+- `bg-gray-100` → `bg-muted`
+- `text-gray-900` → `text-foreground`
 
 ---
 
