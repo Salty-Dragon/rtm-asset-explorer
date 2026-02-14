@@ -260,7 +260,55 @@ NEXT_PUBLIC_IPFS_GATEWAY=https://ipfs.io/ipfs/
 NEXT_TELEMETRY_DISABLED=1
 ```
 
-### 3. Initialize Database
+### 3. Production Environment Variables
+
+For production deployment, use the comprehensive `.env.example` files as templates:
+
+#### Backend Configuration
+
+Copy the example file and customize:
+```bash
+cp backend/.env.example backend/.env
+```
+
+**Critical variables to change:**
+- `APP_URL` - Your domain (e.g., https://assets.raptoreum.com)
+- `MONGODB_URI` - Include your MongoDB credentials with authentication
+- `REDIS_PASSWORD` - Set a strong Redis password
+- `RAPTOREUMD_PASSWORD` - Your local node RPC password
+- `REMOTE_RAPTOREUMD_*` - Remote node configuration for asset creation
+- `LITECOIN_RPC_PASSWORD` - Litecoin node credentials
+- `SESSION_SECRET` - Generate with: `openssl rand -hex 32`
+- `JWT_SECRET` - Generate with: `openssl rand -hex 32`
+- `EXPORT_SIGNING_*_KEY` - Paths to your RSA keys
+- `CORS_ORIGIN` - Set to your production domain
+
+**Generate secure secrets:**
+```bash
+# Generate session secret
+openssl rand -hex 32
+
+# Generate JWT secret
+openssl rand -hex 32
+
+# Generate RSA keys for export signing
+mkdir -p backend/keys
+openssl genrsa -out backend/keys/private_key.pem 4096
+openssl rsa -in backend/keys/private_key.pem -pubout -out backend/keys/public_key.pem
+chmod 600 backend/keys/private_key.pem
+```
+
+#### Frontend Configuration
+
+```bash
+cp frontend/.env.example frontend/.env.local
+```
+
+**Critical variables:**
+- `NEXT_PUBLIC_APP_URL` - Your domain
+- `NEXT_PUBLIC_API_URL` - API endpoint (usually {domain}/api)
+
+### 4. Initialize Database
 
 ```bash
 # Run database setup script
@@ -301,7 +349,7 @@ db.assets.createIndex(
 print('Indexes created successfully');
 ```
 
-### 4. Seed Development Data (Optional)
+### 5. Seed Development Data (Optional)
 
 ```bash
 # Run seed script
