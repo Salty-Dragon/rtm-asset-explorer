@@ -18,6 +18,7 @@ import transactionRoutes from './routes/transactions.js';
 import assetRoutes from './routes/assets.js';
 import addressRoutes from './routes/addresses.js';
 import statsRoutes from './routes/stats.js';
+import exportRoutes from './routes/export.js';
 
 const app = express();
 const PORT = process.env.PORT || 4004;
@@ -73,6 +74,7 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/assets', assetRoutes);
 app.use('/api/addresses', addressRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/export', exportRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -117,6 +119,12 @@ const gracefulShutdown = async (signal) => {
     try {
       const { disconnectDatabase } = await import('./services/database.js');
       const { disconnectCache } = await import('./services/cache.js');
+      const { default: queueProcessor } = await import('./services/queueProcessor.js');
+      const { default: paymentMonitor } = await import('./services/paymentMonitor.js');
+      
+      // Stop export services
+      paymentMonitor.stop();
+      await queueProcessor.shutdown();
       
       await Promise.all([
         disconnectDatabase(),
@@ -147,9 +155,23 @@ const startServer = async () => {
       connectCache()
     ]);
 
+    // Initialize export services
+    const { default: exportGenerator } = await import('./services/exportGenerator.js');
+    const { default: exportSigner } = await import('./services/exportSigner.js');
+    const { default: queueProcessor } = await import('./services/queueProcessor.js');
+    const { default: paymentMonitor } = await import('./services/paymentMonitor.js');
+
+    await exportGenerator.initialize();
+    await exportSigner.initialize();
+    await queueProcessor.initialize();
+    
+    // Start payment monitoring
+    paymentMonitor.start();
+
     server = app.listen(PORT, () => {
       logger.info(`Server running on port ${PORT}`);
       logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      logger.info('Export system initialized');
     });
 
     // Handle shutdown signals
