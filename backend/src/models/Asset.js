@@ -115,6 +115,43 @@ const assetSchema = new mongoose.Schema({
   categories: {
     type: [String],
     index: true
+  },
+  // Sub-asset support
+  isSubAsset: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
+  parentAssetName: {
+    type: String,
+    index: true
+  },
+  subAssetName: {
+    type: String
+  },
+  parentAssetId: {
+    type: String,
+    index: true
+  },
+  // Additional fields for blockchain sync
+  isUnique: {
+    type: Boolean,
+    default: false
+  },
+  maxMintCount: {
+    type: Number,
+    default: 0
+  },
+  mintCount: {
+    type: Number,
+    default: 0
+  },
+  updatable: {
+    type: Boolean,
+    default: false
+  },
+  referenceHash: {
+    type: String
   }
 }, {
   timestamps: true
@@ -126,6 +163,8 @@ assetSchema.index({ currentOwner: 1, createdAt: -1 });
 assetSchema.index({ type: 1, createdAt: -1 });
 assetSchema.index({ views: -1 });
 assetSchema.index({ featured: 1, createdAt: -1 });
+assetSchema.index({ parentAssetName: 1, createdAt: -1 });
+assetSchema.index({ isSubAsset: 1, parentAssetName: 1 });
 
 // Text index for search
 assetSchema.index({

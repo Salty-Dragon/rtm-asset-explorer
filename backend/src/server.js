@@ -19,6 +19,7 @@ import assetRoutes from './routes/assets.js';
 import addressRoutes from './routes/addresses.js';
 import statsRoutes from './routes/stats.js';
 import exportRoutes from './routes/export.js';
+import syncRoutes from './routes/sync.js';
 
 const app = express();
 const PORT = process.env.PORT || 4004;
@@ -75,6 +76,7 @@ app.use('/api/assets', assetRoutes);
 app.use('/api/addresses', addressRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/export', exportRoutes);
+app.use('/api/sync', syncRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -89,7 +91,9 @@ app.get('/', (req, res) => {
         transactions: '/api/transactions/:txid',
         assets: '/api/assets',
         addresses: '/api/addresses/:address',
-        stats: '/api/stats'
+        stats: '/api/stats',
+        sync: '/api/sync/status',
+        futures: '/api/sync/futures/locked'
       }
     },
     meta: {
