@@ -15,7 +15,8 @@ This guide covers local development setup, workflow, and best practices for cont
 7. [Testing Strategy](#testing-strategy)
 8. [Git Workflow](#git-workflow)
 9. [Contributing Guidelines](#contributing-guidelines)
-10. [Common Development Tasks](#common-development-tasks)
+10. [Export System Development](#export-system-development)
+11. [Common Development Tasks](#common-development-tasks)
 
 ---
 
@@ -34,6 +35,27 @@ This guide covers local development setup, workflow, and best practices for cont
 - **Raptoreumd**: For full blockchain integration (can use testnet or mock data for development)
 - **IPFS**: For metadata storage (can use public gateways during development)
 - **Docker**: For containerized development (optional alternative)
+- **Litecoin Core**: Pruned node for payment processing
+  ```bash
+  # Install Litecoin Core
+  wget https://download.litecoin.org/litecoin-0.21.3/linux/litecoin-0.21.3-x86_64-linux-gnu.tar.gz
+  tar -xzf litecoin-0.21.3-x86_64-linux-gnu.tar.gz
+  sudo install -m 0755 -o root -g root -t /usr/local/bin litecoin-0.21.3/bin/*
+  
+  # Configure pruned node
+  mkdir -p ~/.litecoin
+  cat > ~/.litecoin/litecoin.conf << EOF
+  prune=550
+  server=1
+  rpcuser=ltc_user
+  rpcpassword=secure_password
+  rpcallowip=127.0.0.1
+  rpcport=9332
+  EOF
+  
+  # Start node
+  litecoind -daemon
+  ```
 
 ### System Requirements
 
@@ -924,6 +946,80 @@ feat: Add fuzzy search for assets
 - Write tests for new features
 - Maintain or improve test coverage
 - Fix any failing tests before merging
+
+---
+
+## Export System Development
+
+### Environment Variables
+
+Add to `.env`:
+
+```bash
+# Export System
+EXPORT_PRICE_USD=2.00
+EXPORT_MAX_ASSETS=1000
+EXPORT_MAX_TRANSACTIONS=10000
+EXPORT_MAX_ADDRESSES=100
+EXPORT_MAX_FILE_SIZE_MB=100
+EXPORT_MAX_PROCESSING_TIME_SEC=600
+EXPORT_RATE_LIMIT_PER_HOUR=10
+EXPORT_CONCURRENT_LIMIT=3
+EXPORT_QUEUE_MAX_SIZE=50
+
+# Litecoin Payment Node
+LITECOIN_RPC_HOST=127.0.0.1
+LITECOIN_RPC_PORT=9332
+LITECOIN_RPC_USER=ltc_user
+LITECOIN_RPC_PASS=secure_password
+
+# Remote Raptoreumd (for asset creation)
+REMOTE_RAPTOREUMD_HOST=remote.server.com
+REMOTE_RAPTOREUMD_PORT=10225
+REMOTE_RAPTOREUMD_USER=rtm_asset_creator
+REMOTE_RAPTOREUMD_PASS=secure_password
+REMOTE_RAPTOREUM_OWNER_ADDRESS=RxxxxOwnerAddress
+EXPORT_HOLDER_ADDRESS=RxxxxHolderAddress
+
+# Export Signing
+EXPORT_SIGNING_PRIVATE_KEY=path/to/private/key.pem
+EXPORT_SIGNING_PUBLIC_KEY=path/to/public/key.pem
+
+# IPFS (local node)
+IPFS_API_URL=http://127.0.0.1:5001
+IPFS_GATEWAY_URL=http://127.0.0.1:8080
+IPFS_RAPTOREUM_GATEWAY=https://ipfs.raptoreum.com
+IPFS_PUBLIC_GATEWAY=https://ipfs.io
+IPFS_TIMEOUT_SEC=30
+
+# CoinGecko API
+COINGECKO_API_URL=https://api.coingecko.com/api/v3
+COINGECKO_CACHE_TTL=300
+```
+
+### Testing Export System
+
+```bash
+# Generate test signing keys
+openssl genrsa -out private_key.pem 4096
+openssl rsa -in private_key.pem -pubout -out public_key.pem
+
+# Test export request
+curl -X POST http://localhost:4004/api/export/request \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "asset",
+    "assetId": "TEST_ASSET",
+    "includeMedia": false,
+    "retention": 86400
+  }'
+
+# Check status
+curl http://localhost:4004/api/export/status/exp_abc123
+
+# Verify export
+curl http://localhost:4004/api/export/verify/RTM_EXPORTS/ASSET_20260214_a3f2c1b9
+```
 
 ---
 

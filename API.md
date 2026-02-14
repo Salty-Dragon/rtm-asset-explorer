@@ -22,6 +22,7 @@ The Raptoreum Asset Explorer API provides programmatic access to blockchain data
    - [Search](#search-endpoints)
    - [Statistics](#statistics-endpoints)
    - [Health](#health-endpoints)
+   - [Export](#export-endpoints)
 
 ## Authentication
 
@@ -888,6 +889,130 @@ Check the health of specific components.
 **Database**: `GET /health/database`
 **Cache**: `GET /health/cache`
 **IPFS**: `GET /health/ipfs`
+
+---
+
+## Export Endpoints
+
+The export system provides cryptographically signed, blockchain-verified exports for legal compliance and data verification. All exports cost $2.00 USD (paid in Litecoin) and are tokenized on the Raptoreum blockchain.
+
+For comprehensive documentation, see [EXPORTS.md](EXPORTS.md).
+
+### POST /api/export/request
+
+Initiate a new export request.
+
+**Authentication:** None (payment required)
+
+**Request Body:**
+```json
+{
+  "type": "asset|address|multi|legal|provenance",
+  "assetId": "ASSET_NAME",           // For asset/provenance types
+  "address": "RAddress...",           // For address type
+  "assetIds": ["ASSET1", "ASSET2"],  // For multi type
+  "includeTransactions": true,
+  "includeAddresses": true,
+  "includeMedia": false,              // Download IPFS content
+  "retention": 604800,                // Seconds (7 days default)
+  "format": "zip",                    // Always zip containing all formats
+  "legalInfo": {                      // Required for legal type
+    "caseReference": "Case #2024-1234",
+    "court": "Superior Court of...",
+    "purpose": "Evidence for trademark dispute"
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "exportId": "exp_abc123def456",
+    "paymentAddress": "ltc1q...",
+    "paymentAmount": {
+      "usd": 2.00,
+      "ltc": "0.02847391",
+      "rate": 70.32,
+      "validFor": 1800
+    },
+    "expiresAt": "2026-02-14T12:30:00Z",
+    "limits": {
+      "maxAssets": 1000,
+      "maxTransactions": 10000,
+      "maxFileSize": "100MB"
+    }
+  }
+}
+```
+
+### GET /api/export/status/:exportId
+
+Check export processing status.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "exportId": "exp_abc123def456",
+    "status": "pending_payment|processing|completed|failed",
+    "queuePosition": 3,
+    "estimatedTime": "2-3 minutes",
+    "paymentStatus": "confirmed",
+    "progress": {
+      "step": "generating_pdf",
+      "percentage": 75
+    },
+    "downloadUrl": "https://assets.raptoreum.com/download/...",
+    "verification": {
+      "assetName": "RTM_EXPORTS/ASSET_20260214_a3f2c1b9",
+      "txid": "abc123...",
+      "ipfsHash": "QmX...",
+      "signature": "3045..."
+    },
+    "expiresAt": "2026-02-21T12:00:00Z"
+  }
+}
+```
+
+### GET /api/export/download/:exportId
+
+Download completed export (requires valid exportId).
+
+**Response:** ZIP file download
+
+### GET /api/export/verify/:assetName
+
+Verify a tokenized export.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "valid": true,
+    "assetName": "RTM_EXPORTS/ASSET_20260214_a3f2c1b9",
+    "createdAt": "2026-02-14T12:00:00Z",
+    "exportType": "asset",
+    "blockHeight": 123456,
+    "txid": "abc123...",
+    "ipfsHash": "QmX...",
+    "fileHash": "sha256:...",
+    "signatureValid": true,
+    "verification": {
+      "onChain": "https://explorer.raptoreum.com/tx/abc123...",
+      "ipfs": "https://ipfs.io/ipfs/QmX...",
+      "blockExplorer": "https://assets.raptoreum.com/verify/..."
+    }
+  }
+}
+```
+
+### POST /api/export/webhook
+
+Litecoin payment webhook (internal use).
 
 ---
 
