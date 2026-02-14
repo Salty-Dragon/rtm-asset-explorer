@@ -18,11 +18,52 @@ if [ -f "$ENV_FILE" ]; then
     echo "DEBUG: Found .env file, loading variables..."
   fi
   
-  # Use set -a to automatically export all variables
-  # This approach properly handles quotes, spaces, and special characters
-  set -a
-  source <(grep -v '^#' "$ENV_FILE" | grep -v '^$' | sed 's/\r$//')
-  set +a
+  # Robust .env parser that handles all edge cases
+  # Parses line-by-line to handle spaces, special chars, quotes, and comments
+  while IFS= read -r line; do
+    # Remove carriage returns (Windows line endings)
+    line="${line%$'\r'}"
+    
+    # Skip empty lines and comments
+    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+    
+    # Check if line contains a valid variable assignment
+    if [[ "$line" =~ ^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*=[[:space:]]*(.*) ]]; then
+      key="${BASH_REMATCH[1]}"
+      value="${BASH_REMATCH[2]}"
+      
+      # Remove surrounding whitespace first
+      value="${value#"${value%%[![:space:]]*}"}"
+      value="${value%"${value##*[![:space:]]}"}"
+      
+      # Handle quoted values (preserve # inside quotes, remove inline comments outside)
+      if [[ "$value" =~ ^\"([^\"]*)\"[[:space:]]*(#.*)?$ ]]; then
+        # Double-quoted value with optional inline comment
+        value="${BASH_REMATCH[1]}"
+      elif [[ "$value" =~ ^\'([^\']*)\'[[:space:]]*(#.*)?$ ]]; then
+        # Single-quoted value with optional inline comment
+        value="${BASH_REMATCH[1]}"
+      else
+        # Unquoted value: remove inline comments
+        value=$(echo "$value" | sed 's/[[:space:]]*#.*$//')
+        # Trim whitespace again after removing comment
+        value="${value#"${value%%[![:space:]]*}"}"
+        value="${value%"${value##*[![:space:]]}"}"
+      fi
+      
+      # Export the variable
+      export "$key=$value"
+      
+      if [ "$DEBUG" = "1" ]; then
+        # Mask sensitive values
+        if [[ "$key" =~ PASSWORD|SECRET|KEY|TOKEN ]]; then
+          echo "DEBUG: Loaded $key=***MASKED***"
+        else
+          echo "DEBUG: Loaded $key=$value"
+        fi
+      fi
+    fi
+  done < "$ENV_FILE"
   
   if [ "$DEBUG" = "1" ]; then
     echo "DEBUG: Loaded environment variables"
