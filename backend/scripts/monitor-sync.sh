@@ -18,11 +18,56 @@ if [ -f "$ENV_FILE" ]; then
     echo "DEBUG: Found .env file, loading variables..."
   fi
   
-  # Use set -a to automatically export all variables
-  # This approach properly handles quotes, spaces, and special characters
-  set -a
-  source <(grep -v '^#' "$ENV_FILE" | grep -v '^$' | sed 's/\r$//')
-  set +a
+  # Robust .env parser that handles all edge cases
+  # Parses line-by-line to handle spaces, special chars, quotes, and comments
+  while IFS= read -r line; do
+    # Remove carriage returns (Windows line endings)
+    line="${line%$'\r'}"
+    
+    # Skip empty lines and comments
+    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+    
+    # Check if line contains a valid variable assignment
+    if [[ "$line" =~ ^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*=[[:space:]]*(.*) ]]; then
+      key="${BASH_REMATCH[1]}"
+      value="${BASH_REMATCH[2]}"
+      
+      # Remove inline comments (handle # after the value)
+      # But preserve # that are inside quotes
+      if [[ "$value" =~ ^([^\"\'#]*|\"[^\"]*\"|\'[^\']*\').*#.* ]]; then
+        # Simple approach: if value starts with quote, keep everything until matching quote
+        if [[ "$value" =~ ^[\"\'].*[\"\'][[:space:]]*# ]]; then
+          value=$(echo "$value" | sed 's/[[:space:]]*#.*$//')
+        elif [[ "$value" =~ ^[^\"\'#]*# ]]; then
+          # No quotes at start, remove everything from # onwards
+          value=$(echo "$value" | sed 's/[[:space:]]*#.*$//')
+        fi
+      fi
+      
+      # Remove surrounding whitespace
+      value="${value#"${value%%[![:space:]]*}"}"
+      value="${value%"${value##*[![:space:]]}"}"
+      
+      # Remove surrounding quotes if present (both single and double)
+      if [[ "$value" =~ ^\"(.*)\"$ ]]; then
+        value="${BASH_REMATCH[1]}"
+      elif [[ "$value" =~ ^\'(.*)\'$ ]]; then
+        value="${BASH_REMATCH[1]}"
+      fi
+      
+      # Export the variable
+      export "$key=$value"
+      
+      if [ "$DEBUG" = "1" ]; then
+        # Mask sensitive values
+        if [[ "$key" =~ PASSWORD|SECRET|KEY|TOKEN ]]; then
+          echo "DEBUG: Loaded $key=***MASKED***"
+        else
+          echo "DEBUG: Loaded $key=$value"
+        fi
+      fi
+    fi
+  done < "$ENV_FILE"
   
   if [ "$DEBUG" = "1" ]; then
     echo "DEBUG: Loaded environment variables"
