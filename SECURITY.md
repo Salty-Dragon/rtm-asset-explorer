@@ -994,6 +994,171 @@ Users can verify export authenticity by:
 - Included in export ZIP files
 - Versioned for key rotation
 
+### Export Signing Key Security
+
+#### Generating Encrypted Keys
+
+**IMPORTANT:** Generate keys on a secure machine, not on the production server.
+
+```bash
+# Generate encrypted private key with AES-256
+openssl genrsa -aes256 -out private_key_encrypted.pem 4096
+# Enter strong passphrase (20+ characters)
+# Save passphrase in password manager (1Password, LastPass, etc.)
+
+# Generate public key from encrypted private key
+openssl rsa -in private_key_encrypted.pem -pubout -out public_key.pem
+# Will prompt for passphrase again
+
+# Verify key is encrypted
+grep "ENCRYPTED" private_key_encrypted.pem
+# Should output: Proc-Type: 4,ENCRYPTED
+
+# Test signing with encrypted key (optional)
+echo "test data" | openssl dgst -sha256 -sign private_key_encrypted.pem | base64
+```
+
+#### Deploying Keys Securely
+
+```bash
+# 1. Create secure directory on server
+ssh user@server
+sudo mkdir -p /secure/rtm-explorer-keys
+sudo chown rtm-explorer:rtm-explorer /secure/rtm-explorer-keys
+sudo chmod 700 /secure/rtm-explorer-keys
+
+# 2. Upload keys from local machine
+scp private_key_encrypted.pem user@server:/secure/rtm-explorer-keys/private_key.pem
+scp public_key.pem user@server:/secure/rtm-explorer-keys/public_key.pem
+
+# 3. Set strict permissions
+ssh user@server
+sudo chmod 400 /secure/rtm-explorer-keys/private_key.pem
+sudo chmod 444 /secure/rtm-explorer-keys/public_key.pem
+sudo chown rtm-explorer:rtm-explorer /secure/rtm-explorer-keys/*
+```
+
+#### Passphrase Management
+
+**Option 1: Manual Environment Variable (Recommended for Production)**
+
+```bash
+# After server boots, SSH in and set passphrase
+ssh user@server
+export SIGNING_KEY_PASSPHRASE='your-secure-passphrase-here'
+
+# Restart application to pick up passphrase
+pm2 restart rtm-api
+
+# Verify initialization
+pm2 logs rtm-api --lines 50 | grep "Export signer"
+# Should see: "Encrypted private key loaded and verified successfully"
+```
+
+**Option 2: Passphrase File (Alternative)**
+
+```bash
+# Create passphrase file with strict permissions
+echo -n 'your-secure-passphrase' > /secure/signing_passphrase.txt
+chmod 400 /secure/signing_passphrase.txt
+chown rtm-explorer:rtm-explorer /secure/signing_passphrase.txt
+
+# Update .env
+SIGNING_KEY_PASSPHRASE_FILE=/secure/signing_passphrase.txt
+```
+
+**Option 3: PM2 Environment Variable**
+
+```bash
+# Set passphrase in PM2 directly
+pm2 set rtm-api:SIGNING_KEY_PASSPHRASE 'your-secure-passphrase'
+pm2 restart rtm-api
+```
+
+#### Security Best Practices
+
+1. **Never commit passphrase to git**
+   - Add to .gitignore: `*passphrase*`, `*.key`, `*.pem`
+   
+2. **Never store passphrase in .env file**
+   - Set manually after boot or use secure file
+
+3. **Use strong passphrase**
+   - Minimum 20 characters
+   - Mix of uppercase, lowercase, numbers, symbols
+   - Store in password manager
+
+4. **Rotate keys periodically**
+   - Generate new key pair annually
+   - Update public key in SECURITY.md
+   - Keep old public key for verification of old exports
+
+5. **Backup encrypted keys securely**
+   - Store encrypted backup off-site
+   - Store passphrase separately
+   - Test recovery procedure
+
+#### Migrating from Unencrypted Key
+
+If you currently have an unencrypted key:
+
+```bash
+# Encrypt existing key
+openssl rsa -aes256 -in private_key.pem -out private_key_encrypted.pem
+# Enter new passphrase
+
+# Backup old key (optional)
+mv private_key.pem private_key_old.pem.backup
+
+# Replace with encrypted version
+mv private_key_encrypted.pem private_key.pem
+
+# Update permissions
+chmod 400 private_key.pem
+
+# Set passphrase and restart
+export SIGNING_KEY_PASSPHRASE='your-new-passphrase'
+pm2 restart rtm-api
+```
+
+#### Troubleshooting
+
+**Error: "Encrypted private key requires SIGNING_KEY_PASSPHRASE"**
+- Set passphrase environment variable before starting server
+
+**Error: "Invalid passphrase for encrypted private key"**
+- Verify passphrase is correct
+- Test manually: `openssl rsa -in private_key.pem -check`
+
+**Warning: "Private key is not encrypted"**
+- Key is unencrypted (backward compatible but not recommended)
+- Encrypt key following migration steps above
+
+**Health Check Endpoint:**
+
+Test export signer health and signature operations:
+
+```bash
+# Check signer health
+curl http://localhost:4004/api/health/signer
+
+# Response (healthy)
+{
+  "success": true,
+  "service": "export-signer",
+  "status": "healthy",
+  "message": "Export signing operational"
+}
+
+# Response (not initialized)
+{
+  "success": false,
+  "service": "export-signer",
+  "status": "not initialized",
+  "message": "Export signing keys not configured or failed to load"
+}
+```
+
 ### Payment Security
 
 **Litecoin Payment Processing:**

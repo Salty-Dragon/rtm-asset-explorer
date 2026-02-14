@@ -6,22 +6,87 @@ import { logger } from '../utils/logger.js';
 
 class ExportSigner {
   constructor() {
-    this.privateKeyPath = process.env.EXPORT_PRIVATE_KEY_PATH || path.join(process.cwd(), 'keys', 'private.pem');
-    this.publicKeyPath = process.env.EXPORT_PUBLIC_KEY_PATH || path.join(process.cwd(), 'keys', 'public.pem');
+    this.privateKeyPath = process.env.EXPORT_SIGNING_PRIVATE_KEY || process.env.EXPORT_PRIVATE_KEY_PATH || path.join(process.cwd(), 'keys', 'private.pem');
+    this.publicKeyPath = process.env.EXPORT_SIGNING_PUBLIC_KEY || process.env.EXPORT_PUBLIC_KEY_PATH || path.join(process.cwd(), 'keys', 'public.pem');
     this.privateKey = null;
     this.publicKey = null;
+    this.initialized = false;
   }
 
   async initialize() {
-    try {
-      // Try to load existing keys
-      this.privateKey = await fs.readFile(this.privateKeyPath, 'utf8');
-      this.publicKey = await fs.readFile(this.publicKeyPath, 'utf8');
-      logger.info('Export signing keys loaded successfully');
-    } catch (error) {
-      logger.warn('Export signing keys not found, will need to generate them');
-      // Keys will be generated on first use or via explicit generation
+    if (this.initialized) {
+      logger.info('Export signer already initialized');
+      return;
     }
+
+    try {
+      // Load public key (always plaintext)
+      this.publicKey = await fs.readFile(this.publicKeyPath, 'utf8');
+      logger.info('Public key loaded successfully');
+
+      // Load private key
+      const privateKeyPem = await fs.readFile(this.privateKeyPath, 'utf8');
+
+      // Check if key is encrypted (contains "ENCRYPTED")
+      const isEncrypted = privateKeyPem.includes('ENCRYPTED');
+
+      if (isEncrypted) {
+        logger.info('Private key is encrypted, loading passphrase');
+        const passphrase = await this.getPassphrase();
+
+        if (!passphrase) {
+          throw new Error('Encrypted private key requires SIGNING_KEY_PASSPHRASE environment variable');
+        }
+
+        // Store key with passphrase for signing
+        this.privateKey = {
+          key: privateKeyPem,
+          passphrase: passphrase
+        };
+
+        // Test that passphrase works by attempting to load the key
+        try {
+          crypto.createPrivateKey(this.privateKey);
+          logger.info('Encrypted private key loaded and verified successfully');
+        } catch (error) {
+          throw new Error('Invalid passphrase for encrypted private key');
+        }
+      } else {
+        logger.warn('WARNING: Private key is not encrypted - consider using encrypted key for production');
+        // Unencrypted key (backward compatibility)
+        this.privateKey = privateKeyPem;
+      }
+
+      this.initialized = true;
+      logger.info('Export signer initialized successfully');
+    } catch (error) {
+      logger.error('Failed to initialize export signer:', error.message);
+      throw error;
+    }
+  }
+
+  async getPassphrase() {
+    // Priority 1: Environment variable (set manually, NOT in .env file)
+    if (process.env.SIGNING_KEY_PASSPHRASE) {
+      logger.info('Using passphrase from SIGNING_KEY_PASSPHRASE environment variable');
+      return process.env.SIGNING_KEY_PASSPHRASE;
+    }
+
+    // Priority 2: Separate passphrase file (if specified)
+    const passphraseFilePath = process.env.SIGNING_KEY_PASSPHRASE_FILE;
+    if (passphraseFilePath) {
+      try {
+        logger.info(`Loading passphrase from file: ${passphraseFilePath}`);
+        const passphrase = await fs.readFile(passphraseFilePath, 'utf8');
+        return passphrase.trim();
+      } catch (error) {
+        logger.error(`Failed to read passphrase file: ${error.message}`);
+        throw new Error(`Cannot read passphrase file: ${passphraseFilePath}`);
+      }
+    }
+
+    // No passphrase available
+    return null;
   }
 
   async generateKeys() {
@@ -56,6 +121,7 @@ class ExportSigner {
           
           this.privateKey = privateKey;
           this.publicKey = publicKey;
+          this.initialized = true;
           
           logger.info('Export signing keys generated and saved successfully');
           resolve({ publicKey, privateKey });
@@ -68,11 +134,31 @@ class ExportSigner {
   }
 
   async ensureKeys() {
-    if (!this.privateKey || !this.publicKey) {
+    if (!this.initialized) {
       await this.initialize();
-      if (!this.privateKey || !this.publicKey) {
+      if (!this.initialized) {
         await this.generateKeys();
       }
+    }
+  }
+
+  async signExport(fileHash) {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
+    try {
+      const sign = crypto.createSign('SHA256');
+      sign.update(fileHash);
+      sign.end();
+
+      // Sign with private key (handles both encrypted and unencrypted)
+      const signature = sign.sign(this.privateKey, 'hex');
+      
+      return signature;
+    } catch (error) {
+      logger.error('Failed to sign export:', error.message);
+      throw new Error('Export signing failed');
     }
   }
 
@@ -106,18 +192,19 @@ class ExportSigner {
   }
 
   async verifySignature(data, signature) {
-    await this.ensureKeys();
-    
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
     try {
       const verify = crypto.createVerify('SHA256');
       verify.update(data);
       verify.end();
-      
+
       const isValid = verify.verify(this.publicKey, signature, 'hex');
-      logger.debug('Signature verification:', isValid ? 'valid' : 'invalid');
       return isValid;
     } catch (error) {
-      logger.error('Error verifying signature:', error);
+      logger.error('Failed to verify signature:', error.message);
       return false;
     }
   }
@@ -133,8 +220,14 @@ class ExportSigner {
   }
 
   async getPublicKey() {
-    await this.ensureKeys();
+    if (!this.initialized) {
+      await this.initialize();
+    }
     return this.publicKey;
+  }
+
+  isInitialized() {
+    return this.initialized;
   }
 
   calculateFileHash(filePath) {
