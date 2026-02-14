@@ -9,9 +9,23 @@ import Transaction from '../models/Transaction.js';
 import SyncState from '../models/SyncState.js';
 import { logger } from '../utils/logger.js';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// Load environment variables
-dotenv.config();
+// Get directory name for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables from backend/.env
+const envPath = path.resolve(__dirname, '../../.env');
+console.log(`[ENV] Loading environment from: ${envPath}`);
+const envResult = dotenv.config({ path: envPath });
+if (envResult.error) {
+  console.warn(`[ENV WARNING] Could not load .env file from ${envPath}:`, envResult.error.message);
+  console.warn('[ENV WARNING] Will use environment variables from system or PM2 config');
+} else {
+  console.log('[ENV] Environment variables loaded successfully');
+}
 
 class SyncDaemon {
   constructor() {
@@ -35,6 +49,7 @@ class SyncDaemon {
    */
   async initialize() {
     try {
+      console.log('\n[SYNC INIT] Starting initialization...');
       logger.info('Initializing sync daemon...');
       logger.info(`Sync enabled: ${this.syncEnabled}`);
       
@@ -47,33 +62,49 @@ class SyncDaemon {
         'RAPTOREUMD_PASSWORD'
       ];
       
+      console.log('[SYNC INIT] Checking required environment variables...');
       const missingVars = requiredEnvVars.filter(varName => !process.env[varName]?.trim());
       if (missingVars.length > 0) {
-        throw new Error(`Missing required environment variables: ${missingVars.join(', ')}. Please check your .env file or PM2 configuration.`);
+        const error = new Error(`Missing required environment variables: ${missingVars.join(', ')}. Please check your .env file or PM2 configuration.`);
+        console.error('[SYNC INIT ERROR]', error.message);
+        throw error;
       }
+      console.log('[SYNC INIT] All required environment variables present');
       
       // Connect to MongoDB
       const mongoUri = process.env.MONGODB_URI;
       if (!mongoUri) {
-        throw new Error('MONGODB_URI not configured');
+        const error = new Error('MONGODB_URI not configured');
+        console.error('[SYNC INIT ERROR]', error.message);
+        throw error;
       }
 
+      console.log('[SYNC INIT] Connecting to MongoDB...');
       await mongoose.connect(mongoUri);
       logger.info('Connected to MongoDB');
+      console.log('[SYNC INIT] MongoDB connected successfully');
 
       // Check blockchain connection
+      console.log('[SYNC INIT] Checking blockchain connection...');
       const blockchainHealth = await blockchainService.checkHealth();
       if (blockchainHealth.status !== 'connected') {
-        throw new Error(`Blockchain not available: ${blockchainHealth.message}`);
+        const error = new Error(`Blockchain not available: ${blockchainHealth.message}`);
+        console.error('[SYNC INIT ERROR]', error.message);
+        throw error;
       }
       logger.info(`Connected to blockchain: ${blockchainHealth.chain} at block ${blockchainHealth.blocks}`);
+      console.log(`[SYNC INIT] Blockchain connected: ${blockchainHealth.chain} at block ${blockchainHealth.blocks}`);
 
       // Initialize sync state
+      console.log('[SYNC INIT] Initializing sync state...');
       await this.initializeSyncState();
       
       logger.info('Sync daemon initialized successfully');
+      console.log('[SYNC INIT] Initialization complete!\n');
       return true;
     } catch (error) {
+      console.error('\n[SYNC INIT FATAL ERROR]', error.message);
+      console.error('[SYNC INIT STACK]', error.stack);
       logger.error('Failed to initialize sync daemon:', error);
       throw error;
     }
@@ -134,26 +165,55 @@ class SyncDaemon {
       while (this.isRunning) {
         if (this.isPaused) {
           logger.info('Sync is paused, waiting...');
+          console.log('[SYNC] Paused, waiting...');
           await this.sleep(10000);
           continue;
         }
 
+        console.log('[SYNC] Calling syncLoop...');
         await this.syncLoop();
         
         // Small delay between batches
         await this.sleep(1000);
       }
     } catch (error) {
+      console.error('\n==========================================');
+      console.error('[SYNC DAEMON ERROR] Caught error in main loop');
+      console.error('==========================================');
+      console.error('Error:', error.message);
+      console.error('Stack:', error.stack);
+      console.error('==========================================\n');
+      
       logger.error('Sync daemon error:', error);
-      await this.updateSyncState({ status: 'error', lastError: error.message });
+      
+      // Try to save error state, but don't let this failure stop retry logic
+      try {
+        await this.updateSyncState({ status: 'error', lastError: error.message });
+      } catch (stateError) {
+        console.error('[SYNC STATE ERROR] Failed to save error state (non-fatal):', stateError.message);
+        console.error('[SYNC STATE ERROR] This will not prevent retry attempts');
+      }
       
       // Retry after delay
       if (this.isRunning && this.retryAttempts > 0) {
         this.retryAttempts--;
+        console.log(`[SYNC RETRY] Retrying in ${this.retryDelay / 1000} seconds... (${this.retryAttempts} attempts remaining)`);
         logger.info(`Retrying in ${this.retryDelay / 1000} seconds... (${this.retryAttempts} attempts remaining)`);
         await this.sleep(this.retryDelay);
+        console.log('[SYNC RETRY] Restarting sync daemon...');
         await this.start(); // Recursive restart
       } else {
+        console.error('\n==========================================');
+        console.error('[SYNC DAEMON FATAL] Max retry attempts reached');
+        console.error('==========================================');
+        console.error('The sync daemon will now stop.');
+        console.error('Please check:');
+        console.error('1. MongoDB is running and accessible');
+        console.error('2. Raptoreumd is running and RPC is accessible');
+        console.error('3. Network connectivity is working');
+        console.error('4. Environment variables are correctly set');
+        console.error('==========================================\n');
+        
         logger.error('Max retry attempts reached, stopping sync daemon');
         this.isRunning = false;
       }
@@ -165,13 +225,19 @@ class SyncDaemon {
    */
   async syncLoop() {
     try {
+      console.log('[SYNC LOOP] Starting sync loop iteration...');
+      
       // Get current sync state
+      console.log('[SYNC LOOP] Fetching sync state from database...');
       const syncState = await SyncState.findOne({ service: 'blocks' });
       const currentBlock = syncState?.currentBlock || this.startHeight;
+      console.log(`[SYNC LOOP] Current block: ${currentBlock}`);
       
       // Get blockchain info
+      console.log('[SYNC LOOP] Fetching blockchain info...');
       const blockchainInfo = await blockchainService.getBlockchainInfo();
       const targetBlock = blockchainInfo.blocks;
+      console.log(`[SYNC LOOP] Target block: ${targetBlock}`);
       
       // Update target
       await this.updateSyncState({ targetBlock });
@@ -180,7 +246,11 @@ class SyncDaemon {
       if (currentBlock >= targetBlock) {
         if (syncState?.status !== 'synced') {
           logger.info(`Sync complete! At block ${currentBlock}`);
+          console.log(`[SYNC LOOP] Sync complete at block ${currentBlock}`);
           await this.updateSyncState({ status: 'synced' });
+        } else {
+          // Periodic heartbeat when synced
+          console.log(`[SYNC LOOP] Already synced at block ${currentBlock}, waiting for new blocks...`);
         }
         
         // Check for new blocks every 30 seconds
@@ -192,6 +262,7 @@ class SyncDaemon {
       const endBlock = Math.min(currentBlock + this.batchSize, targetBlock);
       
       logger.info(`Syncing blocks ${currentBlock + 1} to ${endBlock} (${endBlock - currentBlock} blocks)`);
+      console.log(`[SYNC LOOP] Syncing blocks ${currentBlock + 1} to ${endBlock}`);
       
       // Update status to syncing
       if (syncState?.status !== 'syncing') {
@@ -207,10 +278,14 @@ class SyncDaemon {
         lastSyncedAt: new Date()
       });
       
+      console.log(`[SYNC LOOP] Successfully synced to block ${endBlock}`);
+      
       // Check and unlock mature futures
       await futureChecker.checkAndUnlockMatureFutures(endBlock, new Date());
       
     } catch (error) {
+      console.error('[SYNC LOOP ERROR]', error.message);
+      console.error('[SYNC LOOP STACK]', error.stack);
       logger.error('Error in sync loop:', error);
       throw error;
     }
@@ -396,13 +471,18 @@ class SyncDaemon {
    */
   async updateSyncState(updates) {
     try {
-      await SyncState.findOneAndUpdate(
+      const result = await SyncState.findOneAndUpdate(
         { service: 'blocks' },
         { $set: updates },
         { upsert: true, new: true }
       );
+      console.log(`[SYNC STATE] Updated: ${JSON.stringify(updates)}`);
+      return result;
     } catch (error) {
+      console.error('[SYNC STATE ERROR] Failed to update sync state:', error.message);
       logger.error('Error updating sync state:', error);
+      // Re-throw the error so it's not silently swallowed
+      throw error;
     }
   }
 
@@ -467,6 +547,12 @@ process.on('SIGTERM', async () => {
     console.log(`SYNC_ENABLED: ${process.env.SYNC_ENABLED}`);
     console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
     console.log(`Working Directory: ${process.cwd()}`);
+    console.log('\nEnvironment Variables Check:');
+    console.log(`- MONGODB_URI: ${process.env.MONGODB_URI ? '✓ Set' : '✗ Missing'}`);
+    console.log(`- RAPTOREUMD_HOST: ${process.env.RAPTOREUMD_HOST || '127.0.0.1 (default)'}`);
+    console.log(`- RAPTOREUMD_PORT: ${process.env.RAPTOREUMD_PORT || '10225 (default)'}`);
+    console.log(`- RAPTOREUMD_USER: ${process.env.RAPTOREUMD_USER ? '✓ Set' : '✗ Missing'}`);
+    console.log(`- RAPTOREUMD_PASSWORD: ${process.env.RAPTOREUMD_PASSWORD ? '✓ Set' : '✗ Missing'}`);
     console.log('==========================================\n');
     
     await daemon.initialize();
