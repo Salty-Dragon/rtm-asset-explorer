@@ -32,27 +32,23 @@ if [ -f "$ENV_FILE" ]; then
       key="${BASH_REMATCH[1]}"
       value="${BASH_REMATCH[2]}"
       
-      # Remove inline comments (handle # after the value)
-      # But preserve # that are inside quotes
-      if [[ "$value" =~ ^([^\"\'#]*|\"[^\"]*\"|\'[^\']*\').*#.* ]]; then
-        # Simple approach: if value starts with quote, keep everything until matching quote
-        if [[ "$value" =~ ^[\"\'].*[\"\'][[:space:]]*# ]]; then
-          value=$(echo "$value" | sed 's/[[:space:]]*#.*$//')
-        elif [[ "$value" =~ ^[^\"\'#]*# ]]; then
-          # No quotes at start, remove everything from # onwards
-          value=$(echo "$value" | sed 's/[[:space:]]*#.*$//')
-        fi
-      fi
-      
-      # Remove surrounding whitespace
+      # Remove surrounding whitespace first
       value="${value#"${value%%[![:space:]]*}"}"
       value="${value%"${value##*[![:space:]]}"}"
       
-      # Remove surrounding quotes if present (both single and double)
-      if [[ "$value" =~ ^\"(.*)\"$ ]]; then
+      # Handle quoted values (preserve # inside quotes, remove inline comments outside)
+      if [[ "$value" =~ ^\"([^\"]*)\"[[:space:]]*(#.*)?$ ]]; then
+        # Double-quoted value with optional inline comment
         value="${BASH_REMATCH[1]}"
-      elif [[ "$value" =~ ^\'(.*)\'$ ]]; then
+      elif [[ "$value" =~ ^\'([^\']*)\'[[:space:]]*(#.*)?$ ]]; then
+        # Single-quoted value with optional inline comment
         value="${BASH_REMATCH[1]}"
+      else
+        # Unquoted value: remove inline comments
+        value=$(echo "$value" | sed 's/[[:space:]]*#.*$//')
+        # Trim whitespace again after removing comment
+        value="${value#"${value%%[![:space:]]*}"}"
+        value="${value%"${value##*[![:space:]]}"}"
       fi
       
       # Export the variable
