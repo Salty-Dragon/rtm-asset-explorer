@@ -77,7 +77,7 @@ router.get('/stats',
 });
 
 /**
- * GET /api/futures/locked - Get locked future outputs
+ * GET /api/sync/futures/locked - Get locked future outputs
  */
 router.get('/futures/locked',
   cacheMiddleware(30),
@@ -112,7 +112,7 @@ router.get('/futures/locked',
 });
 
 /**
- * GET /api/futures/:txid/:vout - Get specific future output
+ * GET /api/sync/futures/:txid/:vout - Get specific future output
  */
 router.get('/futures/:txid/:vout',
   cacheMiddleware(60),
@@ -147,7 +147,7 @@ router.get('/futures/:txid/:vout',
 });
 
 /**
- * GET /api/futures/address/:address - Get futures for address
+ * GET /api/sync/futures/address/:address - Get futures for address
  */
 router.get('/futures/address/:address',
   cacheMiddleware(30),

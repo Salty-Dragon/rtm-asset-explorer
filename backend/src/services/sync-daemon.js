@@ -121,10 +121,14 @@ class SyncDaemon {
       await this.updateSyncState({ status: 'error', lastError: error.message });
       
       // Retry after delay
-      if (this.isRunning) {
-        logger.info(`Retrying in ${this.retryDelay / 1000} seconds...`);
+      if (this.isRunning && this.retryAttempts > 0) {
+        this.retryAttempts--;
+        logger.info(`Retrying in ${this.retryDelay / 1000} seconds... (${this.retryAttempts} attempts remaining)`);
         await this.sleep(this.retryDelay);
         await this.start(); // Recursive restart
+      } else {
+        logger.error('Max retry attempts reached, stopping sync daemon');
+        this.isRunning = false;
       }
     }
   }

@@ -172,6 +172,7 @@ router.get('/by-parent/:parentName',
   cacheMiddleware(60),
   async (req, res, next) => {
     try {
+      // Note: Asset names in Raptoreum are case-insensitive and stored in uppercase
       const parentName = req.params.parentName.toUpperCase();
       
       const parent = await Asset.findOne({ name: parentName, isSubAsset: false });

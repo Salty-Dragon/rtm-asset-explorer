@@ -113,12 +113,14 @@ class AssetProcessor {
    */
   async handleAssetMint(tx, blockHeight, blockTime) {
     try {
-      if (!tx.MintAssetTx) {
-        logger.warn(`No MintAssetTx data in transaction ${tx.txid}`);
+      if (!tx.mintAssetTx && !tx.MintAssetTx) {
+        logger.warn(`No mintAssetTx data in transaction ${tx.txid}`);
         return null;
       }
 
-      const { assetId } = tx.MintAssetTx;
+      // Handle both naming conventions for compatibility
+      const mintData = tx.mintAssetTx || tx.MintAssetTx;
+      const { assetId } = mintData;
       
       // Find the asset vout (type: "transferasset")
       const assetVout = tx.vout?.find(vout => 

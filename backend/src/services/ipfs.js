@@ -134,8 +134,9 @@ class IPFSMetadataService {
     }
     
     // All gateways failed
-    logger.error(`Failed to fetch IPFS metadata from all gateways: ${ipfsHash}`);
-    await this.cacheMetadata(ipfsHash, { error: 'Failed to fetch' }, 'error');
+    const errorMsg = `Failed to fetch IPFS metadata from all gateways (${this.gateways.join(', ')})`;
+    logger.error(`${errorMsg}: ${ipfsHash}`);
+    await this.cacheMetadata(ipfsHash, { error: errorMsg }, 'error');
     return null;
   }
 
