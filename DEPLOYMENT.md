@@ -1074,6 +1074,87 @@ chmod 644 export_public_key.pem
 chown rtmexplorer:rtmexplorer export_private_key.pem export_public_key.pem
 ```
 
+### 5. Environment Variables Security Checklist
+
+Before deploying to production, ensure all security-sensitive variables are properly configured:
+
+#### Production Security Checklist
+
+- [ ] Change all default passwords from `.env.example`
+- [ ] Generate new `SESSION_SECRET` and `JWT_SECRET` using `openssl rand -hex 32`
+- [ ] Set correct `APP_URL` and `CORS_ORIGIN` matching your domain
+- [ ] Configure Redis password matching redis.conf
+- [ ] Use separate MongoDB user with limited permissions (not root)
+- [ ] Store .env files securely (not in git, proper file permissions)
+- [ ] Use environment variable encryption if available
+- [ ] Verify `CORS_ORIGIN` matches your production domain exactly
+- [ ] Set appropriate rate limits for your server capacity
+- [ ] Configure logging paths with proper permissions
+- [ ] Secure export signing keys with restrictive permissions (400 for private key)
+- [ ] Use strong, unique passwords for all RPC connections
+- [ ] Verify all *_PASSWORD and *_SECRET variables are changed from examples
+
+#### Generate Production Secrets
+
+```bash
+# Session secret (32 bytes)
+openssl rand -hex 32
+
+# JWT secret (32 bytes)
+openssl rand -hex 32
+
+# API encryption key (32 bytes)
+openssl rand -hex 32
+
+# RSA keys for export signing (4096-bit)
+openssl genrsa -out /opt/rtm-explorer/keys/private_key.pem 4096
+openssl rsa -in /opt/rtm-explorer/keys/private_key.pem -pubout -out /opt/rtm-explorer/keys/public_key.pem
+
+# Secure the keys
+chmod 400 /opt/rtm-explorer/keys/private_key.pem
+chmod 644 /opt/rtm-explorer/keys/public_key.pem
+```
+
+#### MongoDB Security
+
+Create a dedicated user with minimal required permissions:
+
+```javascript
+// Connect to MongoDB as admin
+use admin
+db.auth("admin", "admin_password")
+
+// Create application user
+use rtm_explorer
+db.createUser({
+  user: "rtm_user",
+  pwd: "secure_generated_password",
+  roles: [
+    { role: "readWrite", db: "rtm_explorer" }
+  ]
+})
+
+// Test connection with new user
+exit
+mongosh "mongodb://rtm_user:secure_generated_password@localhost:27017/rtm_explorer?authSource=admin"
+```
+
+#### Redis Security
+
+Ensure Redis is configured with authentication:
+
+```bash
+# Edit Redis configuration
+sudo nano /etc/redis/redis.conf
+
+# Add/uncomment these lines:
+requirepass YOUR_STRONG_REDIS_PASSWORD
+bind 127.0.0.1 ::1
+
+# Restart Redis
+sudo systemctl restart redis
+```
+
 ---
 
 ## Initial Data Sync
