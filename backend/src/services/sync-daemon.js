@@ -22,7 +22,8 @@ class SyncDaemon {
     this.retryAttempts = parseInt(process.env.SYNC_RETRY_ATTEMPTS || '3');
     this.retryDelay = parseInt(process.env.SYNC_RETRY_DELAY || '30000');
     this.checkpointInterval = parseInt(process.env.SYNC_CHECKPOINT_INTERVAL || '100');
-    this.syncEnabled = process.env.SYNC_ENABLED !== 'false';
+    // Fix: Explicitly check for 'true' to enable sync (don't default to enabled)
+    this.syncEnabled = process.env.SYNC_ENABLED === 'true';
     
     // Performance tracking
     this.startTime = null;
@@ -35,6 +36,21 @@ class SyncDaemon {
   async initialize() {
     try {
       logger.info('Initializing sync daemon...');
+      logger.info(`Sync enabled: ${this.syncEnabled}`);
+      
+      // Validate required environment variables
+      const requiredEnvVars = [
+        'MONGODB_URI',
+        'RAPTOREUMD_HOST',
+        'RAPTOREUMD_PORT',
+        'RAPTOREUMD_USER',
+        'RAPTOREUMD_PASSWORD'
+      ];
+      
+      const missingVars = requiredEnvVars.filter(varName => !process.env[varName]?.trim());
+      if (missingVars.length > 0) {
+        throw new Error(`Missing required environment variables: ${missingVars.join(', ')}. Please check your .env file or PM2 configuration.`);
+      }
       
       // Connect to MongoDB
       const mongoUri = process.env.MONGODB_URI;
@@ -90,6 +106,17 @@ class SyncDaemon {
    */
   async start() {
     if (!this.syncEnabled) {
+      console.warn('\n==========================================');
+      console.warn('SYNC DISABLED');
+      console.warn('==========================================');
+      console.warn('SYNC_ENABLED is not set to "true"');
+      console.warn(`Current value: ${process.env.SYNC_ENABLED || '(not set)'}`);
+      console.warn('\nTo enable sync, set SYNC_ENABLED=true in:');
+      console.warn('- Your .env file, OR');
+      console.warn('- PM2 ecosystem.config.js, OR');
+      console.warn('- Your environment variables');
+      console.warn('==========================================\n');
+      
       logger.warn('Sync is disabled. Set SYNC_ENABLED=true to enable.');
       return;
     }
@@ -434,9 +461,32 @@ process.on('SIGTERM', async () => {
 // Start daemon
 (async () => {
   try {
+    console.log('==========================================');
+    console.log('RTM Asset Explorer - Sync Daemon Starting');
+    console.log('==========================================');
+    console.log(`SYNC_ENABLED: ${process.env.SYNC_ENABLED}`);
+    console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+    console.log(`Working Directory: ${process.cwd()}`);
+    console.log('==========================================\n');
+    
     await daemon.initialize();
     await daemon.start();
   } catch (error) {
+    console.error('\n==========================================');
+    console.error('FATAL ERROR: Failed to start sync daemon');
+    console.error('==========================================');
+    console.error('Error:', error.message);
+    if (error.stack) {
+      console.error('\nStack trace:');
+      console.error(error.stack);
+    }
+    console.error('\nPlease check:');
+    console.error('1. MongoDB is running and MONGODB_URI is correct');
+    console.error('2. Raptoreumd is running and RPC credentials are correct');
+    console.error('3. SYNC_ENABLED is set to "true" in your environment');
+    console.error('4. All required environment variables are set');
+    console.error('==========================================\n');
+    
     logger.error('Failed to start sync daemon:', error);
     process.exit(1);
   }
