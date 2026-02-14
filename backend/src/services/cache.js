@@ -13,6 +13,7 @@ export const connectCache = async () => {
   try {
     const redisHost = process.env.REDIS_HOST || '127.0.0.1';
     const redisPort = process.env.REDIS_PORT || 6379;
+    const redisPassword = process.env.REDIS_PASSWORD || '';
 
     redisClient = createClient({
       socket: {
@@ -20,7 +21,9 @@ export const connectCache = async () => {
         port: redisPort,
         connectTimeout: 3000,
         reconnectStrategy: false // Disable auto-reconnect during initial connection
-      }
+      },
+      password: redisPassword || undefined, // Only add if password is set
+      database: parseInt(process.env.REDIS_DB || '0')
     });
 
     redisClient.on('error', (err) => {
