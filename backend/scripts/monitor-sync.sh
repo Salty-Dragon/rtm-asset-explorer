@@ -4,11 +4,36 @@ echo "=== Raptoreum Asset Explorer Sync Status ==="
 echo
 
 # Load environment variables from .env
-SCRIPT_DIR="$( cd "$( dirname "");" &> /dev/null && pwd )"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 ENV_FILE="$SCRIPT_DIR/../.env"
 
+# Debug output (set DEBUG=1 to enable)
+if [ "$DEBUG" = "1" ]; then
+  echo "DEBUG: Script dir: $SCRIPT_DIR"
+  echo "DEBUG: Looking for .env at: $ENV_FILE"
+fi
+
 if [ -f "$ENV_FILE" ]; then
-  export $(grep -v '^#' "$ENV_FILE" | grep -v '^$' | xargs)
+  if [ "$DEBUG" = "1" ]; then
+    echo "DEBUG: Found .env file, loading variables..."
+  fi
+  
+  # Use set -a to automatically export all variables
+  # This approach properly handles quotes, spaces, and special characters
+  set -a
+  source <(grep -v '^#' "$ENV_FILE" | grep -v '^$' | sed 's/\r$//')
+  set +a
+  
+  if [ "$DEBUG" = "1" ]; then
+    echo "DEBUG: Loaded environment variables"
+    echo "DEBUG: RAPTOREUMD_HOST=$RAPTOREUMD_HOST"
+    echo "DEBUG: RAPTOREUMD_PORT=$RAPTOREUMD_PORT"
+    echo "DEBUG: RAPTOREUMD_USER=$RAPTOREUMD_USER"
+    echo "DEBUG: RAPTOREUMD_PASSWORD=${RAPTOREUMD_PASSWORD:0:3}***"
+    echo "DEBUG: MONGODB_URI set: $([ -n "$MONGODB_URI" ] && echo "yes" || echo "no")"
+  fi
+else
+  echo "WARNING: .env file not found at: $ENV_FILE"
 fi
 
 # Get blockchain height via RPC
