@@ -3,6 +3,7 @@ import { checkDatabaseHealth } from '../services/database.js';
 import { checkCacheHealth } from '../services/cache.js';
 import blockchainService from '../services/blockchain.js';
 import exportSigner from '../services/exportSigner.js';
+import { rateLimit } from '../middleware/rateLimit.js';
 
 const router = express.Router();
 
@@ -50,7 +51,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.get('/signer', async (req, res) => {
+// Rate limit the signer health check to prevent abuse
+router.get('/signer', rateLimit(60, 60), async (req, res) => {
   try {
     const signerInitialized = exportSigner.isInitialized();
     
