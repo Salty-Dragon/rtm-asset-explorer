@@ -2,6 +2,7 @@ import express from 'express';
 import fs from 'fs/promises';
 import { z } from 'zod';
 import { logger } from '../utils/logger.js';
+import { rateLimit } from '../middleware/rateLimit.js';
 import Export from '../models/Export.js';
 import litecoinClient from '../services/litecoinClient.js';
 import pricingService from '../services/pricingService.js';
@@ -10,6 +11,10 @@ import assetTokenizer from '../services/assetTokenizer.js';
 import ipfsService from '../services/ipfsService.js';
 
 const router = express.Router();
+
+// Export-specific rate limiting
+const exportRequestLimit = parseInt(process.env.EXPORT_RATE_LIMIT_PER_HOUR || '10');
+const exportRateLimit = rateLimit(exportRequestLimit, 3600); // Per hour
 
 // Validation schemas
 const requestExportSchema = z.object({
@@ -48,7 +53,7 @@ const requestExportSchema = z.object({
 });
 
 // POST /api/export/request - Initiate new export
-router.post('/request', async (req, res) => {
+router.post('/request', exportRateLimit, async (req, res) => {
   try {
     // Validate request body
     const validatedData = requestExportSchema.parse(req.body);
@@ -199,7 +204,7 @@ router.get('/status/:exportId', async (req, res) => {
 });
 
 // GET /api/export/download/:exportId - Download export file
-router.get('/download/:exportId', async (req, res) => {
+router.get('/download/:exportId', exportRateLimit, async (req, res) => {
   try {
     const { exportId } = req.params;
     
@@ -274,7 +279,7 @@ router.get('/download/:exportId', async (req, res) => {
 
 // GET /api/export/verify/:assetName - Verify export
 // Note: Asset name should be URL encoded (e.g., RTM_EXPORTS%2FASSET_20260214_hash)
-router.get('/verify/:assetName', async (req, res) => {
+router.get('/verify/:assetName', exportRateLimit, async (req, res) => {
   try {
     // Decode URL-encoded asset name
     const assetName = decodeURIComponent(req.params.assetName);
