@@ -79,3 +79,4 @@ backups/
 # Local config
 config/local.json
 test-imports.js
+backend/test-api.sh

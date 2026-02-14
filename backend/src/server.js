@@ -59,7 +59,8 @@ app.use((req, res, next) => {
 // Authentication middleware (optional for most endpoints)
 app.use(authenticateApiKey);
 
-// Rate limiting based on API key tier
+// Rate limiting based on API key tier - Applied globally to all routes
+// This protects all database accesses below
 app.use((req, res, next) => {
   const maxRequests = req.apiKey ? req.apiKey.rateLimit : 100;
   return rateLimit(maxRequests, 60)(req, res, next);
@@ -167,5 +168,5 @@ export { app };
 
 // Start server if running directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const server = await startServer();
+  await startServer();
 }
