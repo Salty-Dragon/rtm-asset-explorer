@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import cors from 'cors';
 import compression from 'compression';
 import crypto from 'crypto';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { logger } from './utils/logger.js';
 import { connectDatabase } from './services/database.js';
 import { connectCache } from './services/cache.js';
@@ -286,6 +288,6 @@ process.on('uncaughtException', (error) => {
 });
 
 // Start server if running directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   await startServer();
 }

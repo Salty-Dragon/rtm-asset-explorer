@@ -525,7 +525,8 @@ export { SyncDaemon };
 export default SyncDaemon;
 
 // Standalone execution - only runs when this file is the entry point
-const isMainModule = process.argv[1] && import.meta.url === `file://${process.argv[1]}`;
+const isMainModule = process.argv[1] &&
+  fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
 
 if (isMainModule) {
   const daemon = new SyncDaemon();
