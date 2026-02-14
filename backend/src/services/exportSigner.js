@@ -6,8 +6,9 @@ import { logger } from '../utils/logger.js';
 
 class ExportSigner {
   constructor() {
-    this.privateKeyPath = process.env.EXPORT_SIGNING_PRIVATE_KEY || process.env.EXPORT_PRIVATE_KEY_PATH || path.join(process.cwd(), 'keys', 'private.pem');
-    this.publicKeyPath = process.env.EXPORT_SIGNING_PUBLIC_KEY || process.env.EXPORT_PUBLIC_KEY_PATH || path.join(process.cwd(), 'keys', 'public.pem');
+    // Support both old and new environment variable names for backward compatibility
+    this.privateKeyPath = process.env.EXPORT_SIGNING_PRIVATE_KEY_PATH || process.env.EXPORT_SIGNING_PRIVATE_KEY || process.env.EXPORT_PRIVATE_KEY_PATH || path.join(process.cwd(), 'keys', 'private.pem');
+    this.publicKeyPath = process.env.EXPORT_SIGNING_PUBLIC_KEY_PATH || process.env.EXPORT_SIGNING_PUBLIC_KEY || process.env.EXPORT_PUBLIC_KEY_PATH || path.join(process.cwd(), 'keys', 'public.pem');
     this.privateKey = null;
     this.publicKey = null;
     this.initialized = false;
@@ -66,7 +67,9 @@ class ExportSigner {
   }
 
   async getPassphrase() {
-    // Priority 1: Environment variable (set manually, NOT in .env file)
+    // Priority 1: Environment variable
+    // NOTE: This is a recommendation - do not store passphrase in .env file in production
+    // Set via export/pm2/system environment instead
     if (process.env.SIGNING_KEY_PASSPHRASE) {
       logger.info('Using passphrase from SIGNING_KEY_PASSPHRASE environment variable');
       return process.env.SIGNING_KEY_PASSPHRASE;
