@@ -7,6 +7,9 @@ import { rateLimit } from '../middleware/rateLimit.js';
 
 const router = express.Router();
 
+// Rate limit for signer health check (60 requests per minute)
+const signerHealthRateLimit = rateLimit(60, 60);
+
 router.get('/', async (req, res) => {
   try {
     const [database, cache, blockchain] = await Promise.all([
@@ -51,8 +54,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Rate limit the signer health check to prevent abuse
-router.get('/signer', rateLimit(60, 60), async (req, res) => {
+// Rate-limited signer health check endpoint
+router.get('/signer', signerHealthRateLimit, async (req, res) => {
   try {
     const signerInitialized = exportSigner.isInitialized();
     
