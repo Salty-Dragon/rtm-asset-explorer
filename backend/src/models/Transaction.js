@@ -51,18 +51,28 @@ const transactionSchema = new mongoose.Schema({
   }],
   type: {
     type: String,
-    enum: ['standard', 'asset_create', 'asset_transfer'],
+    enum: ['standard', 'asset_create', 'asset_transfer', 'asset_mint', 'asset_update', 'future'],
     default: 'standard',
     index: true
   },
   assetData: {
     assetId: String,
+    assetName: String,
+    amount: Number,
+    from: String,
+    to: String,
     operation: {
       type: String,
-      enum: ['create', 'transfer', 'update']
-    },
-    amount: Number,
-    metadata: mongoose.Schema.Types.Mixed
+      enum: ['create', 'mint', 'transfer', 'update']
+    }
+  },
+  futureData: {
+    maturity: Number,
+    lockTime: Number,
+    unlockHeight: Number,
+    unlockTime: Date,
+    lockedAmount: Number,
+    assetId: String
   }
 }, {
   timestamps: true
