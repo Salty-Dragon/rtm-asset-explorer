@@ -31,16 +31,20 @@ router.get('/',
         .skip(offset);
 
       const total = await Asset.countDocuments(filter);
+      const page = Math.floor(offset / limit) + 1;
+      const pages = Math.ceil(total / limit);
 
       res.json({
         success: true,
-        data: {
-          assets,
-          pagination: {
-            limit,
-            offset,
-            total
-          }
+        data: assets,
+        pagination: {
+          page,
+          limit,
+          offset,
+          total,
+          pages,
+          hasNext: offset + limit < total,
+          hasPrev: offset > 0
         },
         meta: {
           timestamp: new Date().toISOString(),

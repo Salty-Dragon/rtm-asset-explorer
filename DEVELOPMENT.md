@@ -1033,12 +1033,11 @@ EXPORT_HOLDER_ADDRESS=RxxxxHolderAddress
 EXPORT_SIGNING_PRIVATE_KEY=path/to/private/key.pem
 EXPORT_SIGNING_PUBLIC_KEY=path/to/public/key.pem
 
-# IPFS (local node)
+# IPFS (local follower node + public fallback)
+IPFS_LOCAL_GATEWAY=http://127.0.0.1:8080
 IPFS_API_URL=http://127.0.0.1:5001
-IPFS_GATEWAY_URL=http://127.0.0.1:8080
-IPFS_RAPTOREUM_GATEWAY=https://ipfs.raptoreum.com
 IPFS_PUBLIC_GATEWAY=https://ipfs.io
-IPFS_TIMEOUT_SEC=30
+IPFS_TIMEOUT=10000
 
 # CoinGecko API
 COINGECKO_API_URL=https://api.coingecko.com/api/v3
