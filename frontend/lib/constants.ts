@@ -1,7 +1,7 @@
 // Application constants
 
 // API Configuration
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://assets.raptoreum.com/api'
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://assets.raptoreum.com/api/v1'
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://assets.raptoreum.com'
 
 // IPFS Configuration

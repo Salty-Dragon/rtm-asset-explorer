@@ -70,15 +70,15 @@ app.use((req, res, next) => {
   return rateLimit(maxRequests, 60)(req, res, next);
 });
 
-// API routes
-app.use('/api/health', healthRoutes);
-app.use('/api/blocks', blockRoutes);
-app.use('/api/transactions', transactionRoutes);
-app.use('/api/assets', assetRoutes);
-app.use('/api/addresses', addressRoutes);
-app.use('/api/stats', statsRoutes);
-app.use('/api/export', exportRoutes);
-app.use('/api/sync', syncRoutes);
+// API routes (v1)
+app.use('/api/v1/health', healthRoutes);
+app.use('/api/v1/blocks', blockRoutes);
+app.use('/api/v1/transactions', transactionRoutes);
+app.use('/api/v1/assets', assetRoutes);
+app.use('/api/v1/addresses', addressRoutes);
+app.use('/api/v1/stats', statsRoutes);
+app.use('/api/v1/export', exportRoutes);
+app.use('/api/v1/sync', syncRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -88,14 +88,14 @@ app.get('/', (req, res) => {
       name: 'Raptoreum Asset Explorer API',
       version: '1.0.0',
       endpoints: {
-        health: '/api/health',
-        blocks: '/api/blocks',
-        transactions: '/api/transactions/:txid',
-        assets: '/api/assets',
-        addresses: '/api/addresses/:address',
-        stats: '/api/stats',
-        sync: '/api/sync/status',
-        futures: '/api/sync/futures/locked'
+        health: '/api/v1/health',
+        blocks: '/api/v1/blocks',
+        transactions: '/api/v1/transactions/:txid',
+        assets: '/api/v1/assets',
+        addresses: '/api/v1/addresses/:address',
+        stats: '/api/v1/stats',
+        sync: '/api/v1/sync/status',
+        futures: '/api/v1/sync/futures/locked'
       }
     },
     meta: {
