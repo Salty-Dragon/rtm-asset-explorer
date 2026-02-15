@@ -33,7 +33,7 @@ function transformAsset(asset) {
     ipfsHash: obj.ipfsHash || undefined,
     txid: obj.createdTxid,
     height: obj.createdBlockHeight,
-    blockTime: obj.createdAt ? new Date(obj.createdAt).getTime() / 1000 : 0,
+    blockTime: obj.createdAt ? new Date(obj.createdAt).getTime() / 1000 : undefined,
     owner: obj.creator,
     metadata: obj.metadata || undefined,
     transferCount: obj.transferCount ?? 0,

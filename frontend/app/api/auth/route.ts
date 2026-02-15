@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
 
+function generateAuthToken(password: string): string {
+  const timestamp = Date.now().toString()
+  const hmac = crypto.createHmac('sha256', password).update(timestamp).digest('hex')
+  return `${hmac}:${timestamp}`
+}
+
 export async function POST(request: Request) {
   const sitePassword = process.env.SITE_PASSWORD
 
@@ -34,8 +40,9 @@ export async function POST(request: Request) {
       )
     }
 
+    const token = generateAuthToken(sitePassword)
     const response = NextResponse.json({ success: true })
-    response.cookies.set('site_auth', 'authenticated', {
+    response.cookies.set('site_auth', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
