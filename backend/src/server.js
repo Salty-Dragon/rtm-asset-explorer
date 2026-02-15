@@ -22,6 +22,7 @@ import addressRoutes from './routes/addresses.js';
 import statsRoutes from './routes/stats.js';
 import exportRoutes from './routes/export.js';
 import syncRoutes from './routes/sync.js';
+import blockchainRoutes from './routes/blockchain.js';
 
 const app = express();
 const PORT = process.env.PORT || 4004;
@@ -77,6 +78,7 @@ app.use('/api/v1/transactions', transactionRoutes);
 app.use('/api/v1/assets', assetRoutes);
 app.use('/api/v1/addresses', addressRoutes);
 app.use('/api/v1/stats', statsRoutes);
+app.use('/api/v1/blockchain', blockchainRoutes);
 app.use('/api/v1/export', exportRoutes);
 app.use('/api/v1/sync', syncRoutes);
 
@@ -94,6 +96,7 @@ app.get('/', (req, res) => {
         assets: '/api/v1/assets',
         addresses: '/api/v1/addresses/:address',
         stats: '/api/v1/stats',
+        blockchain: '/api/v1/blockchain/info',
         sync: '/api/v1/sync/status',
         futures: '/api/v1/sync/futures/locked'
       }
