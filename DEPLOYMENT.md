@@ -1692,8 +1692,6 @@ pm2 save
 
 If you're getting a 500 error but there are NO logs in nginx `access.log` or `error.log` at all, this means the error is occurring **before** the request reaches nginx. This is commonly caused by Cloudflare SSL configuration issues.
 
-If you're getting a 500 error but there are NO logs in nginx `access.log` or `error.log`, this means the error is occurring **before** the request reaches nginx. This is commonly caused by Cloudflare SSL configuration issues.
-
 **Symptoms:**
 - 500 error when accessing https://assets.raptoreum.com
 - No entries in `/var/log/nginx/rtm-explorer-access.log`
