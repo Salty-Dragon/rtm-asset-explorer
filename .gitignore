@@ -86,3 +86,4 @@ backend/keys/
 config/local.json
 test-imports.js
 backend/test-api.sh
+*.tsbuildinfo
