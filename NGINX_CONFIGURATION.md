@@ -43,8 +43,10 @@ Here's the complete nginx configuration that works with `/api/v1`:
 
 > **Note**: An example configuration file is available at [nginx/rtm-asset-explorer.conf](nginx/rtm-asset-explorer.conf) that you can copy and customize for your deployment.
 
+> **Important**: The `limit_req_zone` directives shown below must be placed in the nginx http block (in `/etc/nginx/nginx.conf` or `/etc/nginx/conf.d/rate-limits.conf`), not in the site configuration file. See the example config file for detailed instructions.
+
 ```nginx
-# Rate limiting
+# Rate limiting (place in http block)
 limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
 limit_req_zone $binary_remote_addr zone=frontend_limit:10m rate=30r/s;
 

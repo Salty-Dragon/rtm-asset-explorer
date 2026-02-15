@@ -15,7 +15,29 @@ This directory contains example nginx configuration files for the Raptoreum Asse
 sudo cp nginx/rtm-asset-explorer.conf /etc/nginx/sites-available/rtm-asset-explorer
 ```
 
-### 2. Update Configuration
+### 2. Configure Rate Limiting
+
+The configuration file includes rate limiting zones that must be placed in the nginx http block:
+
+```bash
+# Option 1: Add to main nginx.conf
+sudo nano /etc/nginx/nginx.conf
+
+# Inside the http {} block, add:
+# limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
+# limit_req_zone $binary_remote_addr zone=frontend_limit:10m rate=30r/s;
+
+# Option 2: Create a separate file
+sudo nano /etc/nginx/conf.d/rate-limits.conf
+
+# Add the rate limiting zones:
+limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
+limit_req_zone $binary_remote_addr zone=frontend_limit:10m rate=30r/s;
+```
+
+After adding these to the http block, remove the `limit_req_zone` lines from the site configuration file.
+
+### 3. Update Site Configuration
 
 Edit the file and update these settings:
 
@@ -35,7 +57,7 @@ sudo nano /etc/nginx/sites-available/rtm-asset-explorer
 - Enable/disable Basic Authentication
 - Timeouts and buffer settings
 
-### 3. Enable Site
+### 4. Enable Site
 
 ```bash
 # Create symbolic link to sites-enabled
@@ -45,7 +67,7 @@ sudo ln -s /etc/nginx/sites-available/rtm-asset-explorer /etc/nginx/sites-enable
 sudo rm /etc/nginx/sites-enabled/default
 ```
 
-### 4. Test Configuration
+### 5. Test Configuration
 
 ```bash
 # Test nginx configuration
@@ -56,7 +78,7 @@ sudo nginx -t
 # nginx: configuration file /etc/nginx/nginx.conf test is successful
 ```
 
-### 5. Reload Nginx
+### 6. Reload Nginx
 
 ```bash
 # Reload nginx to apply changes
