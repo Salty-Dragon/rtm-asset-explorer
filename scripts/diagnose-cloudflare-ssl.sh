@@ -31,7 +31,7 @@ DOMAIN="${1:-assets.raptoreum.com}"
 NGINX_CONF="/etc/nginx/sites-available/rtm-explorer"
 CLOUDFLARE_CERT_DIR="/etc/ssl/cloudflare"
 LOG_DIR="/var/log/nginx"
-API_HEALTH_ENDPOINT="http://localhost:4004/api/health"
+API_HEALTH_ENDPOINT="http://localhost:4004/api/v1/health"
 FRONTEND_ENDPOINT="http://localhost:3003"  # Default Next.js port, change if different
 API_PORT=4004
 FRONTEND_PORT=3003
@@ -105,12 +105,32 @@ if [ $nginx_running -eq 1 ]; then
     fi
 fi
 
-# Check for auth_basic (password protection)
+# Check for auth_basic (password protection) - COMMON CAUSE OF 500 ERRORS
 if [ -f "$NGINX_CONF" ]; then
-    if grep -q "auth_basic" "$NGINX_CONF" 2>/dev/null; then
-        print_warning "HTTP Basic Authentication (password protection) is enabled"
-        echo "  This may interfere with some Cloudflare features"
-        echo "  If experiencing issues, consider application-level auth instead"
+    # Check for uncommented auth_basic (not just in comments)
+    if grep -v '^[[:space:]]*#' "$NGINX_CONF" 2>/dev/null | grep -q "auth_basic"; then
+        print_status 1 "HTTP Basic Authentication (auth_basic) is ENABLED"
+        echo "  *** This is a common cause of 500 errors! ***"
+        echo "  When auth_basic is enabled at the server level:"
+        echo "  - Cloudflare/CDN requests will fail (no credentials sent)"
+        echo "  - If .htpasswd has wrong permissions, nginx returns 500"
+        echo "  Fix: Comment out auth_basic lines in $NGINX_CONF"
+        echo "       or move them to specific location blocks only"
+        
+        # Check htpasswd file
+        htpasswd_file=$(grep -v '^[[:space:]]*#' "$NGINX_CONF" 2>/dev/null | grep "auth_basic_user_file" | head -1 | awk '{print $2}' | tr -d ';')
+        if [ -n "$htpasswd_file" ]; then
+            if [ ! -f "$htpasswd_file" ]; then
+                print_status 1 "htpasswd file does NOT exist: $htpasswd_file"
+                echo "  This WILL cause 500 errors!"
+            elif [ ! -r "$htpasswd_file" ]; then
+                print_status 1 "htpasswd file is NOT readable: $htpasswd_file"
+                echo "  This WILL cause 500 errors!"
+                echo "  Fix: sudo chmod 644 $htpasswd_file"
+            else
+                print_status 0 "htpasswd file exists and is readable: $htpasswd_file"
+            fi
+        fi
     fi
 fi
 
