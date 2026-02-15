@@ -90,6 +90,11 @@ router.get('/:assetId',
             });
           }
 
+          // Ensure metadata.attributes is an array, not an object
+          if (assetData?.metadata?.attributes && !Array.isArray(assetData.metadata.attributes)) {
+            assetData.metadata.attributes = Object.values(assetData.metadata.attributes);
+          }
+
           return res.json({
             success: true,
             data: assetData,
