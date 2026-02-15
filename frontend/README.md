@@ -76,13 +76,14 @@ npm install
 
 ### Environment Variables
 
-Copy `.env.example` to `.env.local` and configure:
+Copy `.env.example` to `.env` (or `.env.local`) and configure:
 
 ```env
 NEXT_PUBLIC_API_URL=https://assets.raptoreum.com/api/v1
 NEXT_PUBLIC_IPFS_GATEWAY_URL=https://assets.raptoreum.com/ipfs
 NEXT_PUBLIC_IPFS_FALLBACK_URL=https://ipfs.io/ipfs
 NEXT_PUBLIC_SITE_URL=https://assets.raptoreum.com
+PORT=3000  # Change this to run on a different port (e.g., PORT=3003)
 ```
 
 ### Development
@@ -91,7 +92,7 @@ NEXT_PUBLIC_SITE_URL=https://assets.raptoreum.com
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+The development server will start on the port specified in your `.env` file (default: [http://localhost:3000](http://localhost:3000)).
 
 ### Build
 
