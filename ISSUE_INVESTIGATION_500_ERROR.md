@@ -2,7 +2,7 @@
 
 ## Problem Statement
 
-You reported getting a 500 Internal Server Error when accessing https://assets.raptoreum.com with the following symptoms:
+Users may experience a 500 Internal Server Error when accessing https://assets.raptoreum.com with the following symptoms:
 
 - **Error**: `GET https://assets.raptoreum.com/ 500 (Internal Server Error)`
 - **No nginx logs**: Nothing in `/var/log/nginx/error.log` or `/var/log/nginx/access.log`

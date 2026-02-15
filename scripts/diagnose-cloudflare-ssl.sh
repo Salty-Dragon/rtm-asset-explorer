@@ -6,8 +6,6 @@
 # This script helps diagnose issues with Cloudflare Origin SSL configuration
 # Run this script when experiencing 500 errors or connectivity issues
 
-set -e
-
 echo "============================================"
 echo "Cloudflare SSL Diagnostic Tool"
 echo "============================================"
@@ -24,6 +22,8 @@ DOMAIN="assets.raptoreum.com"
 NGINX_CONF="/etc/nginx/sites-available/rtm-explorer"
 CLOUDFLARE_CERT_DIR="/etc/ssl/cloudflare"
 LOG_DIR="/var/log/nginx"
+API_HEALTH_ENDPOINT="http://localhost:4004/api/health"
+FRONTEND_ENDPOINT="http://localhost:3000"
 
 # Function to print status
 print_status() {
@@ -196,17 +196,17 @@ else
 fi
 
 # Test backend API directly
-if curl -s -o /dev/null -w "%{http_code}" http://localhost:4004/api/health 2>/dev/null | grep -q "200"; then
-    print_status 0 "Backend API responds on http://localhost:4004/api/health"
+if curl -s -o /dev/null -w "%{http_code}" "$API_HEALTH_ENDPOINT" 2>/dev/null | grep -q "200"; then
+    print_status 0 "Backend API responds on $API_HEALTH_ENDPOINT"
 else
-    print_status 1 "Backend API does NOT respond on http://localhost:4004/api/health"
+    print_status 1 "Backend API does NOT respond on $API_HEALTH_ENDPOINT"
 fi
 
 # Test frontend directly
-if curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 2>/dev/null | grep -q "200"; then
-    print_status 0 "Frontend responds on http://localhost:3000"
+if curl -s -o /dev/null -w "%{http_code}" "$FRONTEND_ENDPOINT" 2>/dev/null | grep -q "200"; then
+    print_status 0 "Frontend responds on $FRONTEND_ENDPOINT"
 else
-    print_status 1 "Frontend does NOT respond on http://localhost:3000"
+    print_status 1 "Frontend does NOT respond on $FRONTEND_ENDPOINT"
 fi
 
 # 6. Check DNS and Cloudflare
