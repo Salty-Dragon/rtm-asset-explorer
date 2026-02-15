@@ -6,13 +6,8 @@ class IPFSService {
   constructor() {
     this.host = process.env.IPFS_HOST || '127.0.0.1';
     this.port = process.env.IPFS_PORT || 5001;
-    this.gatewayUrl = process.env.IPFS_GATEWAY_URL || 'https://ipfs.io/ipfs/';
+    this.gatewayUrl = process.env.IPFS_GATEWAY_URL || 'http://127.0.0.1:8080/ipfs/';
     this.enabled = process.env.IPFS_ENABLED === 'true';
-    this.fallbackGateways = [
-      'https://ipfs.io/ipfs/',
-      'https://gateway.pinata.cloud/ipfs/',
-      'https://cloudflare-ipfs.com/ipfs/'
-    ];
   }
 
   async uploadFile(filePath, options = {}) {
@@ -189,7 +184,7 @@ class IPFSService {
   }
 
   getAllGatewayUrls(hash) {
-    return this.fallbackGateways.map(gateway => this.getGatewayUrl(hash, gateway));
+    return [this.getGatewayUrl(hash)];
   }
 
   async checkHealth() {
