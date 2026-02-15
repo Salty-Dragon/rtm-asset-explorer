@@ -95,13 +95,19 @@ export function AssetDetail({ asset, onExport, className }: AssetDetailProps) {
             <div>
               <div className="mb-1 text-xs text-muted-foreground">Creator</div>
               <div className="flex items-center justify-between gap-2">
-                <Link
-                  href={`/addresses/${asset.owner}`}
-                  className="font-mono text-sm hover:text-accent break-all"
-                >
-                  {asset.owner}
-                </Link>
-                <CopyButton text={asset.owner} size="sm" />
+                {asset.owner ? (
+                  <>
+                    <Link
+                      href={`/addresses/${asset.owner}`}
+                      className="font-mono text-sm hover:text-accent break-all"
+                    >
+                      {asset.owner}
+                    </Link>
+                    <CopyButton text={asset.owner} size="sm" />
+                  </>
+                ) : (
+                  <span className="text-sm text-muted-foreground">Unknown</span>
+                )}
               </div>
             </div>
 
@@ -115,18 +121,20 @@ export function AssetDetail({ asset, onExport, className }: AssetDetailProps) {
             </div>
 
             {/* Block Height */}
-            <div>
-              <div className="mb-1 text-xs text-muted-foreground">Block Height</div>
-              <div className="flex items-center gap-2">
-                <Layers className="h-4 w-4 text-muted-foreground" />
-                <Link
-                  href={`/blocks/${asset.height}`}
-                  className="text-sm hover:text-accent"
-                >
-                  {formatNumber(asset.height)}
-                </Link>
+            {asset.height != null && (
+              <div>
+                <div className="mb-1 text-xs text-muted-foreground">Block Height</div>
+                <div className="flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-muted-foreground" />
+                  <Link
+                    href={`/blocks/${asset.height}`}
+                    className="text-sm hover:text-accent"
+                  >
+                    {formatNumber(asset.height)}
+                  </Link>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Supply */}
             <div>

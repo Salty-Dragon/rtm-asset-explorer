@@ -35,7 +35,7 @@ export function SubAssetGrid({ parentAssetId, className }: SubAssetGridProps) {
     )
   }
 
-  if (error || !data?.data || data.data.length === 0) {
+  if (error || !data?.data || !Array.isArray(data.data) || data.data.length === 0) {
     return null // Don't show the section if no sub-assets
   }
 
