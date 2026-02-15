@@ -225,23 +225,34 @@ router.get('/creators',
           nftCount: { $sum: { $cond: [{ $eq: ['$type', 'non-fungible'] }, 1, 0] } },
           fungibleCount: { $sum: { $cond: [{ $eq: ['$type', 'fungible'] }, 1, 0] } },
           firstAssetDate: { $min: '$createdAt' },
-          lastAssetDate: { $max: '$createdAt' }
+          lastAssetDate: { $max: '$createdAt' },
+          assetNames: { $push: '$name' }
         }},
         { $sort: { totalAssets: -1 } },
         { $limit: limit }
       ]);
 
+      // Get transfer counts for each creator's assets
+      const creatorData = await Promise.all(
+        creators.map(async (c) => {
+          const transferCount = await AssetTransfer.countDocuments({
+            assetName: { $in: c.assetNames }
+          });
+          return {
+            address: c._id || '',
+            totalAssets: c.totalAssets,
+            nftCount: c.nftCount,
+            fungibleCount: c.fungibleCount,
+            totalTransfers: transferCount,
+            firstAssetDate: c.firstAssetDate,
+            lastAssetDate: c.lastAssetDate
+          };
+        })
+      );
+
       res.json({
         success: true,
-        data: creators.map(c => ({
-          address: c._id || '',
-          totalAssets: c.totalAssets,
-          nftCount: c.nftCount,
-          fungibleCount: c.fungibleCount,
-          totalTransfers: 0,
-          firstAssetDate: c.firstAssetDate,
-          lastAssetDate: c.lastAssetDate
-        })),
+        data: creatorData,
         meta: {
           timestamp: new Date().toISOString(),
           requestId: req.id || 'req_' + Date.now(),
@@ -269,7 +280,8 @@ router.get('/creators/:address',
           nftCount: { $sum: { $cond: [{ $eq: ['$type', 'non-fungible'] }, 1, 0] } },
           fungibleCount: { $sum: { $cond: [{ $eq: ['$type', 'fungible'] }, 1, 0] } },
           firstAssetDate: { $min: '$createdAt' },
-          lastAssetDate: { $max: '$createdAt' }
+          lastAssetDate: { $max: '$createdAt' },
+          assetNames: { $push: '$name' }
         }}
       ]);
 
@@ -285,6 +297,10 @@ router.get('/creators/:address',
       }
 
       const creator = stats[0];
+      const transferCount = await AssetTransfer.countDocuments({
+        assetName: { $in: creator.assetNames }
+      });
+
       res.json({
         success: true,
         data: {
@@ -292,7 +308,7 @@ router.get('/creators/:address',
           totalAssets: creator.totalAssets,
           nftCount: creator.nftCount,
           fungibleCount: creator.fungibleCount,
-          totalTransfers: 0,
+          totalTransfers: transferCount,
           firstAssetDate: creator.firstAssetDate,
           lastAssetDate: creator.lastAssetDate
         },

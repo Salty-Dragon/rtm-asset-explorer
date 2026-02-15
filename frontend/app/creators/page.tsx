@@ -54,7 +54,7 @@ export default function CreatorsPage() {
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <FileImage className="h-4 w-4" />
-                          {formatNumber(creator.totalAssets ?? creator.assetCount ?? 0)} assets
+                          {formatNumber(creator.totalAssets)} assets
                         </span>
                         {creator.nftCount !== undefined && (
                           <span className="flex items-center gap-1">
