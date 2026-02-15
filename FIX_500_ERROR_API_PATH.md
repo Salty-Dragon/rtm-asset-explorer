@@ -89,6 +89,40 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://assets.r
 
 ## What User Needs to Do
 
+### Your Setup: Running with npm and tmux
+
+Since you're running the frontend with `npm run start` in tmux (not PM2), here's what to do:
+
+```bash
+# 1. Navigate to frontend directory
+cd /opt/rtm-explorer/frontend  # Adjust to your actual path
+
+# 2. Rebuild the frontend with the fix
+npm run build
+
+# 3. Stop the current frontend process in tmux
+# In your tmux session where frontend is running:
+# Press Ctrl+C to stop the current npm start
+
+# 4. Restart the frontend
+npm run start
+
+# Or if you prefer to do it all in one command:
+# Ctrl+C (stop), then immediately:
+npm run build && npm run start
+```
+
+### Alternative: Quick Restart Without Rebuild
+
+If you want to test without rebuilding (frontend will use the fixed code):
+```bash
+# In your tmux session:
+# Ctrl+C to stop
+npm run start
+```
+
+Note: The code fix is already in place, but Next.js needs to rebuild to use it in production mode.
+
 ### If User Has `.env` File:
 
 User should verify their `.env` file has:
@@ -98,22 +132,19 @@ NEXT_PUBLIC_API_URL=https://assets.raptoreum.com/api
 
 Without the `/v1` suffix.
 
-### Rebuild and Restart Frontend:
+### Setup Note: tmux vs PM2
 
-```bash
-# Navigate to frontend
-cd /opt/rtm-explorer/frontend
+You mentioned running the frontend with `npm run start` in tmux. This is perfectly fine! The fix works the same way regardless of process manager.
 
-# Rebuild with corrected configuration
-npm run build
+**With tmux:**
+- Stop: Ctrl+C in the tmux session
+- Rebuild: `npm run build`
+- Start: `npm run start`
 
-# Restart PM2
-cd /opt/rtm-explorer/backend
-pm2 restart rtm-frontend
-
-# Or restart all
-pm2 restart all
-```
+**With PM2 (if you switch later):**
+- Stop: `pm2 stop rtm-frontend`
+- Rebuild: `npm run build`
+- Start: `pm2 restart rtm-frontend`
 
 ## Verification
 
