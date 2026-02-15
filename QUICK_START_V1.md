@@ -4,6 +4,8 @@
 
 **Frontend and Backend now use `/api/v1` for all API endpoints**
 
+> **Note**: Your nginx configuration does not need changes. See [NGINX_CONFIGURATION.md](NGINX_CONFIGURATION.md) for details.
+
 ## 🚀 What You Need to Do
 
 ### Your Path

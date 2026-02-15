@@ -61,6 +61,21 @@ Not `/opt/rtm-explorer` as in some documentation.
 
 ## What User Needs to Do
 
+### 0. Nginx Configuration (No Changes Needed)
+
+Your nginx configuration is already correct and does not need changes. The configuration:
+
+```nginx
+location /api/ {
+    proxy_pass http://api_backend;
+    # ...
+}
+```
+
+This works perfectly with `/api/v1` because `proxy_pass http://api_backend;` (without trailing slash) preserves the full request path. When a request comes to `/api/v1/health`, nginx passes it as-is to the backend.
+
+**For detailed nginx configuration information, see [NGINX_CONFIGURATION.md](NGINX_CONFIGURATION.md).**
+
 ### 1. Restart Backend
 
 ```bash

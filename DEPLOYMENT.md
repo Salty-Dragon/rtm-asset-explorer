@@ -707,6 +707,8 @@ pm2 set pm2-logrotate:dateFormat YYYY-MM-DD_HH-mm-ss
 
 ## Nginx Configuration
 
+> **Important**: For detailed nginx configuration information including `/api/v1` endpoint handling and troubleshooting, see [NGINX_CONFIGURATION.md](NGINX_CONFIGURATION.md).
+
 ### 1. Install Nginx
 
 ```bash
@@ -791,6 +793,8 @@ server {
     gzip_types text/plain text/css text/xml text/javascript application/javascript application/json application/xml+rss application/rss+xml font/truetype font/opentype application/vnd.ms-fontobject image/svg+xml;
 
     # API Routes
+    # Note: This handles ALL /api/* requests including /api/v1/*
+    # The proxy_pass without trailing slash preserves the full path
     location /api/ {
         limit_req zone=api_limit burst=20 nodelay;
         
