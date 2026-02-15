@@ -46,14 +46,12 @@ const IPFSCache = mongoose.model('IPFSCache', ipfsCacheSchema);
 class IPFSMetadataService {
   constructor() {
     this.localGateway = process.env.IPFS_LOCAL_GATEWAY || 'http://127.0.0.1:8080';
-    this.raptoreumGateway = process.env.IPFS_RAPTOREUM_GATEWAY || 'https://ipfs.raptoreum.com';
     this.publicGateway = process.env.IPFS_PUBLIC_GATEWAY || 'https://ipfs.io';
     this.timeout = parseInt(process.env.IPFS_TIMEOUT || '10000');
     this.retryAttempts = parseInt(process.env.IPFS_RETRY_ATTEMPTS || '3');
     
     this.gateways = [
       this.localGateway,
-      this.raptoreumGateway,
       this.publicGateway
     ];
   }
@@ -185,12 +183,12 @@ class IPFSMetadataService {
     // If IPFS hash or ipfs:// URL
     if (imageValue.startsWith('ipfs://')) {
       const hash = imageValue.replace('ipfs://', '');
-      return `${this.raptoreumGateway}/ipfs/${hash}`;
+      return `${this.localGateway}/ipfs/${hash}`;
     }
     
     // Assume it's an IPFS hash
     if (imageValue.startsWith('Qm') || imageValue.startsWith('bafy')) {
-      return `${this.raptoreumGateway}/ipfs/${imageValue}`;
+      return `${this.localGateway}/ipfs/${imageValue}`;
     }
     
     return imageValue;

@@ -186,9 +186,8 @@ SYNC_RETRY_ATTEMPTS=3
 SYNC_RETRY_DELAY=30000           # 30 seconds
 SYNC_CHECKPOINT_INTERVAL=100     # Save state every N blocks
 
-# IPFS
+# IPFS (local follower node + public fallback)
 IPFS_LOCAL_GATEWAY=http://127.0.0.1:8080
-IPFS_RAPTOREUM_GATEWAY=https://ipfs.raptoreum.com
 IPFS_PUBLIC_GATEWAY=https://ipfs.io
 IPFS_TIMEOUT=10000
 IPFS_RETRY_ATTEMPTS=3
