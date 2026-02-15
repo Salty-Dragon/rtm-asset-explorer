@@ -41,6 +41,8 @@ Response: {"success": true, "data": {...}}
 
 Here's the complete nginx configuration that works with `/api/v1`:
 
+> **Note**: An example configuration file is available at [nginx/rtm-asset-explorer.conf](nginx/rtm-asset-explorer.conf) that you can copy and customize for your deployment.
+
 ```nginx
 # Rate limiting
 limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
@@ -425,3 +427,12 @@ curl https://assets.raptoreum.com/api/v1/health
 # Check Nginx Logs
 sudo tail -f /var/log/nginx/rtm-asset-explorer-error.log
 ```
+
+## Example Configuration Files
+
+Ready-to-use nginx configuration files are available in the [nginx/](nginx/) directory:
+
+- **[nginx/rtm-asset-explorer.conf](nginx/rtm-asset-explorer.conf)** - Complete configuration with detailed comments
+- **[nginx/README.md](nginx/README.md)** - Quick setup guide
+
+You can copy these files directly to your server and customize them for your deployment.
