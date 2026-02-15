@@ -3,6 +3,13 @@
 import { format, formatDistance, formatRelative } from 'date-fns'
 
 /**
+ * Check if a number value is invalid (undefined, null, or NaN)
+ */
+function isInvalidNumber(value: number): boolean {
+  return value === undefined || value === null || isNaN(value)
+}
+
+/**
  * Format a number with commas
  */
 export function formatNumber(num: number): string {
@@ -25,6 +32,9 @@ export function formatCompactNumber(num: number): string {
  * @param decimals - Number of decimal places to show
  */
 export function formatRTM(amount: number, decimals = 8): string {
+  if (isInvalidNumber(amount)) {
+    return '0 RTM'
+  }
   const rtm = amount / 100000000 // Convert satoshis to RTM
   return `${rtm.toFixed(decimals)} RTM`
 }
@@ -33,6 +43,9 @@ export function formatRTM(amount: number, decimals = 8): string {
  * Format a percentage
  */
 export function formatPercentage(value: number, decimals = 2): string {
+  if (isInvalidNumber(value)) {
+    return '0%'
+  }
   return `${value.toFixed(decimals)}%`
 }
 
@@ -95,6 +108,10 @@ export function formatDuration(seconds: number): string {
  * Format a hash rate
  */
 export function formatHashRate(hashRate: number): string {
+  if (isInvalidNumber(hashRate) || hashRate === 0) {
+    return '0 H/s'
+  }
+  
   const units = ['H/s', 'KH/s', 'MH/s', 'GH/s', 'TH/s', 'PH/s', 'EH/s']
   let unitIndex = 0
   let rate = hashRate
@@ -111,6 +128,10 @@ export function formatHashRate(hashRate: number): string {
  * Format difficulty
  */
 export function formatDifficulty(difficulty: number): string {
+  if (isInvalidNumber(difficulty)) {
+    return '0'
+  }
+  
   if (difficulty >= 1e12) {
     return `${(difficulty / 1e12).toFixed(2)} T`
   } else if (difficulty >= 1e9) {
