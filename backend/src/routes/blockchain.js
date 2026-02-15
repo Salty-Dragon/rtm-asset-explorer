@@ -11,24 +11,29 @@ router.get('/info',
     try {
       const info = await blockchainService.getBlockchainInfo();
       
-      // Fetch additional network and mining info
-      let networkInfo, miningInfo;
+      // Fetch additional network and mining info with complete fallbacks
+      let networkInfo = { connections: 0, version: 0, protocolversion: 0 };
       try {
-        networkInfo = await blockchainService.getNetworkInfo();
+        const netInfo = await blockchainService.getNetworkInfo();
+        if (netInfo) {
+          networkInfo = netInfo;
+        }
       } catch (error) {
         console.warn('Failed to get network info:', error.message);
-        networkInfo = { connections: 0 };
       }
       
+      let miningInfo = { networkhashps: 0 };
       try {
-        miningInfo = await blockchainService.getMiningInfo();
+        const minInfo = await blockchainService.getMiningInfo();
+        if (minInfo) {
+          miningInfo = minInfo;
+        }
       } catch (error) {
         console.warn('Failed to get mining info:', error.message);
-        miningInfo = { networkhashps: 0 };
       }
 
-      // Get last block time
-      let lastBlockTime = info.mediantime || Math.floor(Date.now() / 1000);
+      // Get last block time - use median time as fallback (0 if unavailable)
+      let lastBlockTime = info.mediantime || 0;
       try {
         const lastBlock = await blockchainService.getBlock(info.bestblockhash, 1);
         if (lastBlock && lastBlock.time) {
