@@ -5,14 +5,11 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://assets.r
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://assets.raptoreum.com'
 
 // IPFS Configuration
+// Use only the private IPFS cluster gateway for asset images
 export const IPFS_GATEWAY_URL = process.env.NEXT_PUBLIC_IPFS_GATEWAY_URL || 'https://assets.raptoreum.com/ipfs'
-export const IPFS_FALLBACK_URL = process.env.NEXT_PUBLIC_IPFS_FALLBACK_URL || 'https://ipfs.io/ipfs'
 
 export const IPFS_GATEWAYS = [
   IPFS_GATEWAY_URL,
-  IPFS_FALLBACK_URL,
-  'https://gateway.pinata.cloud/ipfs',
-  'https://cloudflare-ipfs.com/ipfs',
 ]
 
 // Site Configuration

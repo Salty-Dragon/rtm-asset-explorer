@@ -46,13 +46,12 @@ const IPFSCache = mongoose.model('IPFSCache', ipfsCacheSchema);
 class IPFSMetadataService {
   constructor() {
     this.localGateway = process.env.IPFS_LOCAL_GATEWAY || 'http://127.0.0.1:8080';
-    this.publicGateway = process.env.IPFS_PUBLIC_GATEWAY || 'https://ipfs.io';
     this.timeout = parseInt(process.env.IPFS_TIMEOUT || '10000');
     this.retryAttempts = parseInt(process.env.IPFS_RETRY_ATTEMPTS || '3');
     
+    // Use only the local/private IPFS cluster gateway
     this.gateways = [
       this.localGateway,
-      this.publicGateway
     ];
   }
 
