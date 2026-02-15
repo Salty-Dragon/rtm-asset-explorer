@@ -58,6 +58,7 @@ function LoginForm() {
               placeholder="Enter site password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
               autoFocus
               required
             />
