@@ -91,7 +91,9 @@ router.get('/:assetId',
           }
 
           // Ensure metadata.attributes is an array, not an object
+          // When fetched from blockchain RPC, attributes may be returned as an object with numeric keys
           if (assetData?.metadata?.attributes && !Array.isArray(assetData.metadata.attributes)) {
+            // Convert object to array (handles objects with numeric or string keys)
             assetData.metadata.attributes = Object.values(assetData.metadata.attributes);
           }
 
