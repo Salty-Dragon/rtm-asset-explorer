@@ -71,7 +71,7 @@ export function useInfiniteAssets(params?: ApiQueryParams) {
   const limit = params?.limit ?? 20
   return useInfiniteQuery({
     queryKey: ['assets', 'infinite', params],
-    queryFn: ({ pageParam = 1 }) => api.getAssets({ ...params, offset: (pageParam - 1) * limit }),
+    queryFn: ({ pageParam = 1 }) => api.getAssets({ ...params, limit, offset: (pageParam - 1) * limit }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => {
       if (lastPage.pagination && lastPage.pagination.hasNext) {
