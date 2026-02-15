@@ -5,6 +5,7 @@ import AssetTransfer from '../models/AssetTransfer.js';
 import blockchainService from '../services/blockchain.js';
 import { validate, schemas } from '../middleware/validation.js';
 import { cacheMiddleware } from '../middleware/cache.js';
+import { logger } from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -88,6 +89,14 @@ router.get('/:assetId',
                 requestId: req.id || 'req_' + Date.now()
               }
             });
+          }
+
+          // Ensure metadata.attributes is an array, not an object
+          // When fetched from blockchain RPC, attributes may be returned as an object with numeric keys
+          if (assetData?.metadata?.attributes && !Array.isArray(assetData.metadata.attributes)) {
+            logger.warn(`Converting non-array attributes to array for asset ${assetId}`);
+            // Convert object to array (handles objects with numeric or string keys)
+            assetData.metadata.attributes = Object.values(assetData.metadata.attributes);
           }
 
           return res.json({

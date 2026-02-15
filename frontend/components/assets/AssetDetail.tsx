@@ -62,7 +62,7 @@ export function AssetDetail({ asset, onExport, className }: AssetDetailProps) {
         </div>
 
         {/* Attributes */}
-        {asset.metadata?.attributes && asset.metadata.attributes.length > 0 && (
+        {asset.metadata?.attributes && Array.isArray(asset.metadata.attributes) && asset.metadata.attributes.length > 0 && (
           <AssetAttributes attributes={asset.metadata.attributes} />
         )}
 

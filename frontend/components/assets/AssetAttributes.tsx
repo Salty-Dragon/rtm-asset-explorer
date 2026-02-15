@@ -9,7 +9,7 @@ interface AssetAttributesProps {
 }
 
 export function AssetAttributes({ attributes, className }: AssetAttributesProps) {
-  if (!attributes || attributes.length === 0) {
+  if (!attributes || !Array.isArray(attributes) || attributes.length === 0) {
     return null
   }
 
