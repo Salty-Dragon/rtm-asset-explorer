@@ -2,31 +2,34 @@
 
 ## Overview
 
-After PR #18, all API endpoints use the `/api/v1` prefix. Your nginx configuration needs to properly proxy these requests to the backend server.
+After PR #18, all backend API endpoints use the `/api/v1` prefix. After PR #25, the frontend Next.js application also has API routes (e.g., `/api/auth` for password protection). Your nginx configuration needs to properly route:
+- `/api/v1/*` requests to the backend API server
+- Other `/api/*` requests (e.g., `/api/auth`) to the Next.js frontend server
 
-## Important: Your Current Configuration is Correct ✅
+## Important: Configuration Updated for Frontend API Routes ✅
 
-The nginx configuration you provided is **already correct** for the `/api/v1` implementation:
+The nginx configuration has been updated to properly route different API paths:
 
 ```nginx
-location /api/ {
+location /api/v1/ {
     proxy_pass http://api_backend;
     # ... other settings
 }
 ```
 
 This configuration works because:
-1. Requests to `/api/v1/health` match the `/api/` location block
-2. `proxy_pass http://api_backend;` (without trailing slash) passes the **full request path** to backend
-3. Backend receives `/api/v1/health` and handles it correctly
+1. Requests to `/api/v1/*` match the `/api/v1/` location block and are routed to the backend
+2. Requests to other `/api/*` paths (like `/api/auth`) fall through to the Next.js frontend via the catch-all `/` location
+3. `proxy_pass http://api_backend;` (without trailing slash) passes the **full request path** to backend
+4. Backend receives `/api/v1/health` and handles it correctly
 
 ## How It Works
 
-### Request Flow
+### Request Flow for Backend API
 ```
 Client Request: https://assets.raptoreum.com/api/v1/health
          ↓
-Nginx location /api/: Matches ✓
+Nginx location /api/v1/: Matches ✓
          ↓
 proxy_pass http://api_backend;
          ↓
@@ -35,6 +38,23 @@ Backend receives: /api/v1/health
 Backend route: app.use('/api/v1/health', healthRoutes)
          ↓
 Response: {"success": true, "data": {...}}
+```
+
+### Request Flow for Frontend API
+```
+Client Request: https://assets.raptoreum.com/api/auth
+         ↓
+Nginx location /api/v1/: No match
+         ↓
+Nginx location /: Matches ✓
+         ↓
+proxy_pass http://frontend_backend;
+         ↓
+Next.js receives: /api/auth
+         ↓
+Next.js route: app/api/auth/route.ts
+         ↓
+Response: {"success": true}
 ```
 
 ## Complete Working Configuration
@@ -112,8 +132,9 @@ server {
     gzip_types text/plain text/css text/xml text/javascript application/javascript application/json application/xml+rss application/rss+xml font/truetype font/opentype application/vnd.ms-fontobject image/svg+xml;
 
     # API Routes - CRITICAL CONFIGURATION
-    # This handles ALL /api/* requests including /api/v1/*
-    location /api/ {
+    # This handles ONLY /api/v1/* requests for the backend API
+    # Other /api/* routes (e.g., /api/auth) are handled by Next.js frontend
+    location /api/v1/ {
         limit_req zone=api_limit burst=20 nodelay;
 
         # Pass to backend - keeps full path including /api/v1
@@ -361,7 +382,7 @@ After configuration, verify everything works:
 ### Without Trailing Slash in proxy_pass
 
 ```nginx
-location /api/ {
+location /api/v1/ {
     proxy_pass http://api_backend;  # ← No trailing slash
 }
 ```
@@ -374,15 +395,15 @@ When nginx sees this configuration:
 ### With Trailing Slash in proxy_pass (INCORRECT)
 
 ```nginx
-location /api/ {
+location /api/v1/ {
     proxy_pass http://api_backend/;  # ← Trailing slash
 }
 ```
 
-This would strip the `/api/` prefix:
+This would strip the `/api/v1/` prefix:
 - Request: `/api/v1/health`
-- Matches: `/api/` location
-- Passes to backend: `/v1/health` (prefix stripped)
+- Matches: `/api/v1/` location
+- Passes to backend: `/health` (prefix stripped)
 - Backend expects: `/api/v1/health`
 - Result: **404 Not Found** ❌
 
