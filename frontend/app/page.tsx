@@ -1,15 +1,18 @@
+'use client'
+
 import Link from 'next/link'
 import { ArrowRight, FileImage, Layers, Hash } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { BlockchainInfo } from '@/components/blockchain/BlockchainInfo'
 import { SearchBar } from '@/components/shared/SearchBar'
+import { useGlobalStats } from '@/hooks/useApi'
 import { formatNumber } from '@/lib/formatters'
 
-export default async function HomePage() {
-  // In a real app, these would be fetched from the API
-  // For now, we'll use placeholder data since SSR would need the API to be available
-  const stats = {
+export default function HomePage() {
+  // Fetch global stats
+  const { data: statsData } = useGlobalStats()
+  const stats = statsData?.data || {
     totalAssets: 0,
     totalNFTs: 0,
     totalTransactions: 0,
