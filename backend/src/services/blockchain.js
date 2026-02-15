@@ -90,6 +90,14 @@ class BlockchainService {
     return await this.rpcCall('listassets');
   }
 
+  async getNetworkInfo() {
+    return await this.rpcCall('getnetworkinfo');
+  }
+
+  async getMiningInfo() {
+    return await this.rpcCall('getmininginfo');
+  }
+
   async checkHealth() {
     try {
       console.log('[BLOCKCHAIN HEALTH] Checking blockchain health...');

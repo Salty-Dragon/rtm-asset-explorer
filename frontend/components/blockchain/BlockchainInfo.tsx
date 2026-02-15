@@ -95,7 +95,7 @@ export function BlockchainInfo({ className }: BlockchainInfoProps) {
         </div>
 
         {/* Sync Progress */}
-        {info.syncProgress < 100 && (
+        {info.syncProgress !== undefined && info.syncProgress < 100 && (
           <div className="mt-4">
             <div className="mb-1 flex justify-between text-sm">
               <span className="text-muted-foreground">Sync Progress</span>
