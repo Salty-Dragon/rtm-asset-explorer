@@ -63,9 +63,13 @@ export function AssetFilters({ className }: AssetFiltersProps) {
             <DropdownMenuContent className="w-56">
               <DropdownMenuRadioGroup
                 value={hasIpfs === undefined ? 'all' : hasIpfs ? 'true' : 'false'}
-                onValueChange={(value) =>
-                  setHasIpfs(value === 'all' ? undefined : value === 'true')
-                }
+                onValueChange={(value) => {
+                  if (value === 'all') {
+                    setHasIpfs(undefined)
+                  } else {
+                    setHasIpfs(value === 'true')
+                  }
+                }}
               >
                 <DropdownMenuRadioItem value="all">All Assets</DropdownMenuRadioItem>
                 <DropdownMenuRadioItem value="true">With IPFS Only</DropdownMenuRadioItem>

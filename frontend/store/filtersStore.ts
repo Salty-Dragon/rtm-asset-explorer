@@ -5,7 +5,7 @@ import type { AssetFilters } from '@/lib/types'
 
 interface FiltersStore extends AssetFilters {
   setType: (type: AssetFilters['type']) => void
-  setHasIpfs: (hasIpfs: boolean) => void
+  setHasIpfs: (hasIpfs: boolean | undefined) => void
   setSort: (sort: AssetFilters['sort']) => void
   setSearch: (search: string) => void
   reset: () => void

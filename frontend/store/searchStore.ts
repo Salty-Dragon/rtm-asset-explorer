@@ -6,7 +6,7 @@ import { persist } from 'zustand/middleware'
 export interface SearchHistoryItem {
   id: string
   query: string
-  type: 'address' | 'txid' | 'asset' | 'text'
+  type: 'address' | 'txid' | 'block_hash' | 'block_height' | 'asset' | 'cid' | 'text'
   timestamp: number
 }
 

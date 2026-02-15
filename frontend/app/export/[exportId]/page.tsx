@@ -1,5 +1,6 @@
 'use client'
 
+import { use } from 'react'
 import { useExportStatus } from '@/hooks/useApi'
 import { ExportStatus } from '@/components/export/ExportStatus'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
@@ -11,9 +12,10 @@ import Link from 'next/link'
 export default function ExportStatusPage({
   params,
 }: {
-  params: { exportId: string }
+  params: Promise<{ exportId: string }>
 }) {
-  const { data, isLoading, error } = useExportStatus(params.exportId)
+  const { exportId } = use(params)
+  const { data, isLoading, error } = useExportStatus(exportId)
 
   if (isLoading) {
     return (

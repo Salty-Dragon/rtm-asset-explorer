@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, use } from 'react'
 import { useAsset } from '@/hooks/useApi'
 import { AssetDetail } from '@/components/assets/AssetDetail'
 import { ExportDialog } from '@/components/export/ExportDialog'
@@ -14,11 +14,12 @@ import { useRouter } from 'next/navigation'
 export default function AssetDetailPage({
   params,
 }: {
-  params: { assetId: string }
+  params: Promise<{ assetId: string }>
 }) {
+  const { assetId } = use(params)
   const router = useRouter()
   const [exportDialogOpen, setExportDialogOpen] = useState(false)
-  const { data, isLoading, error } = useAsset(params.assetId)
+  const { data, isLoading, error } = useAsset(assetId)
 
   const handleExportCreated = (exportId: string) => {
     router.push(`/export/${exportId}`)

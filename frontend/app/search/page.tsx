@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useSearch } from '@/hooks/useApi'
 import { AssetCard } from '@/components/assets/AssetCard'
@@ -12,7 +13,7 @@ import Link from 'next/link'
 import { formatAddress } from '@/lib/utils'
 import { FileImage, User, Hash, Layers } from 'lucide-react'
 
-export default function SearchPage() {
+function SearchPageContent() {
   const searchParams = useSearchParams()
   const query = searchParams.get('q') || ''
 
@@ -195,5 +196,17 @@ export default function SearchPage() {
         {/* They would show the same content as the "all" tab but filtered */}
       </Tabs>
     </div>
+  )
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="container py-12">
+        <LoadingSpinner text="Loading search..." />
+      </div>
+    }>
+      <SearchPageContent />
+    </Suspense>
   )
 }
