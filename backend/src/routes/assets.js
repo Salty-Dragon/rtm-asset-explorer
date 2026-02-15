@@ -9,6 +9,42 @@ import { logger } from '../utils/logger.js';
 
 const router = express.Router();
 
+/**
+ * Transform a database asset document to the frontend-expected format.
+ * Maps field names from the DB schema to the frontend Asset type.
+ */
+function transformAsset(asset) {
+  const obj = asset.toObject ? asset.toObject() : { ...asset };
+
+  // Ensure metadata.attributes is an array
+  if (obj.metadata?.attributes && !Array.isArray(obj.metadata.attributes)) {
+    obj.metadata.attributes = Object.values(obj.metadata.attributes);
+  }
+
+  return {
+    _id: obj._id,
+    assetId: obj.assetId,
+    name: obj.name,
+    type: obj.type === 'non-fungible' ? 'nft' : 'fungible',
+    amount: obj.totalSupply ?? 0,
+    units: obj.decimals ?? 0,
+    reissuable: obj.updatable ?? false,
+    hasIpfs: !!obj.ipfsHash,
+    ipfsHash: obj.ipfsHash || undefined,
+    txid: obj.createdTxid,
+    height: obj.createdBlockHeight,
+    blockTime: obj.createdAt ? new Date(obj.createdAt).getTime() / 1000 : 0,
+    owner: obj.creator,
+    metadata: obj.metadata || undefined,
+    transferCount: obj.transferCount ?? 0,
+    views: obj.views ?? 0,
+    isSubAsset: obj.isSubAsset ?? false,
+    parentAssetName: obj.parentAssetName || undefined,
+    createdAt: obj.createdAt,
+    updatedAt: obj.updatedAt,
+  };
+}
+
 // GET /api/assets - List assets
 router.get('/',
   cacheMiddleware(60),
@@ -37,7 +73,7 @@ router.get('/',
 
       res.json({
         success: true,
-        data: assets,
+        data: assets.map(transformAsset),
         pagination: {
           page,
           limit,
@@ -128,7 +164,7 @@ router.get('/:assetId',
 
       res.json({
         success: true,
-        data: asset,
+        data: transformAsset(asset),
         meta: {
           timestamp: new Date().toISOString(),
           requestId: req.id || 'req_' + Date.now(),
@@ -164,11 +200,7 @@ router.get('/:assetId/subassets',
       
       res.json({
         success: true,
-        data: {
-          parent: parentAsset,
-          subAssets,
-          count: subAssets.length
-        },
+        data: subAssets.map(transformAsset),
         meta: {
           timestamp: new Date().toISOString(),
           requestId: req.id || 'req_' + Date.now()
@@ -197,8 +229,8 @@ router.get('/by-parent/:parentName',
       res.json({
         success: true,
         data: {
-          parent,
-          subAssets,
+          parent: parent ? transformAsset(parent) : null,
+          subAssets: subAssets.map(transformAsset),
           total: subAssets.length
         },
         meta: {
@@ -233,16 +265,18 @@ router.get('/:assetId/transfers',
       
       const total = await AssetTransfer.countDocuments({ assetId });
       
+      const pages = Math.ceil(total / limit);
+
       res.json({
         success: true,
-        data: {
-          transfers,
-          pagination: {
-            page,
-            limit,
-            total,
-            pages: Math.ceil(total / limit)
-          }
+        data: transfers,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages,
+          hasNext: page < pages,
+          hasPrev: page > 1
         },
         meta: {
           timestamp: new Date().toISOString(),
@@ -276,16 +310,18 @@ router.get('/name/:assetName/transfers',
       
       const total = await AssetTransfer.countDocuments({ assetName });
       
+      const pages = Math.ceil(total / limit);
+
       res.json({
         success: true,
-        data: {
-          transfers,
-          pagination: {
-            page,
-            limit,
-            total,
-            pages: Math.ceil(total / limit)
-          }
+        data: transfers,
+        pagination: {
+          page,
+          limit,
+          total,
+          pages,
+          hasNext: page < pages,
+          hasPrev: page > 1
         },
         meta: {
           timestamp: new Date().toISOString(),

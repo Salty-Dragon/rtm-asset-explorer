@@ -43,7 +43,7 @@ export function AssetHistory({ assetId, className }: AssetHistoryProps) {
     )
   }
 
-  const transfers = data.data
+  const transfers = Array.isArray(data.data) ? data.data : []
   const pagination = data.pagination
 
   if (transfers.length === 0) {
