@@ -571,6 +571,12 @@ npm install
 npm run build
 ```
 
+> **⚠️ Important:** The frontend MUST be built before starting with PM2. The `npm start` command requires a successful build in the `.next` directory. If you get 500 errors, verify the frontend was built successfully:
+> ```bash
+> ls -la /opt/rtm-explorer/frontend/.next/
+> # Should show build output including standalone/ directory
+> ```
+
 ### 4. Create Directory Structure
 
 ```bash
@@ -624,7 +630,7 @@ module.exports = {
       instances: 1,
       env: {
         NODE_ENV: 'production',
-        PORT: 3000
+        PORT: 3000  // Change this to match your nginx configuration (e.g., 3003)
       },
       error_file: '/var/log/rtm-explorer/frontend-error.log',
       out_file: '/var/log/rtm-explorer/frontend-out.log',
@@ -649,6 +655,18 @@ module.exports = {
   ]
 };
 ```
+
+> **⚠️ CRITICAL: Port Configuration Must Match**
+> 
+> The `PORT` value in the PM2 configuration MUST match what's configured in your nginx upstream:
+> - If nginx has `server 127.0.0.1:3003` for frontend, use `PORT: 3003`
+> - If nginx has `server 127.0.0.1:3000` for frontend, use `PORT: 3000`
+> - Mismatch will cause **500 errors** because nginx cannot connect to the frontend
+> 
+> Also ensure your `frontend/.env` file has the same PORT value:
+> ```bash
+> echo "PORT=3003" >> /opt/rtm-explorer/frontend/.env
+> ```
 
 ### 2. Start Applications with PM2
 
@@ -857,7 +875,11 @@ sudo systemctl reload nginx
 
 ## SSL/TLS Setup
 
-### 1. Install Certbot
+> **Note**: If you are using **Cloudflare with Origin SSL certificates** instead of Let's Encrypt, please follow the [Cloudflare SSL Setup Guide](CLOUDFLARE_SSL_SETUP.md) instead of the instructions below. This is a common configuration when using Cloudflare as a CDN/proxy.
+
+### Option 1: Let's Encrypt (Standard Setup)
+
+#### 1. Install Certbot
 
 ```bash
 # Install Certbot
@@ -867,7 +889,7 @@ sudo apt install -y certbot python3-certbot-nginx
 sudo mkdir -p /var/www/certbot
 ```
 
-### 2. Obtain SSL Certificate
+#### 2. Obtain SSL Certificate
 
 ```bash
 # Get certificate
@@ -879,7 +901,7 @@ sudo certbot --nginx -d assets.raptoreum.com
 # - Choose whether to redirect HTTP to HTTPS (recommended: yes)
 ```
 
-### 3. Auto-Renewal
+#### 3. Auto-Renewal
 
 ```bash
 # Test auto-renewal
@@ -890,7 +912,7 @@ sudo certbot renew --dry-run
 sudo systemctl list-timers | grep certbot
 ```
 
-### 4. Verify SSL Configuration
+#### 4. Verify SSL Configuration
 
 ```bash
 # Test SSL configuration at:
@@ -898,6 +920,27 @@ sudo systemctl list-timers | grep certbot
 
 # Should achieve A+ rating with the configuration above
 ```
+
+### Option 2: Cloudflare Origin SSL
+
+If you are using Cloudflare as a CDN/proxy with Origin SSL certificates:
+
+1. Follow the complete setup guide: [CLOUDFLARE_SSL_SETUP.md](CLOUDFLARE_SSL_SETUP.md)
+2. Use the diagnostic tool to verify your configuration:
+
+```bash
+# Make the script executable (if not already)
+chmod +x scripts/diagnose-cloudflare-ssl.sh
+
+# Run diagnostic tool
+sudo ./scripts/diagnose-cloudflare-ssl.sh
+```
+
+**Key differences when using Cloudflare:**
+- Certificate paths point to `/etc/ssl/cloudflare/` instead of `/etc/letsencrypt/`
+- Real visitor IPs are obtained from `CF-Connecting-IP` header
+- SSL mode in Cloudflare dashboard must be set to "Full (strict)"
+- Orange cloud (proxy) must be enabled in Cloudflare DNS settings
 
 ---
 
@@ -1598,7 +1641,120 @@ chmod +x /opt/rtm-explorer/scripts/monitor-exports.sh
 
 ### Common Issues
 
-#### 1. Raptoreumd Not Syncing
+#### 1. 500 Internal Server Error (Nginx Shows 301 But Then 500)
+
+If nginx access.log shows a **301 redirect** but then you get a 500 error, this means nginx IS receiving requests but **cannot connect to the frontend**.
+
+**Symptoms:**
+- Nginx logs show: `"GET / HTTP/1.1" 301` (HTTP → HTTPS redirect works)
+- Then 500 error when accessing HTTPS
+- Backend is running but frontend is not
+
+**Diagnosis:**
+```bash
+# 1. Check PM2 status - is frontend running?
+pm2 status
+# Look for 'rtm-frontend' - should be "online"
+
+# 2. Test frontend directly
+curl http://localhost:3003  # Or whatever port nginx expects
+# Should return HTML, not "connection refused"
+
+# 3. Check what's listening on frontend port
+sudo netstat -tlnp | grep 3003
+# Should show node/npm process
+
+# 4. Check PM2 logs for frontend errors
+pm2 logs rtm-frontend --lines 50
+```
+
+**Solution:**
+
+If frontend is NOT running, start it:
+
+```bash
+# Build the frontend first (required)
+cd /opt/rtm-explorer/frontend
+npm run build
+
+# Start via PM2
+cd /opt/rtm-explorer/backend
+pm2 start ecosystem.config.js --only rtm-frontend
+pm2 save
+```
+
+**CRITICAL:** Ensure the PORT in ecosystem.config.js matches nginx configuration:
+- If nginx has `server 127.0.0.1:3003`, PM2 must have `PORT: 3003`
+- If nginx has `server 127.0.0.1:3000`, PM2 must have `PORT: 3000`
+- Port mismatch = 500 errors!
+
+#### 2. 500 Internal Server Error (No Nginx Logs at All)
+
+If you're getting a 500 error but there are NO logs in nginx `access.log` or `error.log` at all, this means the error is occurring **before** the request reaches nginx. This is commonly caused by Cloudflare SSL configuration issues.
+
+**Symptoms:**
+- 500 error when accessing https://assets.raptoreum.com
+- No entries in `/var/log/nginx/rtm-explorer-access.log`
+- No entries in `/var/log/nginx/rtm-explorer-error.log`
+- Cloudflare dashboard may show "Error 521: Web Server Is Down"
+
+**Diagnosis:**
+```bash
+# Run the diagnostic tool
+sudo ./scripts/diagnose-cloudflare-ssl.sh
+
+# Check if backend services are running
+pm2 status
+
+# Test backend API directly
+curl http://localhost:4004/api/health
+
+# Test frontend directly
+curl http://localhost:3000
+
+# Check nginx status and test config
+sudo systemctl status nginx
+sudo nginx -t
+```
+
+**Common Causes and Solutions:**
+
+1. **Using Cloudflare Origin SSL with Let's Encrypt configuration**
+   - Problem: Nginx is configured for Let's Encrypt but you're using Cloudflare
+   - Solution: Follow the [Cloudflare SSL Setup Guide](CLOUDFLARE_SSL_SETUP.md)
+
+2. **Cloudflare SSL/TLS mode is incorrect**
+   - Problem: Cloudflare SSL mode is set to "Flexible" or "Full" instead of "Full (strict)"
+   - Solution: 
+     - Login to Cloudflare dashboard
+     - Go to SSL/TLS → Overview
+     - Set encryption mode to "Full (strict)"
+
+3. **Cloudflare Origin Certificate not installed**
+   - Problem: Missing or incorrect Cloudflare origin certificate
+   - Solution:
+     - Generate certificate in Cloudflare dashboard (SSL/TLS → Origin Server)
+     - Install certificate at `/etc/ssl/cloudflare/assets.raptoreum.com.pem`
+     - Install private key at `/etc/ssl/cloudflare/assets.raptoreum.com.key`
+     - Update nginx configuration to use these paths
+
+4. **Nginx not listening on correct ports**
+   - Problem: Nginx not bound to ports 80/443
+   - Solution:
+     ```bash
+     sudo netstat -tlnp | grep nginx
+     sudo systemctl restart nginx
+     ```
+
+5. **Backend services not running**
+   - Problem: API or frontend not started
+   - Solution:
+     ```bash
+     pm2 start ecosystem.config.js
+     pm2 save
+     ```
+
+#### 3. Raptoreumd Not Syncing
 
 ```bash
 # Check if daemon is running
@@ -1616,7 +1772,7 @@ raptoreumd -daemon
 raptoreum-cli getpeerinfo | grep -c "addr"
 ```
 
-#### 2. MongoDB Connection Issues
+#### 4. MongoDB Connection Issues
 
 ```bash
 # Check if MongoDB is running
@@ -1632,7 +1788,7 @@ mongosh "mongodb://rtm_explorer:YOUR_PASSWORD@localhost:27017/rtm_explorer"
 sudo systemctl restart mongod
 ```
 
-#### 3. Redis Connection Issues
+#### 5. Redis Connection Issues
 
 ```bash
 # Check if Redis is running
@@ -1648,7 +1804,7 @@ sudo tail -f /var/log/redis/redis-server.log
 sudo systemctl restart redis-server
 ```
 
-#### 4. PM2 Apps Not Starting
+#### 6. PM2 Apps Not Starting
 
 ```bash
 # Check PM2 logs
@@ -1665,7 +1821,7 @@ pm2 delete rtm-api
 pm2 start ecosystem.config.js --only rtm-api
 ```
 
-#### 5. Nginx 502 Bad Gateway
+#### 7. Nginx 502 Bad Gateway
 
 ```bash
 # Check if backend is running
@@ -1681,7 +1837,7 @@ sudo nginx -t
 sudo systemctl restart nginx
 ```
 
-#### 6. High Memory Usage
+#### 8. High Memory Usage
 
 ```bash
 # Check memory usage
@@ -1699,7 +1855,7 @@ pm2 delete rtm-api
 pm2 start ecosystem.config.js
 ```
 
-#### 7. Disk Space Issues
+#### 9. Disk Space Issues
 
 ```bash
 # Check disk usage

@@ -47,6 +47,25 @@ export default {
       restart_delay: 10000,
       max_restarts: 10,
       min_uptime: '30s'
+    },
+    {
+      name: 'rtm-frontend',
+      script: 'npm',
+      args: 'start',
+      cwd: '../frontend',
+      instances: 1,
+      exec_mode: 'fork',
+      env: {
+        NODE_ENV: 'production',
+        PORT: 3003
+      },
+      error_file: 'logs/frontend-error.log',
+      out_file: 'logs/frontend-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      autorestart: true,
+      max_restarts: 10,
+      min_uptime: '10s',
+      max_memory_restart: '512M'
     }
   ]
 };
