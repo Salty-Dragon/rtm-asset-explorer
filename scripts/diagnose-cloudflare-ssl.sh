@@ -32,7 +32,9 @@ NGINX_CONF="/etc/nginx/sites-available/rtm-explorer"
 CLOUDFLARE_CERT_DIR="/etc/ssl/cloudflare"
 LOG_DIR="/var/log/nginx"
 API_HEALTH_ENDPOINT="http://localhost:4004/api/health"
-FRONTEND_ENDPOINT="http://localhost:3000"
+FRONTEND_ENDPOINT="http://localhost:3003"  # Default Next.js port, change if different
+API_PORT=4004
+FRONTEND_PORT=3003
 
 echo "Checking configuration for: $DOMAIN"
 echo ""
@@ -100,6 +102,15 @@ if [ $nginx_running -eq 1 ]; then
     else
         print_status 1 "Nginx configuration has syntax errors"
         echo "  Run: sudo nginx -t"
+    fi
+fi
+
+# Check for auth_basic (password protection)
+if [ -f "$NGINX_CONF" ]; then
+    if grep -q "auth_basic" "$NGINX_CONF" 2>/dev/null; then
+        print_warning "HTTP Basic Authentication (password protection) is enabled"
+        echo "  This may interfere with some Cloudflare features"
+        echo "  If experiencing issues, consider application-level auth instead"
     fi
 fi
 
@@ -219,6 +230,22 @@ if curl -s -o /dev/null -w "%{http_code}" "$FRONTEND_ENDPOINT" 2>/dev/null | gre
     print_status 0 "Frontend responds on $FRONTEND_ENDPOINT"
 else
     print_status 1 "Frontend does NOT respond on $FRONTEND_ENDPOINT"
+fi
+
+# Check specific ports
+echo ""
+echo "Checking if services are listening on expected ports:"
+if netstat -tlnp 2>/dev/null | grep -q ":$API_PORT "; then
+    print_status 0 "API port $API_PORT is listening"
+else
+    print_status 1 "API port $API_PORT is NOT listening"
+fi
+
+if netstat -tlnp 2>/dev/null | grep -q ":$FRONTEND_PORT "; then
+    print_status 0 "Frontend port $FRONTEND_PORT is listening"
+else
+    print_status 1 "Frontend port $FRONTEND_PORT is NOT listening"
+    print_warning "Check if frontend is configured to use port $FRONTEND_PORT in .env file"
 fi
 
 # 6. Check DNS and Cloudflare
