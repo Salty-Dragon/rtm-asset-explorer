@@ -2,7 +2,9 @@
 
 ## Problem Statement
 
-Users may experience a 500 Internal Server Error when accessing https://assets.raptoreum.com with the following symptoms:
+Users may experience a 500 Internal Server Error when accessing their Raptoreum Asset Explorer deployment (e.g., https://assets.raptoreum.com) with the following symptoms:
+
+> **Note**: Throughout this document, `assets.raptoreum.com` is used as an example domain. Replace it with your actual domain name when following the instructions.
 
 - **Error**: `GET https://assets.raptoreum.com/ 500 (Internal Server Error)`
 - **No nginx logs**: Nothing in `/var/log/nginx/error.log` or `/var/log/nginx/access.log`

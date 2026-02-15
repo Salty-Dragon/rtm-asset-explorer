@@ -5,6 +5,14 @@
 # ============================================
 # This script helps diagnose issues with Cloudflare Origin SSL configuration
 # Run this script when experiencing 500 errors or connectivity issues
+#
+# Usage:
+#   sudo ./diagnose-cloudflare-ssl.sh [domain]
+#
+# Example:
+#   sudo ./diagnose-cloudflare-ssl.sh assets.raptoreum.com
+#
+# If no domain is provided, defaults to assets.raptoreum.com
 
 echo "============================================"
 echo "Cloudflare SSL Diagnostic Tool"
@@ -17,13 +25,17 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Configuration
-DOMAIN="assets.raptoreum.com"
+# Configuration - Modify these for your deployment
+# You can also pass domain as first argument: ./diagnose-cloudflare-ssl.sh your-domain.com
+DOMAIN="${1:-assets.raptoreum.com}"
 NGINX_CONF="/etc/nginx/sites-available/rtm-explorer"
 CLOUDFLARE_CERT_DIR="/etc/ssl/cloudflare"
 LOG_DIR="/var/log/nginx"
 API_HEALTH_ENDPOINT="http://localhost:4004/api/health"
 FRONTEND_ENDPOINT="http://localhost:3000"
+
+echo "Checking configuration for: $DOMAIN"
+echo ""
 
 # Function to print status
 print_status() {
