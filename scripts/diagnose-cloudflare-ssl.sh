@@ -108,7 +108,7 @@ fi
 # Check for auth_basic (password protection) - COMMON CAUSE OF 500 ERRORS
 if [ -f "$NGINX_CONF" ]; then
     # Check for uncommented auth_basic (not just in comments)
-    if grep -v '^\s*#' "$NGINX_CONF" 2>/dev/null | grep -q "auth_basic"; then
+    if grep -v '^[[:space:]]*#' "$NGINX_CONF" 2>/dev/null | grep -q "auth_basic"; then
         print_status 1 "HTTP Basic Authentication (auth_basic) is ENABLED"
         echo "  *** This is a common cause of 500 errors! ***"
         echo "  When auth_basic is enabled at the server level:"
@@ -118,7 +118,7 @@ if [ -f "$NGINX_CONF" ]; then
         echo "       or move them to specific location blocks only"
         
         # Check htpasswd file
-        htpasswd_file=$(grep -v '^\s*#' "$NGINX_CONF" 2>/dev/null | grep "auth_basic_user_file" | awk '{print $2}' | tr -d ';')
+        htpasswd_file=$(grep -v '^[[:space:]]*#' "$NGINX_CONF" 2>/dev/null | grep "auth_basic_user_file" | head -1 | awk '{print $2}' | tr -d ';')
         if [ -n "$htpasswd_file" ]; then
             if [ ! -f "$htpasswd_file" ]; then
                 print_status 1 "htpasswd file does NOT exist: $htpasswd_file"

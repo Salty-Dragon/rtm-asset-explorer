@@ -25,9 +25,15 @@ export default function Error({
         </div>
         <h2 className="mb-2 text-2xl font-bold">Something went wrong</h2>
         <p className="mb-6 text-muted-foreground">
-          An unexpected error occurred. This may be due to a temporary connection issue with the backend services.
+          An unexpected error occurred. Please try refreshing the page.
+          If the problem persists, the backend services may be temporarily unavailable.
         </p>
-        <Button onClick={reset}>Try Again</Button>
+        <div className="flex flex-wrap justify-center gap-3">
+          <Button onClick={reset}>Try Again</Button>
+          <Button variant="outline" onClick={() => window.location.reload()}>
+            Refresh Page
+          </Button>
+        </div>
       </div>
     </div>
   )

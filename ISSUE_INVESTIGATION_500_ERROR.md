@@ -7,13 +7,45 @@ Users may experience a 500 Internal Server Error when accessing their Raptoreum 
 > **Note**: Throughout this document, `assets.raptoreum.com` is used as an example domain. Replace it with your actual domain name when following the instructions.
 
 - **Error**: `GET https://assets.raptoreum.com/ 500 (Internal Server Error)`
-- **No nginx logs**: Nothing in `/var/log/nginx/error.log` or `/var/log/nginx/access.log`
-- **Configuration**: Using Cloudflare Origin SSL instead of Let's Encrypt
-- **DNS**: A-record is correct
+- **Also**: `GET https://assets.raptoreum.com/favicon.ico 500 (Internal Server Error)`
+- **Backend and frontend work**: `curl http://localhost:4004/api/v1/health` and `curl http://localhost:3003/` both return correct responses
+- **Nginx error log**: Shows 500 errors
 
-## Root Cause
+## Root Causes
 
-When you get a **500 error with NO nginx logs**, it means the request is not reaching your nginx server. The error is being returned by Cloudflare **before** it reaches your server. This is a common issue when:
+### Cause 1: `auth_basic` Enabled with Cloudflare (Most Common)
+
+If you have `auth_basic` enabled at the **server level** in your nginx config, this will cause 500 errors when:
+
+1. The `.htpasswd` file has **wrong permissions** (not readable by the nginx worker process)
+2. The `.htpasswd` file **does not exist**
+3. **Cloudflare** or other CDN/proxy sends requests without credentials
+
+**How to check:**
+```bash
+# Look for uncommented auth_basic in your nginx config
+grep -v '^\s*#' /etc/nginx/sites-available/rtm-asset-explorer | grep auth_basic
+```
+
+**How to fix:**
+```bash
+# Option 1: Disable auth_basic (recommended for production with Cloudflare)
+# Comment out these lines in your nginx config:
+#   auth_basic "Restricted";
+#   auth_basic_user_file /etc/nginx/.htpasswd;
+
+# Option 2: If you need auth_basic, ensure the htpasswd file exists and is readable
+sudo htpasswd -c /etc/nginx/.htpasswd username
+sudo chmod 644 /etc/nginx/.htpasswd
+
+# Then test and reload nginx
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### Cause 2: Cloudflare SSL Misconfiguration
+
+When you get a **500 error with NO nginx logs** (nothing in access or error logs), it means the request is not reaching your nginx server. The error is being returned by Cloudflare **before** it reaches your server. This is a common issue when:
 
 1. **Nginx is configured for Let's Encrypt certificates** but you're using **Cloudflare Origin SSL**
 2. **Cloudflare SSL/TLS mode** is not set to "Full (strict)"
