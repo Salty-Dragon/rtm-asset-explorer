@@ -140,6 +140,8 @@ For detailed development setup, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
 For production deployment to OVH server (no Docker), see [DEPLOYMENT.md](DEPLOYMENT.md).
 
+**Using Cloudflare?** See the [Cloudflare SSL Setup Guide](CLOUDFLARE_SSL_SETUP.md) for configuring Origin SSL certificates.
+
 ## 📚 Documentation
 
 Comprehensive documentation is available for all aspects of the project:
@@ -151,6 +153,7 @@ Comprehensive documentation is available for all aspects of the project:
 - **[FRONTEND.md](FRONTEND.md)** - Frontend specifications including pages, components, design system, state management, and performance optimization
 - **[SECURITY.md](SECURITY.md)** - Security guidelines covering input validation, authentication, rate limiting, audit logging, and incident response
 - **[DEPLOYMENT.md](DEPLOYMENT.md)** - Step-by-step deployment guide for OVH server with PM2, Nginx, SSL, backups, and monitoring
+- **[CLOUDFLARE_SSL_SETUP.md](CLOUDFLARE_SSL_SETUP.md)** - Cloudflare Origin SSL configuration guide for deployments using Cloudflare CDN
 - **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development guide with setup, workflow, code style, testing, and contributing guidelines
 
 ## 🔑 API Access

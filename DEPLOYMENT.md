@@ -857,7 +857,11 @@ sudo systemctl reload nginx
 
 ## SSL/TLS Setup
 
-### 1. Install Certbot
+> **Note**: If you are using **Cloudflare with Origin SSL certificates** instead of Let's Encrypt, please follow the [Cloudflare SSL Setup Guide](CLOUDFLARE_SSL_SETUP.md) instead of the instructions below. This is a common configuration when using Cloudflare as a CDN/proxy.
+
+### Option 1: Let's Encrypt (Standard Setup)
+
+#### 1. Install Certbot
 
 ```bash
 # Install Certbot
@@ -867,7 +871,7 @@ sudo apt install -y certbot python3-certbot-nginx
 sudo mkdir -p /var/www/certbot
 ```
 
-### 2. Obtain SSL Certificate
+#### 2. Obtain SSL Certificate
 
 ```bash
 # Get certificate
@@ -879,7 +883,7 @@ sudo certbot --nginx -d assets.raptoreum.com
 # - Choose whether to redirect HTTP to HTTPS (recommended: yes)
 ```
 
-### 3. Auto-Renewal
+#### 3. Auto-Renewal
 
 ```bash
 # Test auto-renewal
@@ -890,7 +894,7 @@ sudo certbot renew --dry-run
 sudo systemctl list-timers | grep certbot
 ```
 
-### 4. Verify SSL Configuration
+#### 4. Verify SSL Configuration
 
 ```bash
 # Test SSL configuration at:
@@ -898,6 +902,27 @@ sudo systemctl list-timers | grep certbot
 
 # Should achieve A+ rating with the configuration above
 ```
+
+### Option 2: Cloudflare Origin SSL
+
+If you are using Cloudflare as a CDN/proxy with Origin SSL certificates:
+
+1. Follow the complete setup guide: [CLOUDFLARE_SSL_SETUP.md](CLOUDFLARE_SSL_SETUP.md)
+2. Use the diagnostic tool to verify your configuration:
+
+```bash
+# Make the script executable (if not already)
+chmod +x scripts/diagnose-cloudflare-ssl.sh
+
+# Run diagnostic tool
+sudo ./scripts/diagnose-cloudflare-ssl.sh
+```
+
+**Key differences when using Cloudflare:**
+- Certificate paths point to `/etc/ssl/cloudflare/` instead of `/etc/letsencrypt/`
+- Real visitor IPs are obtained from `CF-Connecting-IP` header
+- SSL mode in Cloudflare dashboard must be set to "Full (strict)"
+- Orange cloud (proxy) must be enabled in Cloudflare DNS settings
 
 ---
 
@@ -1598,7 +1623,73 @@ chmod +x /opt/rtm-explorer/scripts/monitor-exports.sh
 
 ### Common Issues
 
-#### 1. Raptoreumd Not Syncing
+#### 1. 500 Internal Server Error (No Nginx Logs)
+
+If you're getting a 500 error but there are NO logs in nginx `access.log` or `error.log`, this means the error is occurring **before** the request reaches nginx. This is commonly caused by Cloudflare SSL configuration issues.
+
+**Symptoms:**
+- 500 error when accessing https://assets.raptoreum.com
+- No entries in `/var/log/nginx/rtm-explorer-access.log`
+- No entries in `/var/log/nginx/rtm-explorer-error.log`
+- Cloudflare dashboard may show "Error 521: Web Server Is Down"
+
+**Diagnosis:**
+```bash
+# Run the diagnostic tool
+sudo ./scripts/diagnose-cloudflare-ssl.sh
+
+# Check if backend services are running
+pm2 status
+
+# Test backend API directly
+curl http://localhost:4004/api/health
+
+# Test frontend directly
+curl http://localhost:3000
+
+# Check nginx status and test config
+sudo systemctl status nginx
+sudo nginx -t
+```
+
+**Common Causes and Solutions:**
+
+1. **Using Cloudflare Origin SSL with Let's Encrypt configuration**
+   - Problem: Nginx is configured for Let's Encrypt but you're using Cloudflare
+   - Solution: Follow the [Cloudflare SSL Setup Guide](CLOUDFLARE_SSL_SETUP.md)
+
+2. **Cloudflare SSL/TLS mode is incorrect**
+   - Problem: Cloudflare SSL mode is set to "Flexible" or "Full" instead of "Full (strict)"
+   - Solution: 
+     - Login to Cloudflare dashboard
+     - Go to SSL/TLS → Overview
+     - Set encryption mode to "Full (strict)"
+
+3. **Cloudflare Origin Certificate not installed**
+   - Problem: Missing or incorrect Cloudflare origin certificate
+   - Solution:
+     - Generate certificate in Cloudflare dashboard (SSL/TLS → Origin Server)
+     - Install certificate at `/etc/ssl/cloudflare/assets.raptoreum.com.pem`
+     - Install private key at `/etc/ssl/cloudflare/assets.raptoreum.com.key`
+     - Update nginx configuration to use these paths
+
+4. **Nginx not listening on correct ports**
+   - Problem: Nginx not bound to ports 80/443
+   - Solution:
+     ```bash
+     sudo netstat -tlnp | grep nginx
+     sudo systemctl restart nginx
+     ```
+
+5. **Backend services not running**
+   - Problem: API or frontend not started
+   - Solution:
+     ```bash
+     pm2 start ecosystem.config.js
+     pm2 save
+     ```
+
+#### 2. Raptoreumd Not Syncing
 
 ```bash
 # Check if daemon is running
@@ -1616,7 +1707,7 @@ raptoreumd -daemon
 raptoreum-cli getpeerinfo | grep -c "addr"
 ```
 
-#### 2. MongoDB Connection Issues
+#### 3. MongoDB Connection Issues
 
 ```bash
 # Check if MongoDB is running
@@ -1632,7 +1723,7 @@ mongosh "mongodb://rtm_explorer:YOUR_PASSWORD@localhost:27017/rtm_explorer"
 sudo systemctl restart mongod
 ```
 
-#### 3. Redis Connection Issues
+#### 4. Redis Connection Issues
 
 ```bash
 # Check if Redis is running
@@ -1648,7 +1739,7 @@ sudo tail -f /var/log/redis/redis-server.log
 sudo systemctl restart redis-server
 ```
 
-#### 4. PM2 Apps Not Starting
+#### 5. PM2 Apps Not Starting
 
 ```bash
 # Check PM2 logs
@@ -1665,7 +1756,7 @@ pm2 delete rtm-api
 pm2 start ecosystem.config.js --only rtm-api
 ```
 
-#### 5. Nginx 502 Bad Gateway
+#### 6. Nginx 502 Bad Gateway
 
 ```bash
 # Check if backend is running
@@ -1681,7 +1772,7 @@ sudo nginx -t
 sudo systemctl restart nginx
 ```
 
-#### 6. High Memory Usage
+#### 7. High Memory Usage
 
 ```bash
 # Check memory usage
@@ -1699,7 +1790,7 @@ pm2 delete rtm-api
 pm2 start ecosystem.config.js
 ```
 
-#### 7. Disk Space Issues
+#### 8. Disk Space Issues
 
 ```bash
 # Check disk usage
