@@ -194,6 +194,46 @@ function calculateEntropy(data: Uint8Array): number {
 }
 
 /**
+ * Validate if a string looks like a valid IPFS CID.
+ * Valid CIDs are either:
+ * - CIDv0: Base58btc-encoded, starts with "Qm" and is 46 characters long
+ * - CIDv1: Typically starts with "bafy" (base32) or "z" (base58btc), alphanumeric
+ * 
+ * This is a heuristic check - it won't catch all invalid CIDs but will filter
+ * out obviously malformed ones (random characters, special chars, etc.)
+ */
+export function isValidCid(cid: string): boolean {
+  const cleanCid = cid.replace(/^ipfs:\/\//, '')
+  
+  // Must not be empty
+  if (!cleanCid || cleanCid.length === 0) return false
+  
+  // CID should only contain alphanumeric characters (base58/base32)
+  // Allow dots only for extension-based filenames (e.g., "QmXxx.pdf")
+  // But reject CIDs that are just dots/numbers like "1.2.3.4.5..."
+  const basePart = cleanCid.split('.')[0]
+  if (!basePart || basePart.length === 0) return false
+  
+  // The base part (before any extension) must be alphanumeric
+  if (!/^[a-zA-Z0-9]+$/.test(basePart)) return false
+  
+  // CIDv0: starts with "Qm" and is 46 chars
+  if (basePart.startsWith('Qm') && basePart.length === 46) return true
+  
+  // CIDv1: starts with "bafy" (base32) or "b" prefix, typically longer
+  if (basePart.startsWith('bafy') && basePart.length >= 50) return true
+  
+  // CIDv1 with other bases (base58btc starts with 'z')
+  if (basePart.startsWith('z') && basePart.length >= 40) return true
+  
+  // Allow other alphanumeric strings of reasonable length (some CIDs use different encodings)
+  // But reject very short strings that are likely not CIDs
+  if (basePart.length >= 20 && /^[a-zA-Z0-9]+$/.test(basePart)) return true
+  
+  return false
+}
+
+/**
  * Get placeholder image for file type
  */
 export function getPlaceholderImage(fileType: FileTypeInfo, encrypted: boolean = false): string {
