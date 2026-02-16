@@ -34,6 +34,7 @@ export function Header() {
             width={logoWidth}
             height={logoHeight}
             priority
+            style={{ width: `${logoWidth}px`, height: `${logoHeight}px` }}
           />
         </Link>
 
