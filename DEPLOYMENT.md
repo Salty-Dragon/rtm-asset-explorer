@@ -615,7 +615,7 @@ npm run build
 >
 > **For detailed troubleshooting**, see [WEBP_TROUBLESHOOTING.md](WEBP_TROUBLESHOOTING.md).
 
-### 4. Create Directory Structure
+### 5. Create Directory Structure
 
 ```bash
 # Create necessary directories
