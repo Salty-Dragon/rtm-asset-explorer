@@ -234,6 +234,19 @@ router.get('/',
             Asset.find({ assetId: q }).limit(limit)
           );
 
+          // Search assets by partial IPFS hash (for predictive search)
+          // Only search if query starts with common IPFS CID prefixes
+          if (/^(Qm|baf)/i.test(q)) {
+            searchQueries.push(
+              Asset.find({ ipfsHash: { $regex: '^' + escapedQ, $options: 'i' } })
+                .sort({ createdAt: -1 })
+                .limit(limit)
+            );
+          } else {
+            // Push null to maintain array index consistency
+            searchQueries.push(Promise.resolve([]));
+          }
+
           // Search addresses by exact match
           searchQueries.push(
             Address.find({ address: q }).limit(limit)
@@ -265,6 +278,7 @@ router.get('/',
             nameAssets,
             textAssets,
             idAssets,
+            ipfsAssets,
             exactAddresses,
             usernameAddresses,
             exactTxs,
@@ -274,7 +288,7 @@ router.get('/',
 
           // Merge and deduplicate assets, then apply offset
           const assetMap = new Map();
-          for (const a of [...(nameAssets || []), ...(textAssets || []), ...(idAssets || [])]) {
+          for (const a of [...(nameAssets || []), ...(textAssets || []), ...(idAssets || []), ...(ipfsAssets || [])]) {
             const id = a._id.toString();
             if (!assetMap.has(id)) {
               assetMap.set(id, transformAsset(a));
