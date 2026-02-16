@@ -1,10 +1,10 @@
 // File type utilities for detecting and handling different file types
 
 export interface FileTypeInfo {
-  type: 'image' | 'pdf' | 'text' | 'csv' | 'json' | 'xml' | 'unknown'
+  type: 'image' | 'pdf' | 'text' | 'csv' | 'json' | 'xml' | 'video' | 'unknown'
   mimeType?: string
   extension?: string
-  category: 'image' | 'document' | 'data' | 'unknown'
+  category: 'image' | 'document' | 'data' | 'media' | 'unknown'
   canPreview: boolean
   badge?: string
 }
@@ -28,6 +28,14 @@ const FILE_TYPE_MAP: Record<string, FileTypeInfo> = {
   'csv': { type: 'csv', mimeType: 'text/csv', extension: 'csv', category: 'data', canPreview: true, badge: 'CSV' },
   'json': { type: 'json', mimeType: 'application/json', extension: 'json', category: 'data', canPreview: true, badge: 'JSON' },
   'xml': { type: 'xml', mimeType: 'application/xml', extension: 'xml', category: 'data', canPreview: true, badge: 'XML' },
+
+  // Video files
+  'mp4': { type: 'video', mimeType: 'video/mp4', extension: 'mp4', category: 'media', canPreview: true, badge: 'MP4' },
+  'webm': { type: 'video', mimeType: 'video/webm', extension: 'webm', category: 'media', canPreview: true, badge: 'WEBM' },
+  'ogg': { type: 'video', mimeType: 'video/ogg', extension: 'ogg', category: 'media', canPreview: true, badge: 'OGG' },
+  'mov': { type: 'video', mimeType: 'video/quicktime', extension: 'mov', category: 'media', canPreview: true, badge: 'MOV' },
+  'avi': { type: 'video', mimeType: 'video/x-msvideo', extension: 'avi', category: 'media', canPreview: true, badge: 'AVI' },
+  'mkv': { type: 'video', mimeType: 'video/x-matroska', extension: 'mkv', category: 'media', canPreview: true, badge: 'MKV' },
 }
 
 // Map of MIME types to file type info
@@ -44,6 +52,12 @@ const MIME_TYPE_MAP: Record<string, FileTypeInfo> = {
   'application/json': FILE_TYPE_MAP['json'],
   'application/xml': FILE_TYPE_MAP['xml'],
   'text/xml': FILE_TYPE_MAP['xml'],
+  'video/mp4': FILE_TYPE_MAP['mp4'],
+  'video/webm': FILE_TYPE_MAP['webm'],
+  'video/ogg': FILE_TYPE_MAP['ogg'],
+  'video/quicktime': FILE_TYPE_MAP['mov'],
+  'video/x-msvideo': FILE_TYPE_MAP['avi'],
+  'video/x-matroska': FILE_TYPE_MAP['mkv'],
 }
 
 /**
@@ -87,6 +101,16 @@ export function detectFileTypeFromMime(mimeType: string): FileTypeInfo {
       type: 'image',
       mimeType,
       category: 'image',
+      canPreview: true,
+    }
+  }
+
+  // Check if it's a video type we haven't mapped
+  if (mimeType.startsWith('video/')) {
+    return {
+      type: 'video',
+      mimeType,
+      category: 'media',
       canPreview: true,
     }
   }
@@ -185,6 +209,8 @@ export function getPlaceholderImage(fileType: FileTypeInfo, encrypted: boolean =
     case 'json':
     case 'xml':
       return '/placeholder-text.svg'
+    case 'video':
+      return '/placeholder-video.svg'
     case 'unknown':
       return '/placeholder-file.svg'
     default:

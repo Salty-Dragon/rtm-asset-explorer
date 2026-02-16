@@ -16,6 +16,7 @@ interface IPFSImageProps {
   height?: number
   fill?: boolean
   priority?: boolean
+  showActions?: boolean
 }
 
 export function IPFSImage({
@@ -26,6 +27,7 @@ export function IPFSImage({
   height = 400,
   fill = false,
   priority = false,
+  showActions,
 }: IPFSImageProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -72,6 +74,7 @@ export function IPFSImage({
         width={width}
         height={height}
         fill={fill}
+        showActions={showActions}
       />
     )
   }
