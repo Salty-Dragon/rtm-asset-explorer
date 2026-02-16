@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button'
 import { SearchBar } from '@/components/shared/SearchBar'
 import { MobileNav } from './MobileNav'
 import { useState } from 'react'
-import { cn } from '@/lib/utils'
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)

@@ -3,7 +3,6 @@
 import { useAssetSubAssets } from '@/hooks/useApi'
 import { AssetCard } from './AssetCard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { Skeleton } from '@/components/ui/skeleton'
 
 interface SubAssetGridProps {

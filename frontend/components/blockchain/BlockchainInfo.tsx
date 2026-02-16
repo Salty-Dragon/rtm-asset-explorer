@@ -6,7 +6,6 @@ import { useBlockchainInfo } from '@/hooks/useApi'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { ErrorMessage } from '@/components/shared/ErrorMessage'
 import { formatNumber, formatHashRate, formatTimeAgo } from '@/lib/formatters'
-import { cn } from '@/lib/utils'
 
 interface BlockchainInfoProps {
   className?: string

@@ -11,10 +11,8 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu'
 import { useFiltersStore } from '@/store/filtersStore'
-import { cn } from '@/lib/utils'
 
 interface AssetFiltersProps {
   className?: string
@@ -42,7 +40,7 @@ export function AssetFilters({ className }: AssetFiltersProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
-              <DropdownMenuRadioGroup value={type || 'all'} onValueChange={(value: any) => setType(value)}>
+              <DropdownMenuRadioGroup value={type || 'all'} onValueChange={(value: string) => setType(value as 'fungible' | 'nft' | 'all')}>
                 <DropdownMenuRadioItem value="all">All Assets</DropdownMenuRadioItem>
                 <DropdownMenuRadioItem value="nft">NFTs Only</DropdownMenuRadioItem>
                 <DropdownMenuRadioItem value="fungible">Fungible Only</DropdownMenuRadioItem>
@@ -95,7 +93,7 @@ export function AssetFilters({ className }: AssetFiltersProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
-              <DropdownMenuRadioGroup value={sort || 'newest'} onValueChange={(value: any) => setSort(value)}>
+              <DropdownMenuRadioGroup value={sort || 'newest'} onValueChange={(value: string) => setSort(value as 'newest' | 'oldest' | 'name_asc' | 'name_desc')}>
                 <DropdownMenuRadioItem value="newest">Newest First</DropdownMenuRadioItem>
                 <DropdownMenuRadioItem value="oldest">Oldest First</DropdownMenuRadioItem>
                 <DropdownMenuSeparator />

@@ -1,7 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CopyButton } from '@/components/shared/CopyButton'
-import { formatDate } from '@/lib/formatters'
-import { cn } from '@/lib/utils'
 import type { AssetMetadata as AssetMetadataType } from '@/lib/types'
 
 interface AssetMetadataProps {

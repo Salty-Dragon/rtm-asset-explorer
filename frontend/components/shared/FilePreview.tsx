@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { FileText, Download, ExternalLink } from 'lucide-react'
+import { Download, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
@@ -50,80 +50,81 @@ export function FilePreview({
     }
 
     // Fetch file to check type and encryption
-    fetchFilePreview()
-  }, [cleanCid, gatewayIndex])
-
-  const fetchFilePreview = async () => {
-    try {
-      // First, make a HEAD request to get content type and size without downloading the file
-      const response = await fetch(fileUrl, {
-        method: 'HEAD',
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch file')
-      }
-
-      // Get content type and size from headers
-      const contentType = response.headers.get('content-type')
-      const contentLength = response.headers.get('content-length')
-
-      if (contentLength) {
-        setFileSize(parseInt(contentLength, 10))
-      }
-
-      // If we have a content type, use it to refine file type detection
-      if (contentType && fileType?.type === 'unknown') {
-        const { detectFileTypeFromMime } = await import('@/lib/fileTypes')
-        const refinedType = detectFileTypeFromMime(contentType)
-        setFileType(refinedType)
-      }
-
-      // For text-based files, fetch content to show preview
-      // Use Range request to fetch only first 1KB for preview and encryption check
-      if (fileType?.canPreview && ['text', 'csv', 'json', 'xml'].includes(fileType.type)) {
-        const fullResponse = await fetch(fileUrl, {
-          headers: {
-            'Range': 'bytes=0-1023' // Fetch first 1KB
-          }
+    const fetchFilePreview = async () => {
+      try {
+        // First, make a HEAD request to get content type and size without downloading the file
+        const response = await fetch(fileUrl, {
+          method: 'HEAD',
         })
-        const text = await fullResponse.text()
 
-        // Check if encrypted
-        if (isEncrypted(text)) {
-          setEncrypted(true)
-        } else {
-          // Show first 500 characters as preview
-          setPreview(text.slice(0, 500))
+        if (!response.ok) {
+          throw new Error('Failed to fetch file')
         }
-      } else if (fileType?.type === 'pdf') {
-        // For PDFs, check if encrypted by reading first 2KB (enough for PDF header and encryption info)
-        const fullResponse = await fetch(fileUrl, {
-          headers: {
-            'Range': 'bytes=0-2047' // Fetch first 2KB which includes PDF header
+
+        // Get content type and size from headers
+        const contentType = response.headers.get('content-type')
+        const contentLength = response.headers.get('content-length')
+
+        if (contentLength) {
+          setFileSize(parseInt(contentLength, 10))
+        }
+
+        // If we have a content type, use it to refine file type detection
+        if (contentType && detectedType.type === 'unknown') {
+          const { detectFileTypeFromMime } = await import('@/lib/fileTypes')
+          const refinedType = detectFileTypeFromMime(contentType)
+          setFileType(refinedType)
+        }
+
+        // For text-based files, fetch content to show preview
+        // Use Range request to fetch only first 1KB for preview and encryption check
+        if (detectedType.canPreview && ['text', 'csv', 'json', 'xml'].includes(detectedType.type)) {
+          const fullResponse = await fetch(fileUrl, {
+            headers: {
+              'Range': 'bytes=0-1023' // Fetch first 1KB
+            }
+          })
+          const text = await fullResponse.text()
+
+          // Check if encrypted
+          if (isEncrypted(text)) {
+            setEncrypted(true)
+          } else {
+            // Show first 500 characters as preview
+            setPreview(text.slice(0, 500))
           }
-        })
-        const buffer = await fullResponse.arrayBuffer()
-        const bytes = new Uint8Array(buffer)
+        } else if (detectedType.type === 'pdf') {
+          // For PDFs, check if encrypted by reading first 2KB (enough for PDF header and encryption info)
+          const fullResponse = await fetch(fileUrl, {
+            headers: {
+              'Range': 'bytes=0-2047' // Fetch first 2KB which includes PDF header
+            }
+          })
+          const buffer = await fullResponse.arrayBuffer()
+          const bytes = new Uint8Array(buffer)
 
-        if (isEncrypted(bytes)) {
-          setEncrypted(true)
+          if (isEncrypted(bytes)) {
+            setEncrypted(true)
+          }
         }
-      }
 
-      setIsLoading(false)
-    } catch (err) {
-      console.error('Error fetching file preview:', err)
-      
-      // Try next gateway
-      if (gatewayIndex < IPFS_GATEWAYS.length - 1) {
-        setGatewayIndex(gatewayIndex + 1)
-      } else {
-        setError(true)
         setIsLoading(false)
+      } catch (err) {
+        console.error('Error fetching file preview:', err)
+        
+        // Try next gateway
+        if (gatewayIndex < IPFS_GATEWAYS.length - 1) {
+          setGatewayIndex(gatewayIndex + 1)
+        } else {
+          setError(true)
+          setIsLoading(false)
+        }
       }
     }
-  }
+
+    fetchFilePreview()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cleanCid, gatewayIndex])
 
   const handleImageError = () => {
     // Try next gateway

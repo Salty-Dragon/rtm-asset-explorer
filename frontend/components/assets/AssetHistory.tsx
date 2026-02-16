@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { ArrowRight, ExternalLink } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { CopyButton } from '@/components/shared/CopyButton'
 import { TimeAgo } from '@/components/shared/TimeAgo'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
@@ -12,7 +11,6 @@ import { Pagination } from '@/components/shared/Pagination'
 import { useAssetTransfers } from '@/hooks/useApi'
 import { formatAddress, formatHash } from '@/lib/utils'
 import { useState } from 'react'
-import { cn } from '@/lib/utils'
 
 interface AssetHistoryProps {
   assetId: string
