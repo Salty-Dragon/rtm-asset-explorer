@@ -217,18 +217,14 @@ export function isValidCid(cid: string): boolean {
   // The base part (before any extension) must be alphanumeric
   if (!/^[a-zA-Z0-9]+$/.test(basePart)) return false
   
-  // CIDv0: starts with "Qm" and is 46 chars
+  // CIDv0: starts with "Qm" and is 46 chars (SHA-256 multihash in base58btc)
   if (basePart.startsWith('Qm') && basePart.length === 46) return true
   
-  // CIDv1: starts with "bafy" (base32) or "b" prefix, typically longer
+  // CIDv1 base32 (starts with "bafy"): minimum ~59 chars for SHA-256 content
   if (basePart.startsWith('bafy') && basePart.length >= 50) return true
   
-  // CIDv1 with other bases (base58btc starts with 'z')
+  // CIDv1 base58btc (starts with "z"): minimum ~49 chars for SHA-256 content
   if (basePart.startsWith('z') && basePart.length >= 40) return true
-  
-  // Allow other alphanumeric strings of reasonable length (some CIDs use different encodings)
-  // But reject very short strings that are likely not CIDs
-  if (basePart.length >= 20 && /^[a-zA-Z0-9]+$/.test(basePart)) return true
   
   return false
 }
