@@ -4,7 +4,14 @@
 
 After PR #18, all backend API endpoints use the `/api/v1` prefix. After PR #25, the frontend Next.js application also has API routes (e.g., `/api/auth` for password protection). Your nginx configuration needs to properly route:
 - `/api/v1/*` requests to the backend API server
+- `/ipfs/*` requests to the local IPFS gateway (required for asset images)
 - Other `/api/*` requests (e.g., `/api/auth`) to the Next.js frontend server
+
+> **⚠️ CRITICAL: IPFS Proxy Required**
+>
+> The nginx configuration **MUST include** the IPFS proxy section (`location /ipfs/`) or asset images will fail to load and display "no image" placeholders. 
+>
+> If you're experiencing issues with images not loading, see [IPFS_TROUBLESHOOTING.md](IPFS_TROUBLESHOOTING.md).
 
 ## Important: Configuration Updated for Frontend API Routes ✅
 
@@ -56,6 +63,25 @@ Next.js route: app/api/auth/route.ts
          ↓
 Response: {"success": true}
 ```
+
+### Request Flow for IPFS Gateway
+```
+Browser Request: Load asset image
+         ↓
+Next.js Image: /_next/image?url=https://assets.raptoreum.com/ipfs/[hash]
+         ↓
+Next.js Server: Fetches https://assets.raptoreum.com/ipfs/[hash]
+         ↓
+Nginx location /ipfs/: Matches ✓
+         ↓
+proxy_pass http://127.0.0.1:8080/ipfs/;
+         ↓
+Local IPFS Gateway: Returns image content
+         ↓
+Next.js: Optimizes and serves image to browser
+```
+
+> **Important**: Without the `/ipfs/` location block, Next.js cannot fetch images from IPFS, resulting in "no image" placeholders on the assets page.
 
 ## Complete Working Configuration
 
