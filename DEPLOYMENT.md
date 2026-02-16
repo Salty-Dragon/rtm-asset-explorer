@@ -577,6 +577,16 @@ npm run build
 > # Should show build output including standalone/ directory
 > ```
 
+> **📦 Image Optimization with Sharp:**
+> The application uses `sharp` for Next.js image optimization, which is required for WebP support and other image formats. The `sharp` package includes native dependencies that are automatically compiled during `npm install`.
+>
+> If you encounter issues with image loading (e.g., "The requested resource isn't a valid image"), ensure:
+> - `sharp` is installed: Check with `npm list sharp` in the frontend directory
+> - Native dependencies are properly compiled (may require `build-essential`, `python3` on Linux)
+> - If images still don't load after deployment, try rebuilding: `npm rebuild sharp`
+>
+> For more information, see [Next.js Image Optimization documentation](https://nextjs.org/docs/app/building-your-application/optimizing/images).
+
 ### 4. Create Directory Structure
 
 ```bash
