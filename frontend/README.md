@@ -84,7 +84,19 @@ NEXT_PUBLIC_IPFS_GATEWAY_URL=https://assets.raptoreum.com/ipfs
 NEXT_PUBLIC_IPFS_FALLBACK_URL=https://ipfs.io/ipfs
 NEXT_PUBLIC_SITE_URL=https://assets.raptoreum.com
 PORT=3000  # Change this to run on a different port (e.g., PORT=3003)
+
+# Logo Configuration (optional)
+NEXT_PUBLIC_LOGO_PATH=rtm-logo.webp  # Path relative to /public directory
+NEXT_PUBLIC_LOGO_WIDTH=32             # Logo width in pixels
+NEXT_PUBLIC_LOGO_HEIGHT=32            # Logo height in pixels
+NEXT_PUBLIC_LOGO_ALT=Raptoreum Logo   # Alt text for accessibility
 ```
+
+**Logo Configuration Notes:**
+- The logo file must be placed in the `/public` directory
+- Supported formats: `.svg`, `.png`, `.webp`, `.jpg`, `.jpeg`
+- Recommended size: 32x32 to 64x64 pixels for optimal display in the header
+- To change the logo, simply update `NEXT_PUBLIC_LOGO_PATH` to point to your new logo file
 
 ### Development
 
