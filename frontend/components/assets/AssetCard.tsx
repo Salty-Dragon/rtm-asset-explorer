@@ -8,6 +8,7 @@ import { IPFSImage } from '@/components/shared/IPFSImage'
 import { formatAddress } from '@/lib/utils'
 import { formatNumber } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
+import { detectFileType } from '@/lib/fileTypes'
 import type { Asset } from '@/lib/types'
 
 interface AssetCardProps {
@@ -16,6 +17,11 @@ interface AssetCardProps {
 }
 
 export function AssetCard({ asset, className }: AssetCardProps) {
+  // Detect file type from IPFS hash if available
+  const fileType = asset.hasIpfs && asset.ipfsHash 
+    ? detectFileType(asset.ipfsHash)
+    : null
+
   return (
     <Link href={`/assets/${asset.assetId}`}>
       <Card
@@ -40,10 +46,16 @@ export function AssetCard({ asset, className }: AssetCardProps) {
           )}
 
           {/* Type Badge */}
-          <div className="absolute left-2 top-2">
+          <div className="absolute left-2 top-2 flex gap-1">
             <Badge variant={asset.type === 'nft' ? 'default' : 'secondary'}>
               {asset.type === 'nft' ? 'NFT' : 'Fungible'}
             </Badge>
+            {/* File Type Badge */}
+            {fileType?.badge && (
+              <Badge variant="outline" className="bg-background/80 backdrop-blur-sm">
+                {fileType.badge}
+              </Badge>
+            )}
           </div>
 
           {/* IPFS Badge */}

@@ -1,0 +1,10 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="200" fill="#2a2a2a"/>
+  <path d="M70 50H110L140 80V150H70V50Z" stroke="#10b981" stroke-width="3" fill="none" opacity="0.5"/>
+  <path d="M110 50V80H140" stroke="#10b981" stroke-width="3" fill="none" opacity="0.5"/>
+  <line x1="85" y1="95" x2="125" y2="95" stroke="#10b981" stroke-width="2" opacity="0.4"/>
+  <line x1="85" y1="105" x2="125" y2="105" stroke="#10b981" stroke-width="2" opacity="0.4"/>
+  <line x1="85" y1="115" x2="125" y2="115" stroke="#10b981" stroke-width="2" opacity="0.4"/>
+  <line x1="85" y1="125" x2="115" y2="125" stroke="#10b981" stroke-width="2" opacity="0.4"/>
+  <text x="100" y="175" font-family="monospace" font-size="12" fill="#a0a0a0" text-anchor="middle">Text File</text>
+</svg>
