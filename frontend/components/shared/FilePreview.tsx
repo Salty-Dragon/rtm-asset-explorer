@@ -16,6 +16,7 @@ interface FilePreviewProps {
   width?: number
   height?: number
   fill?: boolean
+  showActions?: boolean
 }
 
 export function FilePreview({
@@ -25,6 +26,7 @@ export function FilePreview({
   width = 400,
   height = 400,
   fill = false,
+  showActions = true,
 }: FilePreviewProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -141,6 +143,15 @@ export function FilePreview({
     setError(false)
   }
 
+  const handleVideoLoad = () => {
+    setIsLoading(false)
+    setError(false)
+  }
+
+  const handlePdfLoad = () => {
+    setIsLoading(false)
+  }
+
   // If it's an image, render as image
   if (fileType?.type === 'image' && !error) {
     return (
@@ -168,6 +179,67 @@ export function FilePreview({
             className
           )}
         />
+      </div>
+    )
+  }
+
+  // If it's a video, render a video player
+  if (fileType?.type === 'video' && !error) {
+    return (
+      <div
+        className={cn(
+          'relative flex items-center justify-center bg-muted',
+          fill ? 'absolute inset-0' : '',
+          className
+        )}
+        style={!fill ? { width, height } : undefined}
+      >
+        {isLoading && (
+          <Skeleton
+            className={cn(
+              'absolute inset-0',
+              !fill && 'w-full h-full'
+            )}
+            style={!fill ? { width, height } : undefined}
+          />
+        )}
+        <video
+          src={fileUrl}
+          controls
+          muted
+          preload="metadata"
+          onLoadedData={handleVideoLoad}
+          onError={handleImageError}
+          className={cn(
+            'max-w-full max-h-full object-contain transition-opacity duration-300',
+            isLoading ? 'opacity-0' : 'opacity-100',
+          )}
+        />
+      </div>
+    )
+  }
+
+  // If it's a PDF, render an iframe preview
+  if (fileType?.type === 'pdf' && !error && !encrypted) {
+    return (
+      <div
+        className={cn(
+          'relative flex flex-col bg-muted',
+          fill ? 'absolute inset-0' : '',
+          className
+        )}
+        style={!fill ? { width, height } : undefined}
+      >
+        {isLoading ? (
+          <Skeleton className="w-full h-full" />
+        ) : (
+          <iframe
+            src={fileUrl}
+            title={alt}
+            className="w-full h-full border-0"
+            onLoad={handlePdfLoad}
+          />
+        )}
       </div>
     )
   }
@@ -228,7 +300,7 @@ export function FilePreview({
           )}
 
           {/* Action Buttons */}
-          {!encrypted && fileType && (
+          {showActions && !encrypted && fileType && (
             <div className="flex gap-2">
               {fileType.type === 'pdf' && (
                 <Button size="sm" variant="outline" asChild>

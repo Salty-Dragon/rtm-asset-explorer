@@ -37,6 +37,7 @@ export function AssetCard({ asset, className }: AssetCardProps) {
               cid={asset.ipfsHash}
               alt={asset.name}
               fill
+              showActions={false}
               className="object-cover transition-transform duration-300 group-hover:scale-110"
             />
           ) : (
