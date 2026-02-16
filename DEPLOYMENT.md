@@ -708,6 +708,18 @@ pm2 set pm2-logrotate:dateFormat YYYY-MM-DD_HH-mm-ss
 ## Nginx Configuration
 
 > **Important**: For detailed nginx configuration information including `/api/v1` endpoint handling and troubleshooting, see [NGINX_CONFIGURATION.md](NGINX_CONFIGURATION.md).
+>
+> **⚠️ CRITICAL: Use the Complete Configuration File**
+>
+> The repository includes a complete, up-to-date nginx configuration at `nginx/rtm-asset-explorer.conf` that includes:
+> - API v1 routing
+> - **IPFS gateway proxy** (required for asset images)
+> - Frontend API routes
+> - Proper security headers
+> - Caching configuration
+> - Rate limiting
+>
+> It is **strongly recommended** to use that file instead of manually creating a configuration. See below for instructions.
 
 ### 1. Install Nginx
 
@@ -719,16 +731,56 @@ sudo systemctl start nginx
 sudo systemctl enable nginx
 ```
 
-### 2. Create Nginx Configuration
+### 2. Deploy Complete Nginx Configuration
+
+**Option A: Use the Complete Config from Repository (Recommended)**
 
 ```bash
+# Copy the complete configuration from repository
+sudo cp /opt/rtm-explorer/nginx/rtm-asset-explorer.conf /etc/nginx/sites-available/rtm-explorer
+
+# Edit configuration for your environment
+# Update: server_name, SSL certificate paths, ports if different
 sudo nano /etc/nginx/sites-available/rtm-explorer
+
+# IMPORTANT: Add the rate limiting zones to nginx.conf http block
+# (These directives must be in the http block, not in the server block)
+sudo nano /etc/nginx/nginx.conf
+
+# Add inside the http {} block:
+#   limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
+#   limit_req_zone $binary_remote_addr zone=frontend_limit:10m rate=30r/s;
+#   
+#   map $http_upgrade $connection_upgrade {
+#       default upgrade;
+#       ''      '';
+#   }
 ```
 
+**Option B: Manual Configuration (Not Recommended - May Miss IPFS Proxy)**
+
+If you must create the configuration manually, ensure you include ALL sections from `nginx/rtm-asset-explorer.conf`, especially:
+- The `/ipfs/` location block for IPFS gateway proxying
+- The `/api/v1/` location block for backend API
+- Proper upstream definitions
+
+**⚠️ Common Issue**: Missing the IPFS proxy configuration will cause asset images to show "no image" placeholders. See [IPFS_TROUBLESHOOTING.md](IPFS_TROUBLESHOOTING.md) if you encounter this issue.
+
+<details>
+<summary>Click to view minimal nginx configuration (incomplete - missing IPFS and other features)</summary>
+
+> **Warning**: This is a minimal example for reference only. Use the complete config from `nginx/rtm-asset-explorer.conf` instead.
+
 ```nginx
-# Rate limiting
+# Rate limiting (add to /etc/nginx/nginx.conf http block)
 limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
 limit_req_zone $binary_remote_addr zone=frontend_limit:10m rate=30r/s;
+
+# Connection upgrade mapping (add to /etc/nginx/nginx.conf http block)
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      '';
+}
 
 # Upstream servers
 upstream api_backend {
@@ -738,7 +790,7 @@ upstream api_backend {
 }
 
 upstream frontend_backend {
-    server 127.0.0.1:3000 max_fails=3 fail_timeout=30s;
+    server 127.0.0.1:3003 max_fails=3 fail_timeout=30s;
     keepalive 64;
 }
 
@@ -763,101 +815,51 @@ server {
     listen [::]:443 ssl http2;
     server_name assets.raptoreum.com;
 
-    # SSL Configuration (will be added by Certbot)
-    # ssl_certificate /etc/letsencrypt/live/assets.raptoreum.com/fullchain.pem;
-    # ssl_certificate_key /etc/letsencrypt/live/assets.raptoreum.com/privkey.pem;
-
-    # SSL Settings
+    # SSL Configuration
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_prefer_server_ciphers on;
-    ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384;
     ssl_session_timeout 10m;
     ssl_session_cache shared:SSL:10m;
-    ssl_session_tickets off;
-
-    # Security Headers
-    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
-    add_header X-Frame-Options "DENY" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-XSS-Protection "1; mode=block" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 
     # Logging
     access_log /var/log/nginx/rtm-explorer-access.log;
     error_log /var/log/nginx/rtm-explorer-error.log;
 
-    # Compression
-    gzip on;
-    gzip_vary on;
-    gzip_min_length 1024;
-    gzip_types text/plain text/css text/xml text/javascript application/javascript application/json application/xml+rss application/rss+xml font/truetype font/opentype application/vnd.ms-fontobject image/svg+xml;
-
-    # API Routes
-    # Note: This handles ALL /api/* requests including /api/v1/*
-    # The proxy_pass without trailing slash preserves the full path
-    location /api/ {
+    # Backend API Routes - /api/v1/*
+    location /api/v1/ {
         limit_req zone=api_limit burst=20 nodelay;
-        
         proxy_pass http://api_backend;
         proxy_http_version 1.1;
-        
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
-        proxy_cache_bypass $http_upgrade;
-        proxy_buffering off;
-        proxy_request_buffering off;
-        
-        # Timeouts
-        proxy_connect_timeout 60s;
-        proxy_send_timeout 60s;
-        proxy_read_timeout 60s;
+    }
+    
+    # ⚠️ CRITICAL: IPFS Gateway Proxy - REQUIRED FOR ASSET IMAGES
+    location /ipfs/ {
+        limit_req zone=api_limit burst=20 nodelay;
+        proxy_pass http://127.0.0.1:8080/ipfs/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_cache_valid 200 1d;
+        add_header Cache-Control "public, max-age=86400";
     }
 
-    # Frontend Routes
+    # Frontend Routes (catch-all)
     location / {
         limit_req zone=frontend_limit burst=50 nodelay;
-        
         proxy_pass http://frontend_backend;
         proxy_http_version 1.1;
-        
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        
-        proxy_cache_bypass $http_upgrade;
-        
-        # Timeouts
-        proxy_connect_timeout 30s;
-        proxy_send_timeout 30s;
-        proxy_read_timeout 30s;
-    }
-
-    # Static assets (if serving directly)
-    location /_next/static {
-        proxy_pass http://frontend_backend;
-        proxy_cache_valid 200 365d;
-        add_header Cache-Control "public, immutable";
-    }
-
-    location /favicon.ico {
-        proxy_pass http://frontend_backend;
-        access_log off;
-    }
-
-    location /robots.txt {
-        proxy_pass http://frontend_backend;
-        access_log off;
     }
 }
 ```
+
+> **Note**: This minimal config is missing many important features. Use `nginx/rtm-asset-explorer.conf` for production.
+
+</details>
 
 ### 3. Enable Site Configuration
 
