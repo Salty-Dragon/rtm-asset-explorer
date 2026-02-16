@@ -243,7 +243,7 @@ router.get('/',
                 .limit(limit)
             );
           } else {
-            // Push null to maintain array index consistency
+            // Push empty array promise to maintain array index consistency
             searchQueries.push(Promise.resolve([]));
           }
 
