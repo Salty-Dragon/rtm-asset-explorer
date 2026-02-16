@@ -12,16 +12,22 @@ import { cn } from '@/lib/utils'
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
+  // Logo configuration from environment variables
+  const logoPath = process.env.NEXT_PUBLIC_LOGO_PATH || 'rtm-logo.webp'
+  const logoWidth = parseInt(process.env.NEXT_PUBLIC_LOGO_WIDTH || '32', 10)
+  const logoHeight = parseInt(process.env.NEXT_PUBLIC_LOGO_HEIGHT || '32', 10)
+  const logoAlt = process.env.NEXT_PUBLIC_LOGO_ALT || 'Logo'
+
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
         {/* Logo and Site Title */}
         <Link href="/" className="flex items-center gap-3">
           <Image
-            src="/logo.svg"
-            alt="Raptoreum Logo"
-            width={32}
-            height={32}
+            src={`/${logoPath}`}
+            alt={logoAlt}
+            width={logoWidth}
+            height={logoHeight}
             priority
           />
           <span className="hidden font-semibold sm:inline-block">
