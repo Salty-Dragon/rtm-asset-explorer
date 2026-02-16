@@ -563,7 +563,21 @@ cd /opt/rtm-explorer/backend
 npm install --production
 ```
 
-### 3. Install Frontend Dependencies
+### 3. Install System Dependencies for Image Processing
+
+Before installing Node.js dependencies, install system libraries required by sharp (used for image optimization):
+
+```bash
+# Install required system libraries
+sudo apt-get update
+sudo apt-get install -y \
+  build-essential \
+  python3 \
+  libvips-dev \
+  pkg-config
+```
+
+### 4. Install Frontend Dependencies
 
 ```bash
 cd /opt/rtm-explorer/frontend
@@ -577,7 +591,31 @@ npm run build
 > # Should show build output including standalone/ directory
 > ```
 
-### 4. Create Directory Structure
+> **📦 Critical: Image Optimization with Sharp**
+>
+> The application uses `sharp` for Next.js image optimization, which is **required for WebP support** and other image formats. The `sharp` package includes native binaries that **must be compiled on the production server** where the app will run.
+>
+> **Important Notes:**
+> - ✅ Always run `npm install` on the production server (not locally and then copied)
+> - ✅ System dependencies (listed above) must be installed BEFORE `npm install`
+> - ✅ Sharp will be automatically compiled during `npm install`
+> - ✅ Verify sharp works: `npm list sharp` should show it's installed
+>
+> **If WebP images don't display after deployment:**
+> - Logo appears invisible or shows "image type not supported"
+> - Server logs show: "The requested resource isn't a valid image"
+>
+> **Fix:** Rebuild sharp on the production server:
+> ```bash
+> cd /opt/rtm-explorer/frontend
+> npm rebuild sharp
+> npm run build
+> pm2 restart rtm-frontend
+> ```
+>
+> **For detailed troubleshooting**, see [WEBP_TROUBLESHOOTING.md](WEBP_TROUBLESHOOTING.md).
+
+### 5. Create Directory Structure
 
 ```bash
 # Create necessary directories
