@@ -151,6 +151,7 @@ Comprehensive documentation is available for all aspects of the project:
 - **[API.md](API.md)** - Full API documentation with endpoints, parameters, responses, and code examples (JavaScript, Python, cURL)
 - **[NGINX_CONFIGURATION.md](NGINX_CONFIGURATION.md)** - Nginx configuration guide for /api/v1 endpoints with troubleshooting
 - **[IPFS_TROUBLESHOOTING.md](IPFS_TROUBLESHOOTING.md)** - IPFS integration troubleshooting guide for asset image loading issues
+- **[WEBP_TROUBLESHOOTING.md](WEBP_TROUBLESHOOTING.md)** - WebP image support troubleshooting (logo not displaying, image optimization issues)
 - **[EXPORTS.md](EXPORTS.md)** - Export system documentation with tokenized exports, payment processing, and blockchain verification
 - **[FRONTEND.md](FRONTEND.md)** - Frontend specifications including pages, components, design system, state management, and performance optimization
 - **[SECURITY.md](SECURITY.md)** - Security guidelines covering input validation, authentication, rate limiting, audit logging, and incident response
