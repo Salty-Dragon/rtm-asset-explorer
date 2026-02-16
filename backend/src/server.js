@@ -23,6 +23,7 @@ import statsRoutes from './routes/stats.js';
 import exportRoutes from './routes/export.js';
 import syncRoutes from './routes/sync.js';
 import blockchainRoutes from './routes/blockchain.js';
+import searchRoutes from './routes/search.js';
 
 const app = express();
 const PORT = process.env.PORT || 4004;
@@ -81,6 +82,7 @@ app.use('/api/v1/stats', statsRoutes);
 app.use('/api/v1/blockchain', blockchainRoutes);
 app.use('/api/v1/export', exportRoutes);
 app.use('/api/v1/sync', syncRoutes);
+app.use('/api/v1/search', searchRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -98,6 +100,7 @@ app.get('/', (req, res) => {
         stats: '/api/v1/stats',
         blockchain: '/api/v1/blockchain/info',
         sync: '/api/v1/sync/status',
+        search: '/api/v1/search?q=<query>',
         futures: '/api/v1/sync/futures/locked'
       }
     },
