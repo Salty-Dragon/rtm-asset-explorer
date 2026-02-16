@@ -64,7 +64,7 @@ export function ExportDialog({
         onExportCreated(result.data.exportId)
       }
       onClose()
-    } catch (error) {
+    } catch {
       // Error is handled by mutation
     }
   }
@@ -83,7 +83,7 @@ export function ExportDialog({
           {/* Export Type Selection */}
           <div className="space-y-3">
             <Label>Export Type</Label>
-            <RadioGroup value={exportType} onValueChange={(value: any) => setExportType(value)}>
+            <RadioGroup value={exportType} onValueChange={(value: string) => setExportType(value as 'standard' | 'provenance' | 'legal')}>
               <div className="flex items-start space-x-3 rounded-lg border p-4">
                 <RadioGroupItem value="standard" id="standard" />
                 <div className="flex-1">

@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
-import { FileText, Download, ExternalLink } from 'lucide-react'
+import { Download, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
@@ -38,22 +38,7 @@ export function FilePreview({
   const cleanCid = cid.replace(/^ipfs:\/\//, '')
   const fileUrl = `${IPFS_GATEWAYS[gatewayIndex]}/${cleanCid}`
 
-  useEffect(() => {
-    // Detect file type from CID
-    const detectedType = detectFileType(cleanCid)
-    setFileType(detectedType)
-
-    // If it's a known image type, don't fetch content
-    if (detectedType.type === 'image') {
-      setIsLoading(false)
-      return
-    }
-
-    // Fetch file to check type and encryption
-    fetchFilePreview()
-  }, [cleanCid, gatewayIndex])
-
-  const fetchFilePreview = async () => {
+  const fetchFilePreview = useCallback(async () => {
     try {
       // First, make a HEAD request to get content type and size without downloading the file
       const response = await fetch(fileUrl, {
@@ -123,7 +108,22 @@ export function FilePreview({
         setIsLoading(false)
       }
     }
-  }
+  }, [fileUrl, gatewayIndex, fileType])
+
+  useEffect(() => {
+    // Detect file type from CID
+    const detectedType = detectFileType(cleanCid)
+    setFileType(detectedType)
+
+    // If it's a known image type, don't fetch content
+    if (detectedType.type === 'image') {
+      setIsLoading(false)
+      return
+    }
+
+    // Fetch file to check type and encryption
+    fetchFilePreview()
+  }, [cleanCid, fetchFilePreview])
 
   const handleImageError = () => {
     // Try next gateway

@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
-import { Copy, Clock } from 'lucide-react'
+import { Clock } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CopyButton } from '@/components/shared/CopyButton'
 import { formatUSD } from '@/lib/formatters'
-import { cn } from '@/lib/utils'
 
 interface PaymentInfoProps {
   address: string

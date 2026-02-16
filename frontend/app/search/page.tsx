@@ -6,11 +6,9 @@ import { useSearch } from '@/hooks/useApi'
 import { AssetCard } from '@/components/assets/AssetCard'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { EmptyState } from '@/components/shared/EmptyState'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import Link from 'next/link'
-import { formatAddress } from '@/lib/utils'
 import { FileImage, User, Hash, Layers } from 'lucide-react'
 
 function SearchPageContent() {

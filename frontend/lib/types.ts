@@ -10,7 +10,7 @@ export interface ApiResponse<T> {
   error?: {
     code: string
     message: string
-    details?: any
+    details?: unknown
   }
   meta?: {
     timestamp: string
@@ -44,8 +44,8 @@ export interface AssetMetadata {
   external_url?: string
   animation_url?: string
   attributes?: AssetAttribute[]
-  properties?: Record<string, any>
-  [key: string]: any
+  properties?: Record<string, unknown>
+  [key: string]: unknown
 }
 
 export interface AssetAttribute {
@@ -367,5 +367,5 @@ export interface PaginationParams {
 export interface ApiQueryParams extends PaginationParams {
   sort?: string
   order?: 'asc' | 'desc'
-  [key: string]: any
+  [key: string]: unknown
 }
