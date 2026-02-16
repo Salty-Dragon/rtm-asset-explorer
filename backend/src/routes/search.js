@@ -182,13 +182,17 @@ router.get('/',
         }
 
         case 'txid': {
-          // Could be txid or block hash – try both
-          const [tx, block] = await Promise.all([
+          // Could be txid, block hash, or asset creation txid – try all
+          const [tx, block, assetsByTxid] = await Promise.all([
             Transaction.findOne({ txid: q }),
             Block.findOne({ hash: q }),
+            Asset.find({ createdTxid: q }).limit(limit),
           ]);
           if (tx) transactions = [transformTransaction(tx)];
           if (block) blocks = [transformBlock(block)];
+          if (assetsByTxid && assetsByTxid.length > 0) {
+            assets = assetsByTxid.map(transformAsset);
+          }
           break;
         }
 
