@@ -6,44 +6,9 @@ import blockchainService from '../services/blockchain.js';
 import { validate, schemas } from '../middleware/validation.js';
 import { cacheMiddleware } from '../middleware/cache.js';
 import { logger } from '../utils/logger.js';
+import { transformAsset, transformAssetTransfer } from '../utils/transforms.js';
 
 const router = express.Router();
-
-/**
- * Transform a database asset document to the frontend-expected format.
- * Maps field names from the DB schema to the frontend Asset type.
- */
-function transformAsset(asset) {
-  const obj = asset.toObject ? asset.toObject() : { ...asset };
-
-  // Ensure metadata.attributes is an array
-  if (obj.metadata?.attributes && !Array.isArray(obj.metadata.attributes)) {
-    obj.metadata.attributes = Object.values(obj.metadata.attributes);
-  }
-
-  return {
-    _id: obj._id,
-    assetId: obj.assetId,
-    name: obj.name,
-    type: obj.type === 'non-fungible' ? 'nft' : 'fungible',
-    amount: obj.totalSupply ?? 0,
-    units: obj.decimals ?? 0,
-    reissuable: obj.updatable ?? false,
-    hasIpfs: !!obj.ipfsHash,
-    ipfsHash: obj.ipfsHash || undefined,
-    txid: obj.createdTxid,
-    height: obj.createdBlockHeight,
-    blockTime: obj.createdAt ? new Date(obj.createdAt).getTime() / 1000 : undefined,
-    owner: obj.creator,
-    metadata: obj.metadata || undefined,
-    transferCount: obj.transferCount ?? 0,
-    views: obj.views ?? 0,
-    isSubAsset: obj.isSubAsset ?? false,
-    parentAssetName: obj.parentAssetName || undefined,
-    createdAt: obj.createdAt,
-    updatedAt: obj.updatedAt,
-  };
-}
 
 // GET /api/assets - List assets
 router.get('/',
@@ -127,17 +92,13 @@ router.get('/:assetId',
             });
           }
 
-          // Ensure metadata.attributes is an array, not an object
-          // When fetched from blockchain RPC, attributes may be returned as an object with numeric keys
-          if (assetData?.metadata?.attributes && !Array.isArray(assetData.metadata.attributes)) {
-            logger.warn(`Converting non-array attributes to array for asset ${assetId}`);
-            // Convert object to array (handles objects with numeric or string keys)
-            assetData.metadata.attributes = Object.values(assetData.metadata.attributes);
-          }
+          // Transform blockchain data to match frontend expectations
+          // This ensures field names are consistent regardless of data source
+          const transformedAsset = transformAsset(assetData);
 
           return res.json({
             success: true,
-            data: assetData,
+            data: transformedAsset,
             meta: {
               timestamp: new Date().toISOString(),
               requestId: req.id || 'req_' + Date.now(),
@@ -269,7 +230,7 @@ router.get('/:assetId/transfers',
 
       res.json({
         success: true,
-        data: transfers,
+        data: transfers.map(transformAssetTransfer),
         pagination: {
           page,
           limit,
@@ -314,7 +275,7 @@ router.get('/name/:assetName/transfers',
 
       res.json({
         success: true,
-        data: transfers,
+        data: transfers.map(transformAssetTransfer),
         pagination: {
           page,
           limit,

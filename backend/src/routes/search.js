@@ -7,6 +7,7 @@ import Block from '../models/Block.js';
 import { validate } from '../middleware/validation.js';
 import { cacheMiddleware } from '../middleware/cache.js';
 import { logger } from '../utils/logger.js';
+import { transformAsset } from '../utils/transforms.js';
 
 const router = express.Router();
 
@@ -33,40 +34,6 @@ function detectQueryType(query) {
 
   // Default to text search
   return 'text';
-}
-
-/**
- * Transform a database asset document to the frontend-expected format.
- */
-function transformAsset(asset) {
-  const obj = asset.toObject ? asset.toObject() : { ...asset };
-
-  if (obj.metadata?.attributes && !Array.isArray(obj.metadata.attributes)) {
-    obj.metadata.attributes = Object.values(obj.metadata.attributes);
-  }
-
-  return {
-    _id: obj._id,
-    assetId: obj.assetId,
-    name: obj.name,
-    type: obj.type === 'non-fungible' ? 'nft' : 'fungible',
-    amount: obj.totalSupply ?? 0,
-    units: obj.decimals ?? 0,
-    reissuable: obj.updatable ?? false,
-    hasIpfs: !!obj.ipfsHash,
-    ipfsHash: obj.ipfsHash || undefined,
-    txid: obj.createdTxid,
-    height: obj.createdBlockHeight,
-    blockTime: obj.createdAt ? new Date(obj.createdAt).getTime() / 1000 : undefined,
-    owner: obj.creator,
-    metadata: obj.metadata || undefined,
-    transferCount: obj.transferCount ?? 0,
-    views: obj.views ?? 0,
-    isSubAsset: obj.isSubAsset ?? false,
-    parentAssetName: obj.parentAssetName || undefined,
-    createdAt: obj.createdAt,
-    updatedAt: obj.updatedAt,
-  };
 }
 
 /**
