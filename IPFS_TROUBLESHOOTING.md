@@ -9,7 +9,7 @@ This guide helps troubleshoot IPFS integration issues with the Raptoreum Asset E
 1. Assets page shows "no image" placeholder for IPFS content
 2. Browser console shows error like:
    ```
-   /_next/image?url=https://assets.raptoreum.com/ipfs/QmXXXXXXXX...&w=1920&q=75:1
+   /_next/image?url=https%3A%2F%2Fassets.raptoreum.com%2Fipfs%2FQma86pMCzA98CuZaXFqyRwefrwHdPr4SXyLCLunQPa5R4&w=1920&q=75:1
    Failed to load resource: the server responded with a status of 400 ()
    ```
 3. IPFS gateway works locally but not through nginx
