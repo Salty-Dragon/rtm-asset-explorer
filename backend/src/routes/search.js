@@ -203,12 +203,14 @@ router.get('/',
           // Text search: search across assets by name, text index, and IPFS hash
           const searchQueries = [];
 
-          // Asset name search (case-insensitive regex)
+          // Escape special regex characters in query
+          const escapedQ = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+          // Asset name search (case-insensitive, anchored to start for index usage)
           searchQueries.push(
-            Asset.find({ name: { $regex: q, $options: 'i' } })
+            Asset.find({ name: { $regex: '^' + escapedQ, $options: 'i' } })
               .sort({ views: -1, createdAt: -1 })
-              .limit(limit)
-              .skip(offset)
+              .limit(limit + offset)
           );
 
           // Text index search (only if query is >= 2 chars)
@@ -219,8 +221,7 @@ router.get('/',
                 { score: { $meta: 'textScore' } }
               )
                 .sort({ score: { $meta: 'textScore' } })
-                .limit(limit)
-                .skip(offset)
+                .limit(limit + offset)
             );
           }
 
@@ -229,24 +230,24 @@ router.get('/',
             Asset.find({ assetId: q }).limit(limit)
           );
 
-          // Search addresses by exact match or profile username
+          // Search addresses by exact match
           searchQueries.push(
-            Address.find({
-              $or: [
-                { address: q },
-                { 'profile.username': { $regex: q, $options: 'i' } },
-              ]
-            }).limit(limit)
+            Address.find({ address: q }).limit(limit)
           );
 
-          // Search transactions by txid prefix or asset name
+          // Search addresses by profile username
           searchQueries.push(
-            Transaction.find({
-              $or: [
-                { txid: q },
-                { 'assetData.assetName': { $regex: q, $options: 'i' } },
-              ]
-            })
+            Address.find({ 'profile.username': { $regex: '^' + escapedQ, $options: 'i' } }).limit(limit)
+          );
+
+          // Search transactions by exact txid
+          searchQueries.push(
+            Transaction.find({ txid: q }).limit(limit)
+          );
+
+          // Search transactions by asset name
+          searchQueries.push(
+            Transaction.find({ 'assetData.assetName': { $regex: '^' + escapedQ, $options: 'i' } })
               .sort({ timestamp: -1 })
               .limit(limit)
           );
@@ -260,12 +261,14 @@ router.get('/',
             nameAssets,
             textAssets,
             idAssets,
-            foundAddresses,
-            foundTxs,
+            exactAddresses,
+            usernameAddresses,
+            exactTxs,
+            assetNameTxs,
             foundBlocks,
           ] = await Promise.all(searchQueries);
 
-          // Merge and deduplicate assets
+          // Merge and deduplicate assets, then apply offset
           const assetMap = new Map();
           for (const a of [...(nameAssets || []), ...(textAssets || []), ...(idAssets || [])]) {
             const id = a._id.toString();
@@ -273,9 +276,27 @@ router.get('/',
               assetMap.set(id, transformAsset(a));
             }
           }
-          assets = Array.from(assetMap.values()).slice(0, limit);
-          addresses = (foundAddresses || []).map(transformAddress);
-          transactions = (foundTxs || []).map(transformTransaction);
+          assets = Array.from(assetMap.values()).slice(offset, offset + limit);
+
+          // Merge and deduplicate addresses
+          const addrMap = new Map();
+          for (const a of [...(exactAddresses || []), ...(usernameAddresses || [])]) {
+            const id = a._id.toString();
+            if (!addrMap.has(id)) {
+              addrMap.set(id, transformAddress(a));
+            }
+          }
+          addresses = Array.from(addrMap.values());
+
+          // Merge and deduplicate transactions
+          const txMap = new Map();
+          for (const t of [...(exactTxs || []), ...(assetNameTxs || [])]) {
+            const id = t._id.toString();
+            if (!txMap.has(id)) {
+              txMap.set(id, transformTransaction(t));
+            }
+          }
+          transactions = Array.from(txMap.values());
           blocks = (foundBlocks || []).map(transformBlock);
           break;
         }
