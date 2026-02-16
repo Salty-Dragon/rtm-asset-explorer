@@ -26,6 +26,15 @@ cd backend
 npm install
 ```
 
+### Dependency Overrides
+
+This project uses npm overrides to address deprecated and vulnerable dependencies:
+
+- **jpeg-exif** → **exif-reader@^2.0.3**: The deprecated `jpeg-exif` package (used by pdfkit) has been replaced with the actively maintained `exif-reader` package from the same author.
+- **glob** → **^13.0.0**: Updated to the latest version to fix known security vulnerabilities in older versions (10.x, 11.x).
+
+These overrides ensure the project uses secure, maintained dependencies without requiring upstream package updates. All functionality remains intact and has been tested.
+
 ## Configuration
 
 Copy `.env.example` to `.env` and configure:
