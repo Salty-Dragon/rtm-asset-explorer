@@ -14,8 +14,14 @@ export function Header() {
 
   // Logo configuration from environment variables
   const logoPath = process.env.NEXT_PUBLIC_LOGO_PATH || 'rtm-logo.webp'
-  const logoWidth = parseInt(process.env.NEXT_PUBLIC_LOGO_WIDTH || '32', 10)
-  const logoHeight = parseInt(process.env.NEXT_PUBLIC_LOGO_HEIGHT || '32', 10)
+  const logoWidth = (() => {
+    const width = parseInt(process.env.NEXT_PUBLIC_LOGO_WIDTH || '32', 10)
+    return isNaN(width) ? 32 : width
+  })()
+  const logoHeight = (() => {
+    const height = parseInt(process.env.NEXT_PUBLIC_LOGO_HEIGHT || '32', 10)
+    return isNaN(height) ? 32 : height
+  })()
   const logoAlt = process.env.NEXT_PUBLIC_LOGO_ALT || 'Logo'
 
   return (
