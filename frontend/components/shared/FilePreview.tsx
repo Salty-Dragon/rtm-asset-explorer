@@ -55,6 +55,7 @@ export function FilePreview({
 
   const fetchFilePreview = async () => {
     try {
+      // First, make a HEAD request to get content type and size without downloading the file
       const response = await fetch(fileUrl, {
         method: 'HEAD',
       })
@@ -79,8 +80,13 @@ export function FilePreview({
       }
 
       // For text-based files, fetch content to show preview
+      // Use Range request to fetch only first 1KB for preview and encryption check
       if (fileType?.canPreview && ['text', 'csv', 'json', 'xml'].includes(fileType.type)) {
-        const fullResponse = await fetch(fileUrl)
+        const fullResponse = await fetch(fileUrl, {
+          headers: {
+            'Range': 'bytes=0-1023' // Fetch first 1KB
+          }
+        })
         const text = await fullResponse.text()
 
         // Check if encrypted
@@ -91,8 +97,12 @@ export function FilePreview({
           setPreview(text.slice(0, 500))
         }
       } else if (fileType?.type === 'pdf') {
-        // For PDFs, just check if encrypted by reading first chunk
-        const fullResponse = await fetch(fileUrl)
+        // For PDFs, check if encrypted by reading first 2KB (enough for PDF header and encryption info)
+        const fullResponse = await fetch(fileUrl, {
+          headers: {
+            'Range': 'bytes=0-2047' // Fetch first 2KB which includes PDF header
+          }
+        })
         const buffer = await fullResponse.arrayBuffer()
         const bytes = new Uint8Array(buffer)
 

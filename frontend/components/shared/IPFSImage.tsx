@@ -62,7 +62,8 @@ export function IPFSImage({
   }
 
   // If file type is detected and it's not an image, use FilePreview
-  if (fileType && fileType.type !== 'image' && !error) {
+  // Only delegate to FilePreview if there hasn't been an error
+  if (fileType && fileType.type !== 'image') {
     return (
       <FilePreview
         cid={cid}

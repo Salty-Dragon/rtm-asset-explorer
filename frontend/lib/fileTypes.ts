@@ -139,6 +139,15 @@ export function isEncrypted(data: Uint8Array | string): boolean {
 
 /**
  * Calculate Shannon entropy of data
+ * 
+ * We use 512 bytes as a sample size because it's large enough to get a representative
+ * distribution of byte values while being small enough to be efficient.
+ * 
+ * The threshold of 7.5 bits is used because:
+ * - Random/encrypted data typically has entropy > 7.5 (approaching 8.0)
+ * - Compressed data has entropy around 7-7.5
+ * - Plain text has entropy around 4-5
+ * - This threshold provides a good balance to detect encryption while minimizing false positives
  */
 function calculateEntropy(data: Uint8Array): number {
   const freq: Record<number, number> = {}
