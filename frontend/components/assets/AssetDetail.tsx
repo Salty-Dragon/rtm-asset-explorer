@@ -14,6 +14,7 @@ import { SubAssetGrid } from './SubAssetGrid'
 import { formatDate, formatNumber } from '@/lib/formatters'
 import { formatHash } from '@/lib/utils'
 import { cn } from '@/lib/utils'
+import { detectFileType } from '@/lib/fileTypes'
 import type { Asset } from '@/lib/types'
 
 interface AssetDetailProps {
@@ -23,6 +24,11 @@ interface AssetDetailProps {
 }
 
 export function AssetDetail({ asset, onExport, className }: AssetDetailProps) {
+  // Detect file type from IPFS hash if available
+  const fileType = asset.hasIpfs && asset.ipfsHash 
+    ? detectFileType(asset.ipfsHash)
+    : null
+
   return (
     <div className={cn('grid gap-6 lg:grid-cols-12', className)}>
       {/* Main Content - Left Column */}
@@ -52,9 +58,17 @@ export function AssetDetail({ asset, onExport, className }: AssetDetailProps) {
         <div>
           <div className="mb-2 flex items-start justify-between gap-4">
             <h1 className="text-3xl font-bold">{asset.name}</h1>
-            <Badge variant={asset.type === 'nft' ? 'default' : 'secondary'}>
-              {asset.type === 'nft' ? 'NFT' : 'Fungible'}
-            </Badge>
+            <div className="flex gap-2">
+              <Badge variant={asset.type === 'nft' ? 'default' : 'secondary'}>
+                {asset.type === 'nft' ? 'NFT' : 'Fungible'}
+              </Badge>
+              {/* File Type Badge */}
+              {fileType?.badge && (
+                <Badge variant="outline">
+                  {fileType.badge}
+                </Badge>
+              )}
+            </div>
           </div>
           {asset.metadata?.description && (
             <p className="text-muted-foreground">{asset.metadata.description}</p>

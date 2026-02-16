@@ -1,0 +1,7 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="200" fill="#2a2a2a"/>
+  <path d="M100 70C88.954 70 80 78.954 80 90V100H75C71.6863 100 69 102.686 69 106V140C69 143.314 71.6863 146 75 146H125C128.314 146 131 143.314 131 140V106C131 102.686 128.314 100 125 100H120V90C120 78.954 111.046 70 100 70ZM100 80C105.523 80 110 84.477 110 90V100H90V90C90 84.477 94.477 80 100 80Z" fill="#b45a46" opacity="0.5"/>
+  <circle cx="100" cy="118" r="6" fill="#b45a46"/>
+  <rect x="97" y="118" width="6" height="14" fill="#b45a46"/>
+  <text x="100" y="175" font-family="monospace" font-size="12" fill="#a0a0a0" text-anchor="middle">Encrypted</text>
+</svg>

@@ -1,0 +1,7 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="200" height="200" fill="#2a2a2a"/>
+  <path d="M70 50H110L140 80V150H70V50Z" stroke="#dc2626" stroke-width="3" fill="none" opacity="0.5"/>
+  <path d="M110 50V80H140" stroke="#dc2626" stroke-width="3" fill="none" opacity="0.5"/>
+  <text x="100" y="120" font-family="monospace" font-size="24" font-weight="bold" fill="#dc2626" text-anchor="middle">PDF</text>
+  <text x="100" y="175" font-family="monospace" font-size="12" fill="#a0a0a0" text-anchor="middle">PDF Document</text>
+</svg>
