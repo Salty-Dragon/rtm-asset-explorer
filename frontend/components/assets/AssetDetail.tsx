@@ -158,8 +158,8 @@ export function AssetDetail({ asset, onExport, className }: AssetDetailProps) {
 
             {/* Units */}
             <div>
-              <div className="mb-1 text-xs text-muted-foreground">Units</div>
-              <div className="text-sm">{asset.units}</div>
+              <div className="mb-1 text-xs text-muted-foreground">Available Supply</div>
+              <div className="text-sm">{formatNumber(asset.units)}</div>
             </div>
 
             {/* Reissuable */}

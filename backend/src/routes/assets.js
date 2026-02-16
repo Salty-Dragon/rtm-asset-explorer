@@ -23,11 +23,11 @@ function transformAsset(asset) {
   }
 
   // Handle both database fields and blockchain RPC fields for amount/units
-  // Database uses: totalSupply, decimals
-  // Blockchain RPC may use: amount, units OR totalSupply, decimals
-  // We prioritize database fields first, then fall back to direct fields
+  // Database uses: totalSupply, circulatingSupply, decimals
+  // Frontend uses: amount (total supply), units (circulating/available supply)
+  // Blockchain RPC may use different field names
   const amount = obj.totalSupply ?? obj.amount ?? 0;
-  const units = obj.decimals ?? obj.units ?? 0;
+  const units = obj.circulatingSupply ?? obj.units ?? 0;
 
   return {
     _id: obj._id,
