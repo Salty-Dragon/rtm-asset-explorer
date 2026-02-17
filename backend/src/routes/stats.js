@@ -175,10 +175,10 @@ router.get('/assets',
         Asset.countDocuments({ ...dateFilter, type: 'non-fungible' }),
         Asset.countDocuments({ ...dateFilter, type: 'fungible' }),
         AssetTransfer.countDocuments(ms ? { timestamp: { $gte: new Date(Date.now() - ms) } } : {}),
-        AssetTransfer.distinct('fromAddress', ms ? { timestamp: { $gte: new Date(Date.now() - ms) } } : {}),
+        AssetTransfer.distinct('from', ms ? { timestamp: { $gte: new Date(Date.now() - ms) } } : {}),
         AssetTransfer.aggregate([
           ...(ms ? [{ $match: { timestamp: { $gte: new Date(Date.now() - ms) } } }] : []),
-          { $group: { _id: '$assetName', transferCount: { $sum: 1 }, uniqueOwners: { $addToSet: '$toAddress' } } },
+          { $group: { _id: '$assetName', transferCount: { $sum: 1 }, uniqueOwners: { $addToSet: '$to' } } },
           { $project: { assetName: '$_id', transferCount: 1, uniqueOwners: { $size: '$uniqueOwners' } } },
           { $sort: { transferCount: -1 } },
           { $limit: 10 }
