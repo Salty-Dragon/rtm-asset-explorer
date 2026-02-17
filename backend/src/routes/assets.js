@@ -293,7 +293,7 @@ router.get('/:assetId/transfers',
                   height: delta.height,
                   // Note: Timestamp not available from getaddressdeltas, would need to fetch block
                   timestamp: null,
-                  confirmations: Math.max(0, currentHeight - delta.height + 1),
+                  confirmations: currentHeight - delta.height + 1,
                   _id: delta.txid + '_' + delta.index
                 }));
               

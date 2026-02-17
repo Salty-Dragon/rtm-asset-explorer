@@ -341,12 +341,13 @@ class AssetProcessor {
         {
           upsert: true,
           new: true,
-          setDefaultsOnInsert: true
+          setDefaultsOnInsert: true,
+          rawResult: true
         }
       );
       
-      // Check if it was newly created or already existed
-      const wasNew = result.$__delta ? true : false;
+      // Check if it was newly created (upserted) or already existed
+      const wasNew = result.lastErrorObject && result.lastErrorObject.upserted;
       
       if (wasNew) {
         logger.info(`✓ Recorded asset transfer: ${transferData.assetName} in ${transferData.txid}, amount: ${transferData.amount}`);
@@ -354,7 +355,7 @@ class AssetProcessor {
         logger.debug(`Transfer already recorded: ${transferData.assetName} in ${transferData.txid}`);
       }
       
-      return result;
+      return result.value;
     } catch (error) {
       logger.error(`Failed to record asset transfer for ${transferData.assetName} in ${transferData.txid}:`, error);
       throw error;

@@ -125,15 +125,15 @@ async function forceResync() {
     // Clear data if requested
     if (clearAll) {
       console.log('Deleting all blocks...');
-      const blocksDeleted = await Block.deleteMany({ height: { $gte: fromHeight } });
+      const blocksDeleted = await Block.deleteMany({});
       console.log(`✓ Deleted ${blocksDeleted.deletedCount} blocks`);
 
       console.log('Deleting all transactions...');
-      const txDeleted = await Transaction.deleteMany({ blockHeight: { $gte: fromHeight } });
+      const txDeleted = await Transaction.deleteMany({});
       console.log(`✓ Deleted ${txDeleted.deletedCount} transactions`);
 
       console.log('Deleting all asset transfers...');
-      const transfersDeleted = await AssetTransfer.deleteMany({ blockHeight: { $gte: fromHeight } });
+      const transfersDeleted = await AssetTransfer.deleteMany({});
       console.log(`✓ Deleted ${transfersDeleted.deletedCount} transfers`);
 
       // Reset asset transfer counts
@@ -142,7 +142,7 @@ async function forceResync() {
       console.log('✓ Reset asset transfer counts');
     } else if (clearTransfers) {
       console.log('Deleting asset transfers...');
-      const transfersDeleted = await AssetTransfer.deleteMany({ blockHeight: { $gte: fromHeight } });
+      const transfersDeleted = await AssetTransfer.deleteMany({});
       console.log(`✓ Deleted ${transfersDeleted.deletedCount} transfers`);
 
       // Reset asset transfer counts
