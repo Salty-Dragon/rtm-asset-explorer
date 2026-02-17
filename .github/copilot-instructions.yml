@@ -1,0 +1,460 @@
+# GitHub Copilot Custom Instructions for rtm-asset-explorer
+# This file configures the Copilot coding agent with repository-specific context
+
+# Project Overview
+about: |
+  The Raptoreum Asset Explorer is a modern, high-performance blockchain explorer and asset viewer for the Raptoreum blockchain. 
+  It features comprehensive asset discovery, IPFS-integrated metadata, and a professional UI for artists, musicians, and collectors.
+  
+  **Architecture:**
+  - Frontend: Next.js 15+ (App Router) with TypeScript, Tailwind CSS, shadcn/ui
+  - Backend: Node.js 24 LTS with Express.js 5.x, MongoDB 8.x, Redis 8.x
+  - Blockchain: Raptoreumd (full node with RPC enabled on port 10225)
+  - Storage: IPFS (Kubo) for decentralized content
+  - Infrastructure: PM2 for process management, Nginx as reverse proxy
+  
+  **Key Components:**
+  1. Backend API (Port 4004): RESTful API with rate limiting, caching, validation
+  2. Frontend (Port 3003): React-based UI with universal search, asset gallery, NFT support
+  3. Database Layer: MongoDB for caching, Redis for response caching and rate limiting
+  4. Blockchain Integration: Direct RPC communication with Raptoreumd node
+  5. IPFS Integration: Smart image loading with multiple gateway fallbacks
+
+# Core Development Principles
+principles:
+  - "All code MUST be efficient, safe, and performant"
+  - "Always test changes before committing - run tests and linting"
+  - "If tests do not exist for the code you're modifying, create them"
+  - "Address all errors and warnings immediately - never ignore them"
+  - "Write defensive code that handles edge cases and failures gracefully"
+  - "Optimize for readability and maintainability, not cleverness"
+  - "Document complex logic and business rules with clear comments"
+  - "Follow the principle of least privilege for security"
+
+# Technology Stack
+technologies:
+  frontend:
+    - Next.js 15+ (App Router pattern)
+    - TypeScript
+    - Tailwind CSS
+    - shadcn/ui (Radix UI primitives)
+    - React Query (@tanstack/react-query) for server state
+    - Zustand for client state management
+    - Framer Motion for animations
+    - Lucide React for icons  
+  
+  backend:
+    - Node.js 24 LTS
+    - Express.js 5.x
+    - Mongoose (MongoDB ODM)
+    - Redis client v4.6+
+    - Winston for logging
+    - Zod for validation
+    - Helmet.js for security
+    - Bull for job queues  
+  
+  blockchain:
+    - Raptoreumd (Bitcoin-based blockchain)
+    - IPFS (Kubo) for content addressing  
+  
+  infrastructure:
+    - PM2 for process management
+    - Nginx for reverse proxy and SSL
+    - MongoDB 8.x for database
+    - Redis 8.x for caching
+
+# Code Style Guidelines
+code_style:
+  javascript:
+    - Use ES6+ modules (type: "module" in package.json)
+    - Use async/await for asynchronous operations
+    - Prefer const over let, avoid var
+    - Use JSDoc comments for function documentation in backend
+    - Follow Express.js best practices with middleware pattern
+    - Use structured error handling with try-catch blocks
+    
+  typescript:
+    - Strict type checking enabled
+    - Define interfaces for all API responses and data structures
+    - Use type guards for runtime type checking
+    - Prefer interfaces over types for object shapes
+    - Export types from lib/types.ts
+    
+  react:
+    - Use functional components with hooks
+    - Follow Next.js App Router conventions
+    - Implement proper loading and error states
+    - Use React Query for data fetching with proper cache configuration
+    - Component files in PascalCase (AssetCard.tsx)
+    
+  naming:
+    - Backend routes: kebab-case (assets.js, transactions.js)
+    - Frontend components: PascalCase (AssetCard.tsx, SearchBar.tsx)
+    - Utility functions: camelCase (formatAddress, validateTxId)
+    - API endpoints: RESTful conventions (/api/v1/assets/:id)
+    - Environment variables: SCREAMING_SNAKE_CASE (MONGODB_URI, REDIS_HOST)
+
+# Project Structure
+structure:
+  backend:
+    root: backend/
+    entry: src/server.js
+    routes: src/routes/
+    models: src/models/
+    middleware: src/middleware/
+    services: src/services/
+    utils: src/utils/
+    tests: tests/
+    
+  frontend:
+    root: frontend/
+    pages: app/
+    components: components/
+    lib: lib/
+    hooks: hooks/
+    store: store/
+    styles: styles/
+    public: public/
+
+# API Design Patterns
+api_patterns:
+  response_format: |
+    All API responses follow a consistent format:
+    ```json
+    {
+      "success": true,
+      "data": { /* response data */ },
+      "meta": {
+        "timestamp": "ISO-8601 timestamp",
+        "requestId": "unique request ID",
+        "dataSource": "cache|database|blockchain"
+      }
+    }
+    ```
+    
+    Error responses:
+    ```json
+    {
+      "success": false,
+      "error": {
+        "message": "Error description",
+        "details": [/* validation errors */]
+      },
+      "meta": {
+        "timestamp": "ISO-8601 timestamp",
+        "requestId": "unique request ID"
+      }
+    }
+    ```  
+  validation: |
+    - Use Zod schemas for input validation
+    - Validate all user inputs before processing
+    - Common patterns:
+      - Raptoreum address: /^R[A-Za-z0-9]{33}$/
+      - Transaction ID: /^[a-f0-9]{64}$/i
+      - Block hash: /^[a-f0-9]{64}$/i
+      - Asset ID: /^[A-Z0-9_]{3,30}$/
+      - Pagination: limit (1-100), offset (>=0)
+  
+  caching: |
+    Redis caching strategy (TTL in seconds):
+    - Blocks: 300s (5 minutes)
+    - Transactions: 300s (5 minutes)
+    - Assets: 300s (5 minutes)
+    - Addresses: 60s (1 minute)
+    - Stats: 30s (30 seconds)
+    - Health checks: Not cached
+    
+    Cache key pattern: cache:api:{endpoint}:{params}
+  
+  rate_limiting: |
+    - Free tier: 100 requests/minute (no API key)
+    - Premium tier: 1000 requests/minute (with API key)
+    - API keys in header: X-API-Key
+    - Rate limit headers: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
+
+# Database Schemas
+database:
+  mongodb_collections:
+    - blocks: Block data with height, hash, timestamp, transactions
+    - transactions: Transaction details with inputs, outputs, block height
+    - assets: Asset registry with metadata, IPFS data, ownership
+    - addresses: Address information with balance, transaction count
+    - api_keys: API key management with usage tracking
+    - audit_logs: Request logging for compliance
+    - exports: Export job tracking with status and file paths
+  
+  indexes: |
+    Strategic indexes for performance:
+    - Block: height (unique), hash (unique), timestamp
+    - Transaction: txid (unique), blockHeight
+    - Asset: assetId (unique), creator, owner, type
+    - Address: address (unique), balance
+    - Compound indexes for filtered queries
+
+# IPFS Integration
+ipfs:
+  gateways:
+    primary: https://assets.raptoreum.com/ipfs
+    fallbacks:
+      - https://ipfs.io/ipfs
+      - https://gateway.pinata.cloud/ipfs
+      - https://cloudflare-ipfs.com/ipfs  
+  
+  patterns: |
+    - Smart IPFS image component with cascading fallbacks
+    - Extract CID from IPFS URLs (ipfs://{cid} or /ipfs/{cid})
+    - Implement loading states and error placeholders
+    - Support both CIDv0 (Qm...) and CIDv1 (bafy...)
+
+# Security Best Practices
+security:
+  - Always validate and sanitize user inputs with Zod
+  - Use Helmet.js for security headers in Express
+  - Implement rate limiting with Redis
+  - Hash API keys with SHA-256 before storage
+  - Enable CORS with proper origin configuration
+  - Verify blockchain data for critical operations
+  - Log all API requests to audit_logs collection
+  - Never expose RPC credentials in frontend
+  - Use environment variables for sensitive configuration
+  - Implement proper error handling without leaking internals
+  - Sanitize error messages before sending to clients
+  - Use parameterized queries to prevent injection attacks
+  - Implement proper authentication and authorization checks
+
+# Testing Guidelines
+testing:
+  requirements: |
+    CRITICAL: All code changes MUST be tested and linted before committing.
+    - Run backend tests: cd backend && npm test
+    - Run frontend linting: cd frontend && npm run lint
+    - Run TypeScript checks: npm run type-check
+    - If tests don't exist for code you're modifying, CREATE THEM
+    - Test coverage should be maintained or improved
+    - All tests must pass before code is considered complete
+    
+  backend: |
+    - Test API endpoints with curl or test scripts
+    - Verify response format consistency
+    - Test validation rules for all inputs
+    - Check rate limiting behavior
+    - Test graceful degradation when services are down
+    - Verify blockchain RPC communication
+    - Test error handling and edge cases
+    - Mock external dependencies (blockchain, IPFS, Redis)
+    - Aim for 80%+ code coverage on new code
+    
+  frontend: |
+    - Test component rendering in different states
+    - Verify API integration with React Query
+    - Test responsive design at different breakpoints
+    - Verify IPFS image fallback behavior
+    - Test search functionality with various input types
+    - Test error boundaries and error states
+    - Test loading states and skeletons
+    - Test accessibility with screen readers
+
+# Error Handling
+error_handling:
+  approach: |
+    Address ALL errors and warnings immediately - never ignore them.
+    
+    Backend error handling:
+    - Wrap async operations in try-catch blocks
+    - Log errors with Winston (include context: requestId, user, endpoint)
+    - Return appropriate HTTP status codes (400, 404, 500, 503)
+    - Never expose internal error details to clients
+    - Implement circuit breakers for external services
+    - Handle blockchain RPC failures gracefully
+    - Validate all inputs before processing
+    
+    Frontend error handling:
+    - Use Error Boundaries to catch React errors
+    - Implement error states in all components
+    - Show user-friendly error messages
+    - Log errors to monitoring service (if configured)
+    - Implement retry logic for transient failures
+    - Provide fallback UI for failed IPFS loads
+    - Handle API errors from React Query
+    
+    Common error scenarios:
+    - Blockchain node unavailable → serve cached data with warning
+    - IPFS gateway timeout → cascade to fallback gateways
+    - MongoDB connection lost → return 503 with retry-after header
+    - Redis unavailable → continue without caching (degrade gracefully)
+    - Invalid user input → return 400 with detailed validation errors
+    - Rate limit exceeded → return 429 with retry-after header
+
+# Common Tasks
+common_tasks:
+  add_api_endpoint: |
+    1. Create route handler in backend/src/routes/
+    2. Add validation middleware with Zod schema
+    3. Implement controller logic with error handling
+    4. Add caching with appropriate TTL
+    5. CREATE TESTS for the new endpoint
+    6. Update API documentation in API.md
+    7. Run tests and linting: npm test && npm run lint
+    8. Test endpoint manually with curl
+    9. Address any errors or warnings
+  
+  add_frontend_page: |
+    1. Create page.tsx in app/ directory following App Router pattern
+    2. Define TypeScript interfaces for data in lib/types.ts
+    3. Create API hook in hooks/ using React Query
+    4. Build components in components/ with proper loading/error states
+    5. Style with Tailwind CSS following design system
+    6. CREATE TESTS for components and hooks
+    7. Run linting and type checking: npm run lint && npm run type-check
+    8. Test responsive behavior at different breakpoints
+    9. Test error states and loading states
+    10. Address any TypeScript errors or ESLint warnings
+  
+  add_database_model: |
+    1. Create Mongoose schema in backend/src/models/
+    2. Define indexes for common queries
+    3. Add validation rules and defaults
+    4. Export model for use in routes/controllers
+    5. CREATE TESTS for model validation and methods
+    6. Update DATABASE.md documentation
+    7. Test model with sample data
+    8. Verify indexes are created properly
+  
+  add_blockchain_rpc_call: |
+    1. Add method to backend/src/services/blockchain.js
+    2. Implement proper error handling for RPC failures
+    3. Add response validation with Zod
+    4. Cache result in Redis if appropriate
+    5. Add fallback behavior for when node is unavailable
+    6. CREATE TESTS with mocked RPC responses
+    7. Test error scenarios (timeout, invalid response)
+    8. Add logging for monitoring
+
+# Environment Configuration
+environment:
+  backend_required:
+    - PORT: "4004"
+    - NODE_ENV: "development|production"
+    - MONGODB_URI: "mongodb://localhost:27017/rtm_explorer"
+    - REDIS_HOST: "127.0.0.1"
+    - REDIS_PORT: "6379"
+    - RAPTOREUMD_HOST: "127.0.0.1"
+    - RAPTOREUMD_PORT: "10225"
+    - RAPTOREUMD_USER: "RPC username"
+    - RAPTOREUMD_PASSWORD: "RPC password"
+  
+  frontend_required:
+    - NEXT_PUBLIC_API_URL: "https://assets.raptoreum.com/api/v1"
+    - NEXT_PUBLIC_IPFS_GATEWAY_URL: "https://assets.raptoreum.com/ipfs"
+    - NEXT_PUBLIC_IPFS_FALLBACK_URL: "https://ipfs.io/ipfs"
+    - NEXT_PUBLIC_SITE_URL: "https://assets.raptoreum.com"
+    - PORT: "3000"
+
+# Documentation References
+documentation:
+  - ARCHITECTURE.md: "Complete system architecture and component details"
+  - DATABASE.md: "MongoDB schema with 11 collections and indexes"
+  - API.md: "Full API documentation with endpoints and examples"
+  - FRONTEND.md: "Frontend specifications and component structure"
+  - SECURITY.md: "Security guidelines and best practices"
+  - DEPLOYMENT.md: "Production deployment guide for OVH server"
+  - DEVELOPMENT.md: "Development setup and contributing guidelines"
+  - NGINX_CONFIGURATION.md: "Nginx setup for /api/v1 endpoints"
+  - IPFS_TROUBLESHOOTING.md: "IPFS integration troubleshooting"
+
+# Special Considerations
+considerations:
+  - This is a blockchain explorer - data integrity is critical
+  - Always verify critical data against the blockchain (trust hierarchy: blockchain > IPFS > database)
+  - MongoDB is a performance cache, not the source of truth
+  - Implement graceful degradation when services are unavailable
+  - Backend runs on PM2 with cluster mode in production
+  - Frontend uses Next.js ISR (Incremental Static Regeneration) for performance
+  - IPFS content is immutable and content-addressed
+  - Raptoreum addresses start with 'R' (34 characters total)
+  - Block time is ~60 seconds, consider this for real-time features
+  - Asset metadata follows Raptoreum NFT standard
+  - Export system generates PDFs with blockchain verification
+
+# Performance Optimization
+performance:
+  requirements: |
+    All code must be optimized for performance and efficiency:
+    
+  strategies:
+    - Use Redis caching aggressively with appropriate TTLs
+    - Implement database indexes for all common queries
+    - Use React Query for client-side caching (stale time: 60s, cache time: 300s)
+    - Lazy load components with Next.js dynamic imports
+    - Optimize images with Next.js Image component
+    - Implement infinite scroll for large lists
+    - Use compression middleware in Express (gzip/brotli)
+    - Enable connection pooling for MongoDB and Redis
+    - Implement request deduplication in React Query
+    - Minimize bundle size - analyze with next bundle-analyzer
+    - Use code splitting for large dependencies
+    - Implement proper memoization (useMemo, useCallback)
+    - Avoid unnecessary re-renders with React.memo
+    - Use efficient database queries (projection, limit)
+    - Profile slow endpoints and optimize bottlenecks
+
+# Debugging Tips
+debugging:
+  backend: |
+    - Check logs in logs/error.log and logs/combined.log
+    - Use Winston logger for structured logging
+    - Test health endpoint: curl http://localhost:4004/api/health
+    - Verify MongoDB connection: mongosh
+    - Verify Redis connection: redis-cli ping
+    - Test RPC connection: curl --user user:pass http://localhost:10225
+    - Use NODE_ENV=development for detailed error messages
+    - Enable debug mode: DEBUG=express:* npm start
+    - Check PM2 logs: pm2 logs rtm-backend
+  
+  frontend: |
+    - Check browser console for errors
+    - Use React Query DevTools for cache inspection
+    - Verify API calls in Network tab
+    - Test responsive design with device emulation
+    - Check environment variables are loaded (NEXT_PUBLIC_ prefix)
+    - Use React DevTools for component inspection
+    - Check Next.js build output for warnings
+    - Test with production build: npm run build && npm start
+
+# Quality Checklist
+quality_checklist:
+  before_committing: |
+    MANDATORY checks before ANY code is committed:
+    
+    ✅ Code is efficient, safe, and performant
+    ✅ All tests pass (npm test)
+    ✅ Linting passes with no errors (npm run lint)
+    ✅ TypeScript compiles with no errors (npm run type-check)
+    ✅ Tests exist for new/modified code
+    ✅ All errors and warnings are addressed
+    ✅ Error handling is implemented properly
+    ✅ Input validation is present where needed
+    ✅ Security best practices are followed
+    ✅ Performance is optimized (no obvious bottlenecks)
+    ✅ Code is documented (JSDoc for complex functions)
+    ✅ Edge cases are handled
+    ✅ Manual testing completed
+    ✅ No console.log statements left in code
+    ✅ Environment variables are not hardcoded
+    ✅ API responses follow standard format
+
+# Deployment Workflow
+department:
+  process: |
+    1. Run ALL tests: npm test (backend), npm run lint (frontend)
+    2. Fix any errors or warnings before proceeding
+    3. Build frontend: npm run build
+    4. Verify build succeeded with no errors
+    5. Update PM2 processes: pm2 restart ecosystem.config.js
+    6. Check health: curl https://assets.raptoreum.com/api/health
+    7. Monitor logs: pm2 logs
+    8. Verify Nginx config: nginx -t
+    9. Monitor metrics with PM2 monitoring
+    10. Test critical user flows in production
+    11. Monitor error rates and performance metrics
