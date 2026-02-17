@@ -68,9 +68,9 @@ try {
   console.log(`  user: ${blockchainService.user}`);
   console.log(`  password: ${blockchainService.password ? '***' : '(empty)'}\n`);
 
-  // Verify that the values match
+  // Verify that the values match (port may be string or number depending on parsing)
   const hostsMatch = blockchainService.host === 'test.host.com';
-  const portsMatch = blockchainService.port === '12345';
+  const portsMatch = blockchainService.port === '12345' || blockchainService.port === 12345;
   const usersMatch = blockchainService.user === 'test_user';
   const passwordsMatch = blockchainService.password === 'test_password_123';
 

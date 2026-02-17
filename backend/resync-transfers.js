@@ -40,18 +40,12 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
 import mongoose from 'mongoose';
 
 async function resyncTransfers() {
+  // Dynamic imports - loaded after dotenv.config() has run
+  // This ensures blockchainService singleton gets the correct env vars from .env
+  let Asset, AssetTransfer, Block, SyncState, blockchainService, assetProcessor, logger;
+  
   try {
-    // Dynamic imports - loaded after dotenv.config() has run
-    // This ensures blockchainService singleton gets the correct env vars from .env
-    const [
-      { default: Asset },
-      { default: AssetTransfer },
-      { default: Block },
-      { default: SyncState },
-      { default: blockchainService },
-      { default: assetProcessor },
-      { logger }
-    ] = await Promise.all([
+    const modules = await Promise.all([
       import('./src/models/Asset.js'),
       import('./src/models/AssetTransfer.js'),
       import('./src/models/Block.js'),
@@ -60,7 +54,22 @@ async function resyncTransfers() {
       import('./src/services/assetProcessor.js'),
       import('./src/utils/logger.js')
     ]);
+    
+    Asset = modules[0].default;
+    AssetTransfer = modules[1].default;
+    Block = modules[2].default;
+    SyncState = modules[3].default;
+    blockchainService = modules[4].default;
+    assetProcessor = modules[5].default;
+    logger = modules[6].logger;
+  } catch (error) {
+    console.error('❌ Failed to load required modules:', error.message);
+    console.error('   Make sure all dependencies are installed and the backend directory structure is correct.');
+    console.error(error);
+    process.exit(1);
+  }
 
+  try {
     // Parse command line arguments
     const args = process.argv.slice(2);
     let fromHeight = 0;
