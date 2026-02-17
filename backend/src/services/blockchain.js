@@ -13,7 +13,6 @@ class BlockchainService {
       const auth = Buffer.from(`${this.user}:${this.password}`).toString('base64');
       
       const url = `http://${this.host}:${this.port}`;
-      console.log(`[BLOCKCHAIN RPC] Calling ${method} at ${url}`);
       
       const response = await fetch(url, {
         method: 'POST',
@@ -43,7 +42,6 @@ class BlockchainService {
         throw new Error(`RPC error: ${data.error.message}`);
       }
 
-      console.log(`[BLOCKCHAIN RPC] ${method} succeeded`);
       return data.result;
     } catch (error) {
       console.error(`[BLOCKCHAIN RPC EXCEPTION] ${method}:`, error.message);
@@ -108,9 +106,7 @@ class BlockchainService {
 
   async checkHealth() {
     try {
-      console.log('[BLOCKCHAIN HEALTH] Checking blockchain health...');
       const info = await this.getBlockchainInfo();
-      console.log(`[BLOCKCHAIN HEALTH] Connected to ${info.chain} at block ${info.blocks}`);
       return {
         status: 'connected',
         message: 'Blockchain connection healthy',
