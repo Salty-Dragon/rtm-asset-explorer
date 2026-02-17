@@ -189,31 +189,62 @@ class AssetProcessor {
    */
   async handleAssetTransfer(tx, blockHeight, blockTime) {
     try {
-      // Find asset vouts
-      const assetVouts = tx.vout?.filter(vout => 
-        vout.scriptPubKey?.type === 'transferasset' && 
-        vout.scriptPubKey?.asset
-      ) || [];
+      // Find asset vouts - check multiple possible structures
+      const assetVouts = tx.vout?.filter(vout => {
+        const scriptPubKey = vout.scriptPubKey;
+        if (!scriptPubKey) return false;
+        
+        // Check for asset data in multiple locations
+        return scriptPubKey.type === 'transferasset' || 
+               scriptPubKey.asset ||
+               (scriptPubKey.type === 'pubkeyhash' && scriptPubKey.asset);
+      }) || [];
 
       if (assetVouts.length === 0) {
+        logger.debug(`No asset vouts found in tx ${tx.txid}`);
         return null;
       }
 
+      logger.info(`Processing ${assetVouts.length} asset transfer(s) in tx ${tx.txid}`);
       const transfers = [];
 
       for (const vout of assetVouts) {
         const { asset } = vout.scriptPubKey;
+        
+        if (!asset) {
+          logger.warn(`Asset vout found but no asset data in tx ${tx.txid}, vout ${vout.n}`);
+          continue;
+        }
+        
         const assetName = asset.name;
         const amount = asset.amount || 0;
         const recipient = vout.scriptPubKey.addresses?.[0];
 
-        if (!recipient) continue;
+        if (!recipient) {
+          logger.warn(`No recipient address in tx ${tx.txid}, vout ${vout.n}`);
+          continue;
+        }
+        
+        if (!assetName) {
+          logger.warn(`No asset name in tx ${tx.txid}, vout ${vout.n}`);
+          continue;
+        }
 
         // Find sender from inputs (trace back to previous transaction)
         let sender = null;
         if (tx.vin && tx.vin.length > 0) {
-          // Use the first input address as sender (simplified)
+          // Try to get address from first input
           sender = tx.vin[0].address || null;
+          
+          // If not available, try other inputs
+          if (!sender) {
+            for (const vin of tx.vin) {
+              if (vin.address) {
+                sender = vin.address;
+                break;
+              }
+            }
+          }
         }
 
         // Find asset record
@@ -229,6 +260,9 @@ class AssetProcessor {
             timestamp: blockTime
           };
           await assetRecord.save();
+          logger.info(`Updated asset ${assetName} transferCount to ${assetRecord.transferCount}`);
+        } else {
+          logger.warn(`Asset record not found for ${assetName} in transfer tx ${tx.txid}`);
         }
 
         // Record transfer
@@ -245,6 +279,7 @@ class AssetProcessor {
         });
 
         transfers.push({ assetName, amount, from: sender, to: recipient });
+        logger.info(`Recorded transfer: ${assetName} from ${sender || 'unknown'} to ${recipient}, amount: ${amount}`);
       }
 
       // Record transaction
@@ -295,14 +330,35 @@ class AssetProcessor {
    */
   async recordAssetTransfer(transferData) {
     try {
+      // Check if transfer already exists to avoid duplicates
+      const existing = await AssetTransfer.findOne({
+        txid: transferData.txid,
+        assetName: transferData.assetName,
+        to: transferData.to
+      });
+      
+      if (existing) {
+        logger.debug(`Transfer already recorded: ${transferData.assetName} in ${transferData.txid}`);
+        return existing;
+      }
+      
       const transfer = new AssetTransfer(transferData);
       await transfer.save();
-      logger.debug(`Recorded asset transfer: ${transferData.assetName} in ${transferData.txid}`);
+      logger.info(`✓ Recorded asset transfer: ${transferData.assetName} in ${transferData.txid}, amount: ${transferData.amount}`);
+      return transfer;
     } catch (error) {
-      // If duplicate, ignore (already recorded)
-      if (error.code !== 11000) {
-        logger.error(`Error recording asset transfer:`, error);
+      // If duplicate key error, try to fetch existing
+      if (error.code === 11000) {
+        logger.debug(`Duplicate transfer detected (code 11000): ${transferData.assetName} in ${transferData.txid}`);
+        return await AssetTransfer.findOne({
+          txid: transferData.txid,
+          assetName: transferData.assetName,
+          to: transferData.to
+        });
       }
+      
+      logger.error(`Failed to record asset transfer for ${transferData.assetName} in ${transferData.txid}:`, error);
+      throw error;
     }
   }
 

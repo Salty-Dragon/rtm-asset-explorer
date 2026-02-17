@@ -449,12 +449,15 @@ class SyncDaemon {
           
         case 0: // Standard transaction - Check for asset transfers
         default:
-          // Check if any vout has asset transfer
+          // Check if any vout has asset transfer - check multiple possible indicators
           const hasAssetTransfer = tx.vout?.some(vout => 
-            vout.scriptPubKey?.type === 'transferasset'
+            vout.scriptPubKey?.type === 'transferasset' ||
+            vout.scriptPubKey?.asset ||
+            (vout.scriptPubKey?.type === 'pubkeyhash' && vout.scriptPubKey?.asset)
           );
           
           if (hasAssetTransfer) {
+            logger.debug(`Detected asset transfer in tx ${tx.txid} at block ${blockHeight}`);
             await assetProcessor.handleAssetTransfer(tx, blockHeight, blockTime);
           }
           break;

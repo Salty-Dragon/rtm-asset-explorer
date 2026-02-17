@@ -260,13 +260,14 @@ router.get('/:assetId/transfers',
       });
       
       // If no transfers found in database and we have asset info, try blockchain
+      let blockchainNote = null;
       if (total === 0 && asset) {
         try {
           const assetName = asset.name || asset.Asset_name;
           const ownerAddress = asset.owner || asset.currentOwner;
           
           if (ownerAddress && assetName) {
-            logger.info(`No transfers in DB for ${assetName}, querying blockchain...`);
+            logger.info(`No transfers in DB for ${assetName}, querying blockchain for owner ${ownerAddress}...`);
             const deltas = await blockchainService.getAddressDeltas([ownerAddress], assetName);
             
             if (deltas && Array.isArray(deltas)) {
@@ -290,11 +291,18 @@ router.get('/:assetId/transfers',
                 }));
               
               total = deltas.length;
+              blockchainNote = 'Showing transfers for owner address only. Complete history may not be available.';
             }
           }
         } catch (blockchainError) {
           logger.warn(`Failed to fetch transfers from blockchain for ${assetId}:`, blockchainError.message);
-          // Continue with empty result
+          
+          // Check if it's an indexing error
+          if (blockchainError.message?.includes('index') || blockchainError.message?.includes('enabled')) {
+            blockchainNote = 'Address indexing not enabled on blockchain node. Transfer history unavailable.';
+          } else {
+            blockchainNote = 'Unable to fetch transfer history from blockchain. Sync may be in progress.';
+          }
         }
       }
       
@@ -314,7 +322,8 @@ router.get('/:assetId/transfers',
         meta: {
           timestamp: new Date().toISOString(),
           requestId: req.id || 'req_' + Date.now(),
-          dataSource: total > 0 && transfers.length > 0 && !transfers[0]._id?.includes('_') ? 'database' : 'blockchain'
+          dataSource: total > 0 && transfers.length > 0 && !transfers[0]._id?.includes('_') ? 'database' : 'blockchain',
+          ...(blockchainNote && { note: blockchainNote })
         }
       });
     } catch (error) {
