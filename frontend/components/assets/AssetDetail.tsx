@@ -36,21 +36,23 @@ export function AssetDetail({ asset, onExport, className }: AssetDetailProps) {
         {/* Image */}
         <Card>
           <CardContent className="p-0">
-            <div className="relative aspect-square overflow-hidden rounded-t-lg bg-muted">
-              {asset.hasIpfs && asset.ipfsHash ? (
+            {asset.hasIpfs && asset.ipfsHash ? (
+              <div className="relative overflow-hidden rounded-t-lg bg-muted flex items-center justify-center">
+                {/* width/height props are for Next.js optimization; w-full h-auto ensures natural aspect ratio */}
                 <IPFSImage
                   cid={asset.ipfsHash}
                   alt={asset.name}
-                  fill
+                  width={800}
+                  height={800}
                   priority
-                  className="object-contain"
+                  className="w-full h-auto object-contain"
                 />
-              ) : (
-                <div className="flex h-full items-center justify-center">
-                  <FileImage className="h-24 w-24 text-muted-foreground" />
-                </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="relative aspect-square overflow-hidden rounded-t-lg bg-muted flex items-center justify-center">
+                <FileImage className="h-24 w-24 text-muted-foreground" />
+              </div>
+            )}
           </CardContent>
         </Card>
 
