@@ -70,7 +70,7 @@ export function transformAssetTransfer(transfer) {
     to: obj.to,
     amount: obj.amount,
     height: obj.blockHeight ?? obj.height,
-    blockTime: obj.timestamp ? new Date(obj.timestamp).getTime() / 1000 : undefined,
-    timestamp: obj.timestamp,
+    blockTime: obj.timestamp ? new Date(obj.timestamp).getTime() / 1000 : null,
+    timestamp: obj.timestamp || null,
   };
 }

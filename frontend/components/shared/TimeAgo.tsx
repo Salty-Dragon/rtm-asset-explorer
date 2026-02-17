@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { formatTimeAgo } from '@/lib/formatters'
 
 interface TimeAgoProps {
-  timestamp: number | string | Date
+  timestamp: number | string | Date | null
   className?: string
 }
 

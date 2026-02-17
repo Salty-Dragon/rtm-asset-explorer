@@ -10,6 +10,9 @@ import { transformAsset, transformAssetTransfer } from '../utils/transforms.js';
 
 const router = express.Router();
 
+// Constants
+const SATOSHIS_PER_UNIT = 1e8; // Asset amounts use 8 decimal places (10^8 satoshis per unit)
+
 // GET /api/assets - List assets
 router.get('/',
   cacheMiddleware(60),
@@ -277,6 +280,21 @@ router.get('/:assetId/transfers',
             const deltas = await blockchainService.getAddressDeltas([ownerAddress], assetName);
             
             if (deltas && Array.isArray(deltas)) {
+              // Fetch block timestamps for unique block heights
+              const blockTimestamps = {};
+              const uniqueHeights = [...new Set(deltas.map(d => d.height))];
+              
+              for (const height of uniqueHeights) {
+                try {
+                  const blockHash = await blockchainService.getBlockHash(height);
+                  const block = await blockchainService.getBlock(blockHash, 1); // Verbosity 1 for basic info
+                  blockTimestamps[height] = new Date(block.time * 1000);
+                } catch (error) {
+                  logger.warn(`Failed to fetch block ${height} timestamp:`, error.message);
+                  blockTimestamps[height] = null;
+                }
+              }
+              
               // Transform blockchain deltas to transfer format
               transfers = deltas
                 .sort((a, b) => b.height - a.height)
@@ -287,12 +305,12 @@ router.get('/:assetId/transfers',
                   assetName: delta.asset || assetName,
                   from: delta.satoshis < 0 ? delta.address : null,
                   to: delta.satoshis > 0 ? delta.address : null,
-                  amount: Math.abs(delta.satoshis),
+                  // Convert from satoshis to human-readable amount
+                  amount: Math.abs(delta.satoshis) / SATOSHIS_PER_UNIT,
                   type: delta.satoshis > 0 ? 'mint' : 'transfer',
                   blockHeight: delta.height,
                   height: delta.height,
-                  // Note: Timestamp not available from getaddressdeltas, would need to fetch block
-                  timestamp: null,
+                  timestamp: blockTimestamps[delta.height],
                   confirmations: currentHeight - delta.height + 1,
                   _id: delta.txid + '_' + delta.index
                 }));
