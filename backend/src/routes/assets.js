@@ -219,12 +219,84 @@ router.get('/:assetId/transfers',
       
       const skip = (page - 1) * limit;
       
-      const transfers = await AssetTransfer.find({ assetId })
+      // First, try to get asset info to determine asset name
+      let asset = await Asset.findOne({ assetId });
+      if (!asset) {
+        // Try to get from blockchain
+        asset = await blockchainService.getAssetDetailsById(assetId).catch(() => null);
+        if (!asset) {
+          // Maybe assetId is actually the asset name
+          asset = await Asset.findOne({ name: assetId });
+          if (!asset) {
+            asset = await blockchainService.getAssetDetailsByName(assetId).catch(() => null);
+          }
+        }
+      }
+
+      // Try database first
+      let transfers = await AssetTransfer.find({
+        $or: [
+          { assetId: assetId },
+          { assetName: assetId },
+          ...(asset ? [
+            { assetId: asset.assetId || asset.Asset_id },
+            { assetName: asset.name || asset.Asset_name }
+          ] : [])
+        ]
+      })
         .sort({ timestamp: -1 })
         .limit(limit)
         .skip(skip);
       
-      const total = await AssetTransfer.countDocuments({ assetId });
+      let total = await AssetTransfer.countDocuments({
+        $or: [
+          { assetId: assetId },
+          { assetName: assetId },
+          ...(asset ? [
+            { assetId: asset.assetId || asset.Asset_id },
+            { assetName: asset.name || asset.Asset_name }
+          ] : [])
+        ]
+      });
+      
+      // If no transfers found in database and we have asset info, try blockchain
+      if (total === 0 && asset) {
+        try {
+          const assetName = asset.name || asset.Asset_name;
+          const ownerAddress = asset.owner || asset.currentOwner;
+          
+          if (ownerAddress && assetName) {
+            logger.info(`No transfers in DB for ${assetName}, querying blockchain...`);
+            const deltas = await blockchainService.getAddressDeltas([ownerAddress], assetName);
+            
+            if (deltas && Array.isArray(deltas)) {
+              // Transform blockchain deltas to transfer format
+              transfers = deltas
+                .sort((a, b) => b.height - a.height)
+                .slice(skip, skip + limit)
+                .map(delta => ({
+                  txid: delta.txid,
+                  assetId: delta.assetId || asset.assetId || asset.Asset_id,
+                  assetName: delta.asset || assetName,
+                  from: delta.satoshis < 0 ? delta.address : null,
+                  to: delta.satoshis > 0 ? delta.address : null,
+                  amount: Math.abs(delta.satoshis),
+                  type: delta.satoshis > 0 ? 'mint' : 'transfer',
+                  blockHeight: delta.height,
+                  height: delta.height,
+                  timestamp: new Date(),
+                  confirmations: 0,
+                  _id: delta.txid + '_' + delta.index
+                }));
+              
+              total = deltas.length;
+            }
+          }
+        } catch (blockchainError) {
+          logger.warn(`Failed to fetch transfers from blockchain for ${assetId}:`, blockchainError.message);
+          // Continue with empty result
+        }
+      }
       
       const pages = Math.ceil(total / limit);
 
@@ -241,7 +313,8 @@ router.get('/:assetId/transfers',
         },
         meta: {
           timestamp: new Date().toISOString(),
-          requestId: req.id || 'req_' + Date.now()
+          requestId: req.id || 'req_' + Date.now(),
+          dataSource: total > 0 && transfers.length > 0 && !transfers[0]._id?.includes('_') ? 'database' : 'blockchain'
         }
       });
     } catch (error) {
