@@ -25,30 +25,50 @@
  *   node resync-transfers.js --batch 50 --confirm
  */
 
-import mongoose from 'mongoose';
+// Load environment variables FIRST, before any other imports
+// This ensures that .env is loaded before blockchainService singleton is instantiated
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Get directory name for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 
-// Import models
-import Asset from './src/models/Asset.js';
-import AssetTransfer from './src/models/AssetTransfer.js';
-import Block from './src/models/Block.js';
-import SyncState from './src/models/SyncState.js';
-
-// Import services
-import blockchainService from './src/services/blockchain.js';
-import assetProcessor from './src/services/assetProcessor.js';
-import { logger } from './src/utils/logger.js';
+// Import mongoose early (doesn't depend on env vars at import time)
+import mongoose from 'mongoose';
 
 async function resyncTransfers() {
+  // Dynamic imports - loaded after dotenv.config() has run
+  // This ensures blockchainService singleton gets the correct env vars from .env
+  let Asset, AssetTransfer, Block, SyncState, blockchainService, assetProcessor, logger;
+  
+  try {
+    const modules = await Promise.all([
+      import('./src/models/Asset.js'),
+      import('./src/models/AssetTransfer.js'),
+      import('./src/models/Block.js'),
+      import('./src/models/SyncState.js'),
+      import('./src/services/blockchain.js'),
+      import('./src/services/assetProcessor.js'),
+      import('./src/utils/logger.js')
+    ]);
+    
+    Asset = modules[0].default;
+    AssetTransfer = modules[1].default;
+    Block = modules[2].default;
+    SyncState = modules[3].default;
+    blockchainService = modules[4].default;
+    assetProcessor = modules[5].default;
+    logger = modules[6].logger;
+  } catch (error) {
+    console.error('❌ Failed to load required modules:', error.message);
+    console.error('   Make sure all dependencies are installed and the backend directory structure is correct.');
+    console.error(error);
+    process.exit(1);
+  }
+
   try {
     // Parse command line arguments
     const args = process.argv.slice(2);
