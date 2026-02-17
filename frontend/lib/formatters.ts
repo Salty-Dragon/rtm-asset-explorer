@@ -52,24 +52,45 @@ export function formatPercentage(value: number, decimals = 2): string {
 /**
  * Format a date/timestamp
  */
-export function formatDate(timestamp: number | string | Date, formatStr = 'PPpp'): string {
+export function formatDate(timestamp: number | string | Date | null, formatStr = 'PPpp'): string {
+  if (!timestamp) {
+    return 'Unknown'
+  }
   const date = typeof timestamp === 'number' ? new Date(timestamp * 1000) : new Date(timestamp)
+  // Check for invalid dates
+  if (isNaN(date.getTime())) {
+    return 'Unknown'
+  }
   return format(date, formatStr)
 }
 
 /**
  * Format a date as relative time (e.g., "2 hours ago")
  */
-export function formatTimeAgo(timestamp: number | string | Date): string {
+export function formatTimeAgo(timestamp: number | string | Date | null): string {
+  if (!timestamp) {
+    return 'Unknown'
+  }
   const date = typeof timestamp === 'number' ? new Date(timestamp * 1000) : new Date(timestamp)
+  // Check for invalid dates
+  if (isNaN(date.getTime())) {
+    return 'Unknown'
+  }
   return formatDistance(date, new Date(), { addSuffix: true })
 }
 
 /**
  * Format a date as relative (e.g., "today at 3:00 PM")
  */
-export function formatRelativeTime(timestamp: number | string | Date): string {
+export function formatRelativeTime(timestamp: number | string | Date | null): string {
+  if (!timestamp) {
+    return 'Unknown'
+  }
   const date = typeof timestamp === 'number' ? new Date(timestamp * 1000) : new Date(timestamp)
+  // Check for invalid dates
+  if (isNaN(date.getTime())) {
+    return 'Unknown'
+  }
   return formatRelative(date, new Date())
 }
 
