@@ -330,33 +330,32 @@ class AssetProcessor {
    */
   async recordAssetTransfer(transferData) {
     try {
-      // Check if transfer already exists to avoid duplicates
-      const existing = await AssetTransfer.findOne({
-        txid: transferData.txid,
-        assetName: transferData.assetName,
-        to: transferData.to
-      });
-      
-      if (existing) {
-        logger.debug(`Transfer already recorded: ${transferData.assetName} in ${transferData.txid}`);
-        return existing;
-      }
-      
-      const transfer = new AssetTransfer(transferData);
-      await transfer.save();
-      logger.info(`✓ Recorded asset transfer: ${transferData.assetName} in ${transferData.txid}, amount: ${transferData.amount}`);
-      return transfer;
-    } catch (error) {
-      // If duplicate key error, try to fetch existing
-      if (error.code === 11000) {
-        logger.debug(`Duplicate transfer detected (code 11000): ${transferData.assetName} in ${transferData.txid}`);
-        return await AssetTransfer.findOne({
+      // Use upsert to avoid duplicate check query
+      const result = await AssetTransfer.findOneAndUpdate(
+        {
           txid: transferData.txid,
           assetName: transferData.assetName,
           to: transferData.to
-        });
+        },
+        transferData,
+        {
+          upsert: true,
+          new: true,
+          setDefaultsOnInsert: true
+        }
+      );
+      
+      // Check if it was newly created or already existed
+      const wasNew = result.$__delta ? true : false;
+      
+      if (wasNew) {
+        logger.info(`✓ Recorded asset transfer: ${transferData.assetName} in ${transferData.txid}, amount: ${transferData.amount}`);
+      } else {
+        logger.debug(`Transfer already recorded: ${transferData.assetName} in ${transferData.txid}`);
       }
       
+      return result;
+    } catch (error) {
       logger.error(`Failed to record asset transfer for ${transferData.assetName} in ${transferData.txid}:`, error);
       throw error;
     }

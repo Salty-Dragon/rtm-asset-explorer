@@ -76,18 +76,20 @@ This will show:
 
 **To re-sync from the beginning (clears all synced data):**
 ```bash
-node force-resync.js --from 0 --clear-all
+node force-resync.js --from 0 --clear-all --confirm
 ```
 
 **To re-sync from a specific block:**
 ```bash
-node force-resync.js --from 1000000
+node force-resync.js --from 1000000 --confirm
 ```
 
 **To just clear transfers and re-detect them:**
 ```bash
-node force-resync.js --from 0 --clear-transfers
+node force-resync.js --from 0 --clear-transfers --confirm
 ```
+
+**Note:** The `--confirm` flag is required to prevent accidental data deletion.
 
 #### Step 3: Restart Sync Daemon
 

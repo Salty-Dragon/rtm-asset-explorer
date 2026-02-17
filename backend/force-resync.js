@@ -7,9 +7,15 @@
  * Use this when transfer detection logic has been fixed and you need to re-scan blocks.
  * 
  * OPTIONS:
- *   --from <height>  - Start re-syncing from this block height (default: 0)
- *   --clear-transfers - Clear existing AssetTransfer records before re-sync
- *   --clear-all      - Clear all synced data (blocks, transactions, transfers)
+ *   --from <height>    - Start re-syncing from this block height (default: 0)
+ *   --clear-transfers  - Clear existing AssetTransfer records before re-sync
+ *   --clear-all        - Clear all synced data (blocks, transactions, transfers)
+ *   --confirm          - Required flag to confirm destructive operation
+ * 
+ * EXAMPLES:
+ *   node force-resync.js --from 0 --clear-transfers --confirm
+ *   node force-resync.js --from 1000000 --confirm
+ *   node force-resync.js --clear-all --confirm
  */
 
 import mongoose from 'mongoose';
@@ -38,6 +44,7 @@ async function forceResync() {
     let fromHeight = 0;
     let clearTransfers = false;
     let clearAll = false;
+    let confirmed = false;
 
     for (let i = 0; i < args.length; i++) {
       if (args[i] === '--from' && args[i + 1]) {
@@ -47,6 +54,8 @@ async function forceResync() {
         clearTransfers = true;
       } else if (args[i] === '--clear-all') {
         clearAll = true;
+      } else if (args[i] === '--confirm') {
+        confirmed = true;
       }
     }
 
@@ -87,6 +96,7 @@ async function forceResync() {
     console.log(`  Start from block: ${fromHeight.toLocaleString()}`);
     console.log(`  Clear transfers:  ${clearTransfers ? 'YES' : 'NO'}`);
     console.log(`  Clear all data:   ${clearAll ? 'YES' : 'NO'}`);
+    console.log(`  Confirmed:        ${confirmed ? 'YES' : 'NO'}`);
 
     // Confirm
     console.log('\n⚠️  WARNING: This will reset sync state and may delete data!');
@@ -100,10 +110,15 @@ async function forceResync() {
       console.log('   ALL synced data (blocks, transactions, transfers) will be DELETED');
     }
 
-    // In production, you'd want a confirmation prompt here
-    // For now, we'll proceed automatically since this is a utility script
-    console.log('\nProceeding in 5 seconds... (Ctrl+C to cancel)');
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    if (!confirmed) {
+      console.log('\n❌ Confirmation required! Add --confirm flag to proceed.');
+      console.log('   Example: node force-resync.js --from 0 --clear-transfers --confirm');
+      await mongoose.disconnect();
+      process.exit(1);
+    }
+
+    console.log('\nProceeding in 3 seconds... (Ctrl+C to cancel)');
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
     console.log('\nExecuting re-sync setup...\n');
 

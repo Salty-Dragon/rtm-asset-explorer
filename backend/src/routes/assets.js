@@ -261,6 +261,7 @@ router.get('/:assetId/transfers',
       
       // If no transfers found in database and we have asset info, try blockchain
       let blockchainNote = null;
+      let fromBlockchain = false;
       if (total === 0 && asset) {
         try {
           const assetName = asset.name || asset.Asset_name;
@@ -268,6 +269,11 @@ router.get('/:assetId/transfers',
           
           if (ownerAddress && assetName) {
             logger.info(`No transfers in DB for ${assetName}, querying blockchain for owner ${ownerAddress}...`);
+            
+            // Get current blockchain height for confirmations calculation
+            const blockchainInfo = await blockchainService.getBlockchainInfo();
+            const currentHeight = blockchainInfo.blocks;
+            
             const deltas = await blockchainService.getAddressDeltas([ownerAddress], assetName);
             
             if (deltas && Array.isArray(deltas)) {
@@ -285,12 +291,14 @@ router.get('/:assetId/transfers',
                   type: delta.satoshis > 0 ? 'mint' : 'transfer',
                   blockHeight: delta.height,
                   height: delta.height,
-                  timestamp: new Date(),
-                  confirmations: 0,
+                  // Note: Timestamp not available from getaddressdeltas, would need to fetch block
+                  timestamp: null,
+                  confirmations: Math.max(0, currentHeight - delta.height + 1),
                   _id: delta.txid + '_' + delta.index
                 }));
               
               total = deltas.length;
+              fromBlockchain = true;
               blockchainNote = 'Showing transfers for owner address only. Complete history may not be available.';
             }
           }
@@ -322,7 +330,7 @@ router.get('/:assetId/transfers',
         meta: {
           timestamp: new Date().toISOString(),
           requestId: req.id || 'req_' + Date.now(),
-          dataSource: total > 0 && transfers.length > 0 && !transfers[0]._id?.includes('_') ? 'database' : 'blockchain',
+          dataSource: fromBlockchain ? 'blockchain' : 'database',
           ...(blockchainNote && { note: blockchainNote })
         }
       });
