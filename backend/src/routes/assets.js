@@ -10,6 +10,9 @@ import { transformAsset, transformAssetTransfer } from '../utils/transforms.js';
 
 const router = express.Router();
 
+// Constants
+const SATOSHIS_PER_UNIT = 1e8; // Asset amounts use 8 decimal places (10^8 satoshis per unit)
+
 // GET /api/assets - List assets
 router.get('/',
   cacheMiddleware(60),
@@ -302,8 +305,8 @@ router.get('/:assetId/transfers',
                   assetName: delta.asset || assetName,
                   from: delta.satoshis < 0 ? delta.address : null,
                   to: delta.satoshis > 0 ? delta.address : null,
-                  // Convert from satoshis to human-readable amount (divide by 10^8)
-                  amount: Math.abs(delta.satoshis) / 100000000,
+                  // Convert from satoshis to human-readable amount
+                  amount: Math.abs(delta.satoshis) / SATOSHIS_PER_UNIT,
                   type: delta.satoshis > 0 ? 'mint' : 'transfer',
                   blockHeight: delta.height,
                   height: delta.height,
