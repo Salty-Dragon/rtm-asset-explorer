@@ -457,3 +457,80 @@ Examples:
 > curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "createrawtransaction", "params": ["[{\"txid\":\"myid\",\"vout\":0}]", "[{\"address\":0.01}]"] }' -H 'content-type: text/plain;' http://127.0.0.1:10225/
 > curl --user myusername --data-binary '{"jsonrpc": "1.0", "id":"curltest", "method": "createrawtransaction", "params": ["[{\"txid\":\"myid\",\"vout\":0}]", "[{\"data\":\"00010203\"}]"] }' -H 'content-type: text/plain;' http://127.0.0.1:10225/
 
+###Raw Transaction involvine asset
+getrawtransaction c93aa310ded59b04e61060df277fb6d972791a8310922ef1438440e82b008999 true
+
+{
+  "txid": "c93aa310ded59b04e61060df277fb6d972791a8310922ef1438440e82b008999",
+  "version": 2,
+  "type": 0,
+  "size": 462,
+  "locktime": 1282275,
+  "vin": [
+    {
+      "txid": "ac23e967f3b7079c955bcdf99a162f0710d51e7c5f25c5cf0d630c4fa60188f2",
+      "vout": 1,
+      "scriptSig": {
+        "asm": "30450221009038fd400733c70e77381fa9edb04725597c3b970acd2752bdcbff52c60a30a502204a3db9e528bc544eceabcfc3d369571f217b85cdc6d88be679a8aae8f7016748[ALL] 0369cd77417c49117d677ed20ebe9098b08ff1d8e67bc8ca6b0038348a5c55d9ed",
+        "hex": "4830450221009038fd400733c70e77381fa9edb04725597c3b970acd2752bdcbff52c60a30a502204a3db9e528bc544eceabcfc3d369571f217b85cdc6d88be679a8aae8f701674801210369cd77417c49117d677ed20ebe9098b08ff1d8e67bc8ca6b0038348a5c55d9ed"
+      },
+      "value": 1.00000000,
+      "valueSat": 100000000,
+      "address": "RKiwk9dJLKt4cqYC4LkmMSmyyT2mEo6NBN",
+      "sequence": 4294967294
+    },
+    {
+      "txid": "ac23e967f3b7079c955bcdf99a162f0710d51e7c5f25c5cf0d630c4fa60188f2",
+      "vout": 2,
+      "scriptSig": {
+        "asm": "304402201a74d45ff58273909d71aae844b1e558aea8696452cb7eb8f0298cbd1c134cf7022042e84b168bab70dc3094c678b70e08bc4a48f5f7b40477526b0cf2758568b2d6[ALL] 025ad467bbfdb5ecc1250ac01eb38c6a84b26c70d2f150a6cce9038349d96f3e6a",
+        "hex": "47304402201a74d45ff58273909d71aae844b1e558aea8696452cb7eb8f0298cbd1c134cf7022042e84b168bab70dc3094c678b70e08bc4a48f5f7b40477526b0cf2758568b2d60121025ad467bbfdb5ecc1250ac01eb38c6a84b26c70d2f150a6cce9038349d96f3e6a"
+      },
+      "value": 4.99999291,
+      "valueSat": 499999291,
+      "address": "RDuomkHN9dyJJTY8vcx45FVUGRKWcECjUR",
+      "sequence": 4294967294
+    }
+  ],
+  "vout": [
+    {
+      "value": 0.00000000,
+      "valueSat": 0,
+      "n": 0,
+      "scriptPubKey": {
+        "asm": "OP_DUP OP_HASH160 e7eec0ac24fe48c673110d40049d3ff64459f7f4 OP_EQUALVERIFY OP_CHECKSIG OP_ASSET_ID 4c5572746d403839346534393433353436366138353637366337623462653430366231666366636161393033326161373636343830666338353663663131393432393336323701a40100000000000000e1f5050000000075",
+        "hex": "76a914e7eec0ac24fe48c673110d40049d3ff64459f7f488acbc4c5572746d403839346534393433353436366138353637366337623462653430366231666366636161393033326161373636343830666338353663663131393432393336323701a40100000000000000e1f5050000000075",
+        "reqSigs": 1,
+        "type": "transferasset",
+        "asset": {
+          "name": "ELECTRON",
+          "asset_id": "894e49435466a85676c7b4be406b1fcfcaa9032aa766480fc856cf1194293627[420]",
+          "amount": 1.00000000
+        },
+        "addresses": [
+          "RWRYBenJefjS18P98iFWXSqFX3tjtiXM8P"
+        ]
+      }
+    },
+    {
+      "value": 4.99998732,
+      "valueSat": 499998732,
+      "n": 1,
+      "scriptPubKey": {
+        "asm": "OP_DUP OP_HASH160 4fc203dce4be758ef4fb7286c257b240f0c6258b OP_EQUALVERIFY OP_CHECKSIG",
+        "hex": "76a9144fc203dce4be758ef4fb7286c257b240f0c6258b88ac",
+        "reqSigs": 1,
+        "type": "pubkeyhash",
+        "addresses": [
+          "RGYut5Ktq5CDZQrRwmdPVTCysYr6SokGqD"
+        ]
+      }
+    }
+  ],
+  "hex": "0200000002f28801a64f0c630dcfc5255f7c1ed510072f169af9cd5b959c07b7f367e923ac010000006b4830450221009038fd400733c70e77381fa9edb04725597c3b970acd2752bdcbff52c60a30a502204a3db9e528bc544eceabcfc3d369571f217b85cdc6d88be679a8aae8f701674801210369cd77417c49117d677ed20ebe9098b08ff1d8e67bc8ca6b0038348a5c55d9edfefffffff28801a64f0c630dcfc5255f7c1ed510072f169af9cd5b959c07b7f367e923ac020000006a47304402201a74d45ff58273909d71aae844b1e558aea8696452cb7eb8f0298cbd1c134cf7022042e84b168bab70dc3094c678b70e08bc4a48f5f7b40477526b0cf2758568b2d60121025ad467bbfdb5ecc1250ac01eb38c6a84b26c70d2f150a6cce9038349d96f3e6afeffffff0200000000000000007276a914e7eec0ac24fe48c673110d40049d3ff64459f7f488acbc4c5572746d403839346534393433353436366138353637366337623462653430366231666366636161393033326161373636343830666338353663663131393432393336323701a40100000000000000e1f50500000000750c60cd1d000000001976a9144fc203dce4be758ef4fb7286c257b240f0c6258b88ace3901300",
+  "instantlock": false,
+  "instantlock_internal": false,
+  "chainlock": false
+}
+
+
