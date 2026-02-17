@@ -98,6 +98,14 @@ class BlockchainService {
     return await this.rpcCall('getmininginfo');
   }
 
+  async getAddressDeltas(addresses, asset = null) {
+    const params = { addresses };
+    if (asset) {
+      params.asset = asset;
+    }
+    return await this.rpcCall('getaddressdeltas', [params]);
+  }
+
   async checkHealth() {
     try {
       console.log('[BLOCKCHAIN HEALTH] Checking blockchain health...');
