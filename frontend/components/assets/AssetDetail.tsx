@@ -125,6 +125,15 @@ export function AssetDetail({ asset, onExport, className }: AssetDetailProps) {
               </div>
             </div>
 
+            {/* Asset Name */}
+            <div>
+              <div className="mb-1 text-xs text-muted-foreground">Asset Name</div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-semibold text-sm break-all">{asset.name}</span>
+                <CopyButton text={asset.name} size="sm" />
+              </div>
+            </div>
+
             {/* Creator */}
             <div>
               <div className="mb-1 text-xs text-muted-foreground">Creator</div>
