@@ -12,8 +12,6 @@
  */
 
 import mongoose from 'mongoose';
-import blockchainService from '../src/services/blockchain.js';
-import assetProcessor from '../src/services/assetProcessor.js';
 import Asset from '../src/models/Asset.js';
 import Transaction from '../src/models/Transaction.js';
 import Block from '../src/models/Block.js';
@@ -33,6 +31,8 @@ dotenv.config({ path: envPath });
 
 class SubAssetFixer {
   constructor() {
+    this.blockchainService = null;
+    this.assetProcessor = null;
     this.stats = {
       assetsChecked: 0,
       subAssetsFound: 0,
@@ -59,8 +59,15 @@ class SubAssetFixer {
       await mongoose.connect(mongoUri);
       console.log('✓ Connected to MongoDB');
 
+      // Dynamically import services AFTER env vars are loaded
+      const blockchainModule = await import('../src/services/blockchain.js');
+      this.blockchainService = blockchainModule.default;
+      
+      const assetProcessorModule = await import('../src/services/assetProcessor.js');
+      this.assetProcessor = assetProcessorModule.default;
+
       // Check blockchain connection
-      const blockchainHealth = await blockchainService.checkHealth();
+      const blockchainHealth = await this.blockchainService.checkHealth();
       if (blockchainHealth.status !== 'connected') {
         throw new Error(`Blockchain not available: ${blockchainHealth.message}`);
       }
@@ -95,7 +102,7 @@ class SubAssetFixer {
   async reprocessBlock(blockData) {
     try {
       // Fetch full block with transactions from blockchain
-      const block = await blockchainService.getBlock(blockData.hash, 2);
+      const block = await this.blockchainService.getBlock(blockData.hash, 2);
       
       if (!block || !block.tx) {
         return 0;
@@ -152,7 +159,7 @@ class SubAssetFixer {
           console.log(`  Creating missing sub-asset: ${assetName}`);
           
           const blockTime = new Date(block.time * 1000);
-          await assetProcessor.handleAssetCreation(tx, block.height, blockTime, block.hash);
+          await this.assetProcessor.handleAssetCreation(tx, block.height, blockTime, block.hash);
           this.stats.subAssetsCreated++;
           processedCount++;
         }
