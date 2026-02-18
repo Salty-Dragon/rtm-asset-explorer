@@ -51,6 +51,12 @@ export function AssetCard({ asset, className }: AssetCardProps) {
             <Badge variant={asset.type === 'nft' ? 'default' : 'secondary'}>
               {asset.type === 'nft' ? 'NFT' : 'Fungible'}
             </Badge>
+            {/* Sub-asset Badge */}
+            {asset.isSubAsset && (
+              <Badge variant="outline" className="bg-background/80 backdrop-blur-sm">
+                Sub-asset
+              </Badge>
+            )}
             {/* File Type Badge */}
             {fileType?.badge && (
               <Badge variant="outline" className="bg-background/80 backdrop-blur-sm">
@@ -74,6 +80,13 @@ export function AssetCard({ asset, className }: AssetCardProps) {
           <h3 className="mb-2 truncate font-semibold group-hover:text-accent">
             {asset.name}
           </h3>
+
+          {/* Parent Asset */}
+          {asset.isSubAsset && asset.parentAssetName && (
+            <p className="mb-2 text-xs text-muted-foreground">
+              Parent: {asset.parentAssetName}
+            </p>
+          )}
 
           {/* Description */}
           {asset.metadata?.description && (

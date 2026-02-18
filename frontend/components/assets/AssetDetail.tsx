@@ -152,10 +152,10 @@ export function AssetDetail({ asset, onExport, className }: AssetDetailProps) {
               </div>
             )}
 
-            {/* Supply */}
+            {/* Max Mint Count */}
             <div>
-              <div className="mb-1 text-xs text-muted-foreground">Total Supply</div>
-              <div className="text-sm">{formatNumber(asset.amount)}</div>
+              <div className="mb-1 text-xs text-muted-foreground">Max Mint Count</div>
+              <div className="text-sm">{formatNumber(asset.maxMintCount)}</div>
             </div>
 
             {/* Units */}

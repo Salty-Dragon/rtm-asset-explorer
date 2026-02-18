@@ -177,6 +177,7 @@ async function resyncTransfers() {
       $set: {
         transferCount: 0,
         mintCount: 0,
+        circulatingSupply: 0,
         lastTransfer: null
       }
     });

@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import Link from 'next/link'
 import { FileImage, User, Hash, Layers } from 'lucide-react'
+import { groupAssetsByParent } from '@/lib/utils'
 
 function SearchPageContent() {
   const searchParams = useSearchParams()
@@ -99,7 +100,7 @@ function SearchPageContent() {
                 Assets
               </h2>
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {assets.map((asset) => (
+                {groupAssetsByParent(assets).map((asset) => (
                   <AssetCard key={asset._id} asset={asset} />
                 ))}
               </div>
