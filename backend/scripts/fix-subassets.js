@@ -316,14 +316,40 @@ let confirmed = false;
 
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--from' && args[i + 1]) {
-    fromHeight = parseInt(args[i + 1]);
+    fromHeight = parseInt(args[i + 1], 10);
     i++;
   } else if (args[i] === '--to' && args[i + 1]) {
-    toHeight = parseInt(args[i + 1]);
+    toHeight = parseInt(args[i + 1], 10);
     i++;
   } else if (args[i] === '--confirm') {
     confirmed = true;
   }
+}
+
+// Validate parsed arguments
+if (isNaN(fromHeight) || fromHeight < 0) {
+  console.error('❌ Invalid --from value. Must be a positive number.');
+  console.error('\nExamples:');
+  console.error('  node backend/scripts/fix-subassets.js --from 850000 --confirm');
+  console.error('  node backend/scripts/fix-subassets.js --from 850000 --to 1000000 --confirm');
+  process.exit(1);
+}
+
+if (toHeight !== null && (isNaN(toHeight) || toHeight < 0)) {
+  console.error('❌ Invalid --to value. Must be a positive number.');
+  console.error('\nExamples:');
+  console.error('  node backend/scripts/fix-subassets.js --from 850000 --confirm');
+  console.error('  node backend/scripts/fix-subassets.js --from 850000 --to 1000000 --confirm');
+  process.exit(1);
+}
+
+if (toHeight !== null && fromHeight > toHeight) {
+  console.error('❌ Invalid range: --from must be less than or equal to --to');
+  console.error(`   Current values: --from ${fromHeight} --to ${toHeight}`);
+  console.error('\nExamples:');
+  console.error('  node backend/scripts/fix-subassets.js --from 850000 --confirm');
+  console.error('  node backend/scripts/fix-subassets.js --from 850000 --to 1000000 --confirm');
+  process.exit(1);
 }
 
 if (!confirmed) {
