@@ -139,43 +139,74 @@ class SubAssetFixer {
         }
 
         const assetName = tx.newAssetTx.name;
+        const isRoot = tx.newAssetTx.isRoot;
+        const rootId = tx.newAssetTx.rootId;
         this.stats.assetsChecked++;
 
-        // Check if this is a sub-asset
-        if (!assetName.includes('|')) {
+        // Check if this is a sub-asset using isRoot field
+        if (isRoot !== false) {
           continue; // Not a sub-asset
         }
 
         this.stats.subAssetsFound++;
         
+        // Get sub-asset name (without parent prefix)
+        const subAssetName = assetName.trim();
+        
+        // Find parent asset by rootId
+        const parentAsset = await Asset.findOne({ assetId: rootId });
+        
+        if (!parentAsset) {
+          console.log(`  ⚠️  Parent asset not found for sub-asset ${assetName} (rootId: ${rootId})`);
+          this.stats.errors++;
+          continue;
+        }
+        
+        const parentAssetName = parentAsset.name.toUpperCase();
+        const fullAssetName = `${parentAssetName}|${subAssetName}`;
+        
         // Check if asset already exists
         const existingAsset = await Asset.findOne({ assetId: tx.txid });
         
         if (existingAsset) {
-          // Update parent asset name to uppercase if needed
-          const parts = assetName.split('|');
-          const correctParentName = parts[0].trim().toUpperCase();
+          // Asset exists but might have wrong name/flags
+          let needsUpdate = false;
           
-          if (existingAsset.parentAssetName !== correctParentName) {
-            console.log(`  Updating parent name: ${existingAsset.parentAssetName} → ${correctParentName} for ${assetName}`);
-            existingAsset.parentAssetName = correctParentName;
-            
-            // Re-find parent asset with correct name
-            const parentAsset = await Asset.findOne({ 
-              name: correctParentName, 
-              isSubAsset: false 
-            });
-            
-            if (parentAsset) {
-              existingAsset.parentAssetId = parentAsset.assetId;
-            }
-            
+          if (existingAsset.name !== fullAssetName) {
+            console.log(`  Fixing asset name: ${existingAsset.name} → ${fullAssetName}`);
+            existingAsset.name = fullAssetName;
+            needsUpdate = true;
+          }
+          
+          if (existingAsset.isSubAsset !== true) {
+            console.log(`  Setting isSubAsset flag for ${fullAssetName}`);
+            existingAsset.isSubAsset = true;
+            needsUpdate = true;
+          }
+          
+          if (existingAsset.parentAssetName !== parentAssetName) {
+            console.log(`  Updating parent name: ${existingAsset.parentAssetName} → ${parentAssetName}`);
+            existingAsset.parentAssetName = parentAssetName;
+            needsUpdate = true;
+          }
+          
+          if (existingAsset.subAssetName !== subAssetName) {
+            existingAsset.subAssetName = subAssetName;
+            needsUpdate = true;
+          }
+          
+          if (existingAsset.parentAssetId !== parentAsset.assetId) {
+            existingAsset.parentAssetId = parentAsset.assetId;
+            needsUpdate = true;
+          }
+          
+          if (needsUpdate) {
             await existingAsset.save();
             this.stats.subAssetsUpdated++;
           }
         } else {
-          // Asset doesn't exist, create it
-          console.log(`  Creating missing sub-asset: ${assetName}`);
+          // Asset doesn't exist, create it with correct data
+          console.log(`  Creating missing sub-asset: ${fullAssetName}`);
           
           const blockTime = new Date(block.time * 1000);
           await this.assetProcessor.handleAssetCreation(tx, block.height, blockTime, block.hash);
@@ -199,6 +230,60 @@ class SubAssetFixer {
       this.stats.errors++;
       return 0;
     }
+  }
+
+  /**
+   * Fix existing assets that were incorrectly saved without parent names
+   */
+  async fixMisnamedSubAssets() {
+    console.log('\nSearching for incorrectly saved sub-assets...');
+    
+    // Find all asset creation transactions from blockchain
+    const blocks = await this.findAssetCreationBlocks();
+    let fixedCount = 0;
+    
+    for (const blockData of blocks) {
+      const block = await this.blockchainService.getBlock(blockData.hash, 2);
+      if (!block || !block.tx) continue;
+      
+      for (const tx of block.tx) {
+        if (tx.type !== 8 || !tx.newAssetTx) continue;
+        
+        const { name, isRoot, rootId } = tx.newAssetTx;
+        
+        // Only process sub-assets
+        if (isRoot !== false) continue;
+        
+        // Find the asset in database
+        const asset = await Asset.findOne({ assetId: tx.txid });
+        if (!asset) continue;
+        
+        // Check if it's incorrectly saved (name doesn't contain pipe)
+        if (asset.name.includes('|')) continue;
+        
+        // This is a sub-asset saved with wrong name
+        const parentAsset = await Asset.findOne({ assetId: rootId });
+        if (!parentAsset) {
+          console.log(`  ⚠️  Cannot fix ${asset.name}: parent not found (rootId: ${rootId})`);
+          continue;
+        }
+        
+        const correctName = `${parentAsset.name.toUpperCase()}|${name.trim()}`;
+        console.log(`  Fixing: "${asset.name}" → "${correctName}"`);
+        
+        asset.name = correctName;
+        asset.isSubAsset = true;
+        asset.parentAssetName = parentAsset.name.toUpperCase();
+        asset.subAssetName = name.trim();
+        asset.parentAssetId = parentAsset.assetId;
+        
+        await asset.save();
+        fixedCount++;
+      }
+    }
+    
+    console.log(`\n✓ Fixed ${fixedCount} misnamed sub-assets`);
+    return fixedCount;
   }
 
   /**
@@ -249,10 +334,13 @@ class SubAssetFixer {
     try {
       await this.initialize();
 
-      // Step 1: Fix empty blockHash in existing transactions
+      // Step 1: Fix misnamed sub-assets that were already saved
+      await this.fixMisnamedSubAssets();
+
+      // Step 2: Fix empty blockHash in existing transactions
       await this.fixEmptyBlockHashes();
 
-      // Step 2: Find and re-process asset creation blocks
+      // Step 3: Find and re-process asset creation blocks
       const blocks = await this.findAssetCreationBlocks();
       
       console.log('\nRe-processing blocks for sub-assets...');
