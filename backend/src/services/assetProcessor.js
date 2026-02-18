@@ -8,7 +8,7 @@ class AssetProcessor {
   /**
    * Handle asset creation (Type 8 - NewAssetTx)
    */
-  async handleAssetCreation(tx, blockHeight, blockTime) {
+  async handleAssetCreation(tx, blockHeight, blockTime, blockHash) {
     try {
       if (!tx.newAssetTx) {
         logger.warn(`No newAssetTx data in transaction ${tx.txid}`);
@@ -25,7 +25,7 @@ class AssetProcessor {
       
       if (isSubAsset) {
         const parts = name.split('|');
-        parentAssetName = parts[0].trim();
+        parentAssetName = parts[0].trim().toUpperCase();
         subAssetName = parts.slice(1).join('|').trim(); // Support multiple pipes
         
         // Find parent asset
@@ -99,7 +99,7 @@ class AssetProcessor {
         from: null,
         to: ownerAddress,
         amount: 0
-      });
+      }, blockHash);
 
       return asset;
     } catch (error) {
@@ -111,7 +111,7 @@ class AssetProcessor {
   /**
    * Handle asset mint (Type 10 - MintAssetTx)
    */
-  async handleAssetMint(tx, blockHeight, blockTime) {
+  async handleAssetMint(tx, blockHeight, blockTime, blockHash) {
     try {
       if (!tx.mintAssetTx && !tx.MintAssetTx) {
         logger.warn(`No mintAssetTx data in transaction ${tx.txid}`);
@@ -175,7 +175,7 @@ class AssetProcessor {
         from: null,
         to: recipient,
         amount
-      });
+      }, blockHash);
 
       return { assetId, assetName, amount, recipient };
     } catch (error) {
@@ -187,7 +187,7 @@ class AssetProcessor {
   /**
    * Handle asset transfer (Type 0 with transferasset vout)
    */
-  async handleAssetTransfer(tx, blockHeight, blockTime) {
+  async handleAssetTransfer(tx, blockHeight, blockTime, blockHash) {
     try {
       // Find asset vouts - check multiple possible structures
       const assetVouts = tx.vout?.filter(vout => {
@@ -290,7 +290,7 @@ class AssetProcessor {
           from: transfers[0].from,
           to: transfers[0].to,
           amount: transfers[0].amount
-        });
+        }, blockHash);
       }
 
       return transfers;
@@ -303,7 +303,7 @@ class AssetProcessor {
   /**
    * Handle asset update (Type 9 - UpdateAssetTx)
    */
-  async handleAssetUpdate(tx, blockHeight, blockTime) {
+  async handleAssetUpdate(tx, blockHeight, blockTime, blockHash) {
     try {
       // Parse extraPayload for updated IPFS hash
       // This is simplified - actual implementation would need to decode extraPayload
@@ -316,7 +316,7 @@ class AssetProcessor {
         from: null,
         to: null,
         amount: 0
-      });
+      }, blockHash);
 
       return { updated: true };
     } catch (error) {
@@ -365,7 +365,7 @@ class AssetProcessor {
   /**
    * Record asset transaction in Transaction collection
    */
-  async recordAssetTransaction(tx, blockHeight, blockTime, operation, assetData) {
+  async recordAssetTransaction(tx, blockHeight, blockTime, operation, assetData, blockHash) {
     try {
       // Check if transaction already exists
       const exists = await Transaction.findOne({ txid: tx.txid });
@@ -382,7 +382,7 @@ class AssetProcessor {
       const transaction = new Transaction({
         txid: tx.txid,
         blockHeight,
-        blockHash: tx.blockhash || '',
+        blockHash: blockHash || '',
         timestamp: blockTime,
         confirmations: tx.confirmations || 0,
         size: tx.size || 0,

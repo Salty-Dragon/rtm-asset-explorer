@@ -13,7 +13,8 @@
     "test:integration": "node test-integration.js",
     "test:config": "node test-config.js",
     "test:validation": "node test-validation.js",
-    "test:all": "npm run test:integration && npm run test:config && npm run test:validation"
+    "test:all": "npm run test:integration && npm run test:config && npm run test:validation",
+    "fix:subassets": "node scripts/fix-subassets.js"
   },
   "keywords": [
     "raptoreum",

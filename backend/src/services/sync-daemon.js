@@ -405,7 +405,7 @@ class SyncDaemon {
       if (block.tx && Array.isArray(block.tx)) {
         for (const tx of block.tx) {
           if (typeof tx === 'object') {
-            await this.processTransaction(tx, block.height, blockTime);
+            await this.processTransaction(tx, block.height, blockTime, block.hash);
           }
         }
       }
@@ -425,22 +425,22 @@ class SyncDaemon {
   /**
    * Process a transaction and route to appropriate handler
    */
-  async processTransaction(tx, blockHeight, blockTime) {
+  async processTransaction(tx, blockHeight, blockTime, blockHash) {
     try {
       const txType = tx.type || 0;
       
       // Route based on transaction type
       switch (txType) {
         case 8: // NewAssetTx - Asset creation
-          await assetProcessor.handleAssetCreation(tx, blockHeight, blockTime);
+          await assetProcessor.handleAssetCreation(tx, blockHeight, blockTime, blockHash);
           break;
           
         case 10: // MintAssetTx - Asset mint
-          await assetProcessor.handleAssetMint(tx, blockHeight, blockTime);
+          await assetProcessor.handleAssetMint(tx, blockHeight, blockTime, blockHash);
           break;
           
         case 9: // UpdateAssetTx - Asset update
-          await assetProcessor.handleAssetUpdate(tx, blockHeight, blockTime);
+          await assetProcessor.handleAssetUpdate(tx, blockHeight, blockTime, blockHash);
           break;
           
         case 7: // FutureTx - Future lock
@@ -458,7 +458,7 @@ class SyncDaemon {
           
           if (hasAssetTransfer) {
             logger.debug(`Detected asset transfer in tx ${tx.txid} at block ${blockHeight}`);
-            await assetProcessor.handleAssetTransfer(tx, blockHeight, blockTime);
+            await assetProcessor.handleAssetTransfer(tx, blockHeight, blockTime, blockHash);
           }
           break;
       }
