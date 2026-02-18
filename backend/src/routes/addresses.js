@@ -53,7 +53,7 @@ router.get('/:address',
 
       res.json({
         success: true,
-        data: addressDoc,
+        data: addressDoc.toObject ? addressDoc.toObject() : addressDoc,
         meta: {
           timestamp: new Date().toISOString(),
           requestId: req.id || 'req_' + Date.now(),
