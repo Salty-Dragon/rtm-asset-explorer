@@ -99,9 +99,29 @@ function SearchPageContent() {
                 Assets
               </h2>
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {assets.map((asset) => (
-                  <AssetCard key={asset._id} asset={asset} />
-                ))}
+                {/* Parent assets first, then sub-assets grouped after their parent */}
+                {(() => {
+                  const parentAssets = assets.filter(a => !a.isSubAsset)
+                  const subAssets = assets.filter(a => a.isSubAsset)
+                  const grouped: typeof assets = []
+
+                  for (const parent of parentAssets) {
+                    grouped.push(parent)
+                    const children = subAssets.filter(s => s.parentAssetName === parent.name)
+                    grouped.push(...children)
+                  }
+                  // Add orphan sub-assets (whose parent isn't in results)
+                  const groupedIds = new Set(grouped.map(a => a._id))
+                  for (const sub of subAssets) {
+                    if (!groupedIds.has(sub._id)) {
+                      grouped.push(sub)
+                    }
+                  }
+
+                  return grouped.map((asset) => (
+                    <AssetCard key={asset._id} asset={asset} />
+                  ))
+                })()}
               </div>
             </section>
           )}

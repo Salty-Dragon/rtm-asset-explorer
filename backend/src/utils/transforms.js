@@ -43,6 +43,7 @@ export function transformAsset(asset) {
     metadata: obj.metadata || undefined,
     transferCount: obj.transferCount ?? 0,
     views: obj.views ?? 0,
+    maxMintCount: obj.maxMintCount ?? 0,
     isSubAsset: obj.isSubAsset ?? false,
     parentAssetName: obj.parentAssetName || undefined,
     createdAt: obj.createdAt,

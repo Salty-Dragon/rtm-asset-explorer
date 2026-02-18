@@ -48,27 +48,47 @@ export function SearchResults({ results, isLoading, query, onClose }: SearchResu
             <FileImage className="h-3 w-3" />
             Assets ({assets.length})
           </div>
-          {assets.map((asset) => (
-            <Link
-              key={asset._id}
-              href={`/assets/${asset.assetId}`}
-              onClick={onClose}
-              className="flex items-center justify-between gap-2 rounded-md px-2 py-2 hover:bg-accent"
-            >
-              <div className="flex items-center gap-2">
-                <FileImage className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <div className="font-medium">{asset.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {asset.type === 'nft' ? 'NFT' : 'Fungible'}
+          {(() => {
+            const parentAssets = assets.filter(a => !a.isSubAsset)
+            const subAssets = assets.filter(a => a.isSubAsset)
+            const grouped: typeof assets = []
+
+            for (const parent of parentAssets) {
+              grouped.push(parent)
+              const children = subAssets.filter(s => s.parentAssetName === parent.name)
+              grouped.push(...children)
+            }
+            const groupedIds = new Set(grouped.map(a => a._id))
+            for (const sub of subAssets) {
+              if (!groupedIds.has(sub._id)) {
+                grouped.push(sub)
+              }
+            }
+
+            return grouped.map((asset) => (
+              <Link
+                key={asset._id}
+                href={`/assets/${asset.assetId}`}
+                onClick={onClose}
+                className={`flex items-center justify-between gap-2 rounded-md px-2 py-2 hover:bg-accent${asset.isSubAsset ? ' ml-4' : ''}`}
+              >
+                <div className="flex items-center gap-2">
+                  <FileImage className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <div className="font-medium">{asset.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {asset.isSubAsset && asset.parentAssetName
+                        ? `Sub-asset of ${asset.parentAssetName}`
+                        : asset.type === 'nft' ? 'NFT' : 'Fungible'}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <Badge variant={asset.hasIpfs ? 'success' : 'secondary'} className="text-xs">
-                {asset.hasIpfs ? 'IPFS' : 'On-Chain'}
-              </Badge>
-            </Link>
-          ))}
+                <Badge variant={asset.hasIpfs ? 'success' : 'secondary'} className="text-xs">
+                  {asset.hasIpfs ? 'IPFS' : 'On-Chain'}
+                </Badge>
+              </Link>
+            ))
+          })()}
         </div>
       )}
 

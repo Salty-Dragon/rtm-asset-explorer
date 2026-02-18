@@ -184,6 +184,16 @@ router.get('/',
               .limit(limit + offset)
           );
 
+          // Sub-asset name search (case-insensitive, matches sub-assets by their sub-name)
+          searchQueries.push(
+            Asset.find({
+              isSubAsset: true,
+              subAssetName: { $regex: '^' + escapedQ, $options: 'i' }
+            })
+              .sort({ views: -1, createdAt: -1 })
+              .limit(limit + offset)
+          );
+
           // Text index search (only if query is >= 2 chars)
           if (q.length >= 2) {
             searchQueries.push(
@@ -243,6 +253,7 @@ router.get('/',
 
           const [
             nameAssets,
+            subNameAssets,
             textAssets,
             idAssets,
             ipfsAssets,
@@ -255,7 +266,7 @@ router.get('/',
 
           // Merge and deduplicate assets, then apply offset
           const assetMap = new Map();
-          for (const a of [...(nameAssets || []), ...(textAssets || []), ...(idAssets || []), ...(ipfsAssets || [])]) {
+          for (const a of [...(nameAssets || []), ...(subNameAssets || []), ...(textAssets || []), ...(idAssets || []), ...(ipfsAssets || [])]) {
             const id = a._id.toString();
             if (!assetMap.has(id)) {
               assetMap.set(id, transformAsset(a));

@@ -71,6 +71,7 @@ export interface Asset {
   metadata?: AssetMetadata
   transferCount: number
   views: number
+  maxMintCount: number
   isSubAsset: boolean
   parentAssetName?: string
   createdAt: string
