@@ -127,3 +127,30 @@ export function isValidUrl(url: string): boolean {
     return false
   }
 }
+
+/**
+ * Group assets so that sub-assets appear after their parent asset.
+ * Orphan sub-assets (whose parent is not in the list) are appended at the end.
+ */
+export function groupAssetsByParent<T extends { _id: string; name: string; isSubAsset: boolean; parentAssetName?: string }>(
+  assets: T[]
+): T[] {
+  const parentAssets = assets.filter(a => !a.isSubAsset)
+  const subAssets = assets.filter(a => a.isSubAsset)
+  const grouped: T[] = []
+
+  for (const parent of parentAssets) {
+    grouped.push(parent)
+    const children = subAssets.filter(s => s.parentAssetName === parent.name)
+    grouped.push(...children)
+  }
+  // Add orphan sub-assets (whose parent isn't in results)
+  const groupedIds = new Set(grouped.map(a => a._id))
+  for (const sub of subAssets) {
+    if (!groupedIds.has(sub._id)) {
+      grouped.push(sub)
+    }
+  }
+
+  return grouped
+}

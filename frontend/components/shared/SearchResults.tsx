@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { FileImage, Hash, User, Layers } from 'lucide-react'
 import { LoadingSpinner } from './LoadingSpinner'
 import { EmptyState } from './EmptyState'
-import { formatAddress } from '@/lib/utils'
+import { formatAddress, groupAssetsByParent } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import type { SearchResults as SearchResultsType } from '@/lib/types'
@@ -49,21 +49,7 @@ export function SearchResults({ results, isLoading, query, onClose }: SearchResu
             Assets ({assets.length})
           </div>
           {(() => {
-            const parentAssets = assets.filter(a => !a.isSubAsset)
-            const subAssets = assets.filter(a => a.isSubAsset)
-            const grouped: typeof assets = []
-
-            for (const parent of parentAssets) {
-              grouped.push(parent)
-              const children = subAssets.filter(s => s.parentAssetName === parent.name)
-              grouped.push(...children)
-            }
-            const groupedIds = new Set(grouped.map(a => a._id))
-            for (const sub of subAssets) {
-              if (!groupedIds.has(sub._id)) {
-                grouped.push(sub)
-              }
-            }
+            const grouped = groupAssetsByParent(assets)
 
             return grouped.map((asset) => (
               <Link
