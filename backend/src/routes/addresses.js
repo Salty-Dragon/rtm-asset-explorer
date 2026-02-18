@@ -18,24 +18,42 @@ router.get('/:address',
     try {
       const { address } = req.validated;
 
-      const addressDoc = await Address.findOne({ address });
+      let addressDoc = await Address.findOne({ address });
 
+      // If no Address document exists, check if the address owns any assets
       if (!addressDoc) {
-        return res.status(404).json({
-          success: false,
-          error: {
-            message: 'Address not found or has no activity'
-          },
-          meta: {
-            timestamp: new Date().toISOString(),
-            requestId: req.id || 'req_' + Date.now()
-          }
-        });
+        const ownedAssets = await Asset.countDocuments({ currentOwner: address });
+        const createdAssets = await Asset.countDocuments({ creator: address });
+
+        // If the address owns or created assets, create a basic address document
+        if (ownedAssets > 0 || createdAssets > 0) {
+          addressDoc = {
+            address,
+            balance: 0,
+            totalReceived: 0,
+            totalSent: 0,
+            transactionCount: 0,
+            assetBalances: [],
+            assetsOwned: ownedAssets,
+            assetsCreated: createdAssets
+          };
+        } else {
+          return res.status(404).json({
+            success: false,
+            error: {
+              message: 'Address not found or has no activity'
+            },
+            meta: {
+              timestamp: new Date().toISOString(),
+              requestId: req.id || 'req_' + Date.now()
+            }
+          });
+        }
       }
 
       res.json({
         success: true,
-        data: addressDoc,
+        data: addressDoc.toObject ? addressDoc.toObject() : addressDoc,
         meta: {
           timestamp: new Date().toISOString(),
           requestId: req.id || 'req_' + Date.now(),
@@ -61,7 +79,7 @@ router.get('/:address/assets',
     try {
       const { address, limit, offset, type } = req.validated;
 
-      const filter = { owner: address };
+      const filter = { currentOwner: address };
       if (type) filter.type = type;
 
       const assets = await Asset.find(filter)
