@@ -1,7 +1,7 @@
 'use client'
 
 import { Card } from '@/components/ui/card'
-import { Package, Grid, Coins, Image } from 'lucide-react'
+import { Package, Grid, Coins, Image as ImageIcon } from 'lucide-react'
 
 interface AddressStatsProps {
   totalTransactions: number
@@ -57,7 +57,7 @@ export function AddressStats({
       <Card className="p-6">
         <div className="flex items-center gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-500/10">
-            <Image className="h-6 w-6 text-purple-500" />
+            <ImageIcon className="h-6 w-6 text-purple-500" />
           </div>
           <div>
             <p className="text-sm text-muted-foreground">NFTs</p>
