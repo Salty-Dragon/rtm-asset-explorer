@@ -46,6 +46,8 @@ export function transformAsset(asset) {
     maxMintCount: obj.maxMintCount ?? 0,
     isSubAsset: obj.isSubAsset ?? false,
     parentAssetName: obj.parentAssetName || undefined,
+    parentAssetId: obj.parentAssetId || undefined,
+    subAssetName: obj.subAssetName || undefined,
     createdAt: obj.createdAt,
     updatedAt: obj.updatedAt,
   };
