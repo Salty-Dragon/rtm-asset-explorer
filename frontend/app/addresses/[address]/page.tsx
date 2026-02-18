@@ -73,11 +73,21 @@ export default function AddressDetailPage({
 
   const addressInfo = addressData.data
 
-  // Calculate statistics from assets
-  const masterAssets = assets.filter((asset) => !asset.isSubAsset).length
-  const subAssets = assets.filter((asset) => asset.isSubAsset).length
-  const nfts = assets.filter((asset) => asset.type === 'nft').length
-  const fts = assets.filter((asset) => asset.type === 'fungible').length
+  // Calculate statistics from assets in a single pass
+  const stats = assets.reduce(
+    (acc, asset) => {
+      if (!asset.isSubAsset) acc.masterAssets++
+      else acc.subAssets++
+      
+      if (asset.type === 'nft') acc.nfts++
+      else if (asset.type === 'fungible') acc.fts++
+      
+      return acc
+    },
+    { masterAssets: 0, subAssets: 0, nfts: 0, fts: 0 }
+  )
+
+  const assetCountText = `${assets.length} ${assets.length === 1 ? 'asset' : 'assets'}`
 
   return (
     <div className="container py-8">
@@ -103,17 +113,17 @@ export default function AddressDetailPage({
       {/* Statistics Cards */}
       <AddressStats
         totalTransactions={addressInfo.txCount || 0}
-        masterAssets={masterAssets}
-        subAssets={subAssets}
-        nfts={nfts}
-        fts={fts}
+        masterAssets={stats.masterAssets}
+        subAssets={stats.subAssets}
+        nfts={stats.nfts}
+        fts={stats.fts}
       />
 
       {/* Section Header */}
       <div className="mb-6">
         <h2 className="mb-2 text-2xl font-bold">Assets</h2>
         <p className="text-muted-foreground">
-          {assets.length} {assets.length === 1 ? 'asset' : 'assets'} owned by this address
+          {assetCountText} owned by this address
         </p>
       </div>
 
@@ -156,7 +166,7 @@ export default function AddressDetailPage({
 
         {/* Results Count */}
         <div className="text-sm text-muted-foreground">
-          {assets.length} {assets.length === 1 ? 'asset' : 'assets'} found
+          {assetCountText} found
         </div>
       </div>
 
