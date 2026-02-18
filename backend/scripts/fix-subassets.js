@@ -9,6 +9,15 @@
  * 3. Ensure parent asset names are uppercase
  * 
  * The script is idempotent - safe to run multiple times
+ * 
+ * OPTIONS:
+ *   --from <height>    - Start from this block height (default: 850000, when assets started)
+ *   --to <height>      - Process up to this block height (default: current)
+ *   --confirm          - Required flag to confirm operation
+ * 
+ * EXAMPLES:
+ *   node backend/scripts/fix-subassets.js --from 850000 --confirm
+ *   node backend/scripts/fix-subassets.js --from 850000 --to 1000000 --confirm
  */
 
 import mongoose from 'mongoose';
@@ -30,7 +39,9 @@ console.log(`Loading environment from: ${envPath}`);
 dotenv.config({ path: envPath });
 
 class SubAssetFixer {
-  constructor() {
+  constructor(fromHeight = 850000, toHeight = null) {
+    this.fromHeight = fromHeight;
+    this.toHeight = toHeight;
     this.blockchainService = null;
     this.assetProcessor = null;
     this.stats = {
@@ -84,11 +95,19 @@ class SubAssetFixer {
    * Find all blocks containing asset creation transactions
    */
   async findAssetCreationBlocks() {
-    console.log('\nFinding blocks with asset creation transactions...');
+    console.log(`\nFinding blocks with asset creation transactions (height ${this.fromHeight} to ${this.toHeight || 'current'})...`);
     
-    // Find all blocks that might contain asset creation txs
-    // We'll look for blocks with transactions
-    const blocks = await Block.find({ transactionCount: { $gt: 0 } })
+    // Build query with height range
+    const query = { 
+      transactionCount: { $gt: 0 },
+      height: { $gte: this.fromHeight }
+    };
+    
+    if (this.toHeight !== null) {
+      query.height.$lte = this.toHeight;
+    }
+    
+    const blocks = await Block.find(query)
       .sort({ height: 1 })
       .lean();
     
@@ -289,8 +308,61 @@ class SubAssetFixer {
   }
 }
 
-// Run the migration
-const fixer = new SubAssetFixer();
+// Parse command line arguments
+const args = process.argv.slice(2);
+let fromHeight = 850000;  // Default: when assets started on Raptoreum
+let toHeight = null;      // Default: current blockchain height
+let confirmed = false;
+
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === '--from' && args[i + 1]) {
+    fromHeight = parseInt(args[i + 1], 10);
+    i++;
+  } else if (args[i] === '--to' && args[i + 1]) {
+    toHeight = parseInt(args[i + 1], 10);
+    i++;
+  } else if (args[i] === '--confirm') {
+    confirmed = true;
+  }
+}
+
+// Validate parsed arguments
+if (isNaN(fromHeight) || fromHeight < 0) {
+  console.error('❌ Invalid --from value. Must be a positive number.');
+  console.error('\nExamples:');
+  console.error('  node backend/scripts/fix-subassets.js --from 850000 --confirm');
+  console.error('  node backend/scripts/fix-subassets.js --from 850000 --to 1000000 --confirm');
+  process.exit(1);
+}
+
+if (toHeight !== null && (isNaN(toHeight) || toHeight < 0)) {
+  console.error('❌ Invalid --to value. Must be a positive number.');
+  console.error('\nExamples:');
+  console.error('  node backend/scripts/fix-subassets.js --from 850000 --confirm');
+  console.error('  node backend/scripts/fix-subassets.js --from 850000 --to 1000000 --confirm');
+  process.exit(1);
+}
+
+if (toHeight !== null && fromHeight > toHeight) {
+  console.error('❌ Invalid range: --from must be less than or equal to --to');
+  console.error(`   Current values: --from ${fromHeight} --to ${toHeight}`);
+  console.error('\nExamples:');
+  console.error('  node backend/scripts/fix-subassets.js --from 850000 --confirm');
+  console.error('  node backend/scripts/fix-subassets.js --from 850000 --to 1000000 --confirm');
+  process.exit(1);
+}
+
+if (!confirmed) {
+  console.error('❌ This script will re-process asset creation transactions.');
+  console.error('   Use --confirm flag to proceed.');
+  console.error('\nExamples:');
+  console.error('  node backend/scripts/fix-subassets.js --from 850000 --confirm');
+  console.error('  node backend/scripts/fix-subassets.js --from 850000 --to 1000000 --confirm');
+  process.exit(1);
+}
+
+// Run the migration with specified range
+const fixer = new SubAssetFixer(fromHeight, toHeight);
 fixer.run().then(() => {
   console.log('Migration script completed successfully');
   process.exit(0);
