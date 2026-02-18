@@ -148,7 +148,11 @@ router.get('/:assetId/subassets',
     try {
       const { assetId } = req.params;
       
-      const parentAsset = await Asset.findOne({ assetId });
+      // Try to find by assetId first, then by name
+      let parentAsset = await Asset.findOne({ assetId });
+      if (!parentAsset) {
+        parentAsset = await Asset.findOne({ name: assetId });
+      }
       
       if (!parentAsset) {
         return res.status(404).json({
