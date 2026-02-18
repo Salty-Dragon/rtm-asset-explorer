@@ -15,23 +15,32 @@ class AssetProcessor {
         return null;
       }
 
-      const { name, isUnique, maxMintCount, updatable, referenceHash, ownerAddress } = tx.newAssetTx;
+      const { name, isUnique, maxMintCount, updatable, referenceHash, ownerAddress, isRoot, rootId } = tx.newAssetTx;
       
-      // Parse sub-asset info
-      const isSubAsset = name.includes('|');
+      // Detect sub-asset using isRoot field
+      const isSubAsset = isRoot === false;
       let parentAssetName = null;
       let subAssetName = null;
       let parentAssetId = null;
+      let fullAssetName = name;  // Default to the provided name
       
       if (isSubAsset) {
-        const parts = name.split('|');
-        parentAssetName = parts[0].trim().toUpperCase();
-        subAssetName = parts.slice(1).join('|').trim(); // Support multiple pipes
+        // Sub-assets have isRoot=false and provide rootId
+        subAssetName = name.trim();
         
-        // Find parent asset
-        const parentAsset = await Asset.findOne({ name: parentAssetName, isSubAsset: false });
+        // Find parent asset by rootId (the parent's creation txid)
+        const parentAsset = await Asset.findOne({ assetId: rootId });
+        
         if (parentAsset) {
+          parentAssetName = parentAsset.name.toUpperCase();
           parentAssetId = parentAsset.assetId;
+          fullAssetName = `${parentAssetName}|${subAssetName}`;
+          
+          logger.info(`Creating sub-asset: ${fullAssetName} (parent: ${parentAssetName}, child: ${subAssetName})`);
+        } else {
+          logger.warn(`Parent asset not found for sub-asset ${name} (rootId: ${rootId})`);
+          // Still save with pipe notation even if parent not found yet
+          fullAssetName = `UNKNOWN|${subAssetName}`;
         }
       }
 
@@ -64,7 +73,7 @@ class AssetProcessor {
       // Create asset record
       const asset = new Asset({
         assetId: tx.txid, // Asset ID is the creation transaction hash
-        name,
+        name: fullAssetName,  // Use the full constructed name
         type: isUnique ? 'non-fungible' : 'fungible',
         createdAt: blockTime,
         createdTxid: tx.txid,
@@ -90,12 +99,12 @@ class AssetProcessor {
       });
 
       await asset.save();
-      logger.info(`Created asset: ${name} (${tx.txid})`);
+      logger.info(`Created asset: ${fullAssetName} (${tx.txid})`);
 
       // Record transaction
       await this.recordAssetTransaction(tx, blockHeight, blockTime, 'create', {
         assetId: tx.txid,
-        assetName: name,
+        assetName: fullAssetName,
         from: null,
         to: ownerAddress,
         amount: 0
