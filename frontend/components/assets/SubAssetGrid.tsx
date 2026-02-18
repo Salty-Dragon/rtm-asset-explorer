@@ -1,9 +1,14 @@
 'use client'
 
+import { useState } from 'react'
 import { useAssetSubAssets } from '@/hooks/useApi'
 import { AssetCard } from './AssetCard'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ChevronDown, ChevronUp } from 'lucide-react'
+
+const COLLAPSED_LIMIT = 5
 
 interface SubAssetGridProps {
   parentAssetId: string
@@ -12,6 +17,7 @@ interface SubAssetGridProps {
 
 export function SubAssetGrid({ parentAssetId, className }: SubAssetGridProps) {
   const { data, isLoading, error } = useAssetSubAssets(parentAssetId)
+  const [expanded, setExpanded] = useState(false)
 
   // Don't show anything if loading or error
   if (isLoading) {
@@ -39,6 +45,10 @@ export function SubAssetGrid({ parentAssetId, className }: SubAssetGridProps) {
   }
 
   const subAssets = data.data
+  const isCollapsible = subAssets.length > COLLAPSED_LIMIT
+  const visibleAssets = isCollapsible && !expanded
+    ? subAssets.slice(0, COLLAPSED_LIMIT)
+    : subAssets
 
   return (
     <Card className={className}>
@@ -49,10 +59,31 @@ export function SubAssetGrid({ parentAssetId, className }: SubAssetGridProps) {
       </CardHeader>
       <CardContent>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {subAssets.map((asset) => (
+          {visibleAssets.map((asset) => (
             <AssetCard key={asset._id} asset={asset} />
           ))}
         </div>
+        {isCollapsible && (
+          <div className="mt-4 flex justify-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setExpanded(!expanded)}
+            >
+              {expanded ? (
+                <>
+                  <ChevronUp className="mr-2 h-4 w-4" />
+                  Show Less
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="mr-2 h-4 w-4" />
+                  Show All ({subAssets.length})
+                </>
+              )}
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

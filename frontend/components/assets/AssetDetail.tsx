@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { FileImage, Layers, Calendar, Download } from 'lucide-react'
+import { FileImage, Layers, Calendar, Download, ArrowUp } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -85,8 +85,26 @@ export function AssetDetail({ asset, onExport, className }: AssetDetailProps) {
         {/* Transfer History */}
         <AssetHistory assetId={asset.assetId} />
 
+        {/* Parent Asset */}
+        {asset.isSubAsset && asset.parentAssetName && (
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-sm">
+                <ArrowUp className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Parent Asset:</span>
+                <Link
+                  href={`/assets/${asset.parentAssetId || asset.parentAssetName}`}
+                  className="font-semibold hover:text-accent"
+                >
+                  {asset.parentAssetName}
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Sub-Assets */}
-        {!asset.isSubAsset && <SubAssetGrid parentAssetId={asset.assetId} />}
+        <SubAssetGrid parentAssetId={asset.assetId} />
       </div>
 
       {/* Sidebar - Right Column */}

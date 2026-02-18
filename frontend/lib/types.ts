@@ -74,6 +74,8 @@ export interface Asset {
   maxMintCount: number
   isSubAsset: boolean
   parentAssetName?: string
+  parentAssetId?: string
+  subAssetName?: string
   createdAt: string
   updatedAt: string
 }
