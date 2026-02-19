@@ -629,7 +629,7 @@ Get transaction history for a specific address.
 
 ### Get Address Assets
 
-Get all assets associated with a specific address.
+Get all assets associated with a specific address (either as owner or creator).
 
 **Endpoint**: `GET /addresses/:address/assets`
 
@@ -639,7 +639,9 @@ Get all assets associated with a specific address.
 **Query Parameters**:
 - `page` - Page number (default: 1)
 - `limit` - Items per page (default: 20, max: 100)
-- `type` - Filter by type: `owned`, `created`, `all` (default: `all`)
+- `type` - Filter by asset type: `fungible`, `non-fungible` (optional)
+
+**Description**: Returns assets where the address is either the current owner or the creator of the asset.
 
 **Response**: Same structure as List Assets
 
