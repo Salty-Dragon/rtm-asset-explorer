@@ -229,7 +229,6 @@ class AssetProcessor {
           continue;
         }
         
-        const assetName = asset.name;
         const amount = asset.amount || 0;
         const recipient = vout.scriptPubKey.addresses?.[0];
 
@@ -238,8 +237,32 @@ class AssetProcessor {
           continue;
         }
         
+        // Get asset name - try direct name first, then lookup by asset_id
+        let assetName = asset.name;
+        let assetId = null;
+
+        if (!assetName && asset.asset_id) {
+          // Parse asset_id to remove [vout] suffix if present
+          // Example: "05ec6f38...2514a[0]" -> "05ec6f38...2514a"
+          const rawAssetId = asset.asset_id.replace(/\[\d+\]$/, '');
+          assetId = rawAssetId;
+          
+          logger.info(`[ASSET] No name in vout, looking up asset by ID: ${assetId}`);
+          
+          // Look up asset in database by assetId (creation txid)
+          const assetRecord = await Asset.findOne({ assetId: rawAssetId });
+          
+          if (assetRecord) {
+            assetName = assetRecord.name;
+            assetId = assetRecord.assetId;
+            logger.info(`[ASSET] ✓ Resolved asset name from ID: ${rawAssetId} -> ${assetName}`);
+          } else {
+            logger.warn(`[ASSET] ✗ Asset not found in database for ID: ${rawAssetId}`);
+          }
+        }
+
         if (!assetName) {
-          logger.warn(`No asset name in tx ${tx.txid}, vout ${vout.n}`);
+          logger.warn(`[ASSET] ✗ No asset name available for tx ${tx.txid}, vout ${vout.n} (asset_id: ${asset.asset_id || 'missing'})`);
           continue;
         }
 
@@ -281,7 +304,7 @@ class AssetProcessor {
         // Record transfer
         await this.recordAssetTransfer({
           txid: tx.txid,
-          assetId: assetRecord?.assetId || assetName,
+          assetId: assetId || assetRecord?.assetId || assetName,
           assetName,
           from: sender,
           to: recipient,
