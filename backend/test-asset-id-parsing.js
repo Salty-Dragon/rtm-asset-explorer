@@ -34,6 +34,46 @@ const testCases = [
     input: 'asset[invalid',
     expected: 'asset[invalid',
     description: 'Invalid format (not parsed)'
+  },
+  {
+    input: '05ec6f38709449e94f764aea1ca31ea453cc8e6b749ec90ba47ba0f5241251a4[1...50]',
+    expected: '05ec6f38709449e94f764aea1ca31ea453cc8e6b749ec90ba47ba0f5241251a4',
+    description: 'Asset ID with [1...50] range suffix'
+  },
+  {
+    input: '05ec6f38709449e94f764aea1ca31ea453cc8e6b749ec90ba47ba0f5241251a4[51...9999]',
+    expected: '05ec6f38709449e94f764aea1ca31ea453cc8e6b749ec90ba47ba0f5241251a4',
+    description: 'Asset ID with [51...9999] range suffix'
+  },
+  {
+    input: 'abc123def456[1...10000]',
+    expected: 'abc123def456',
+    description: 'Asset ID with [1...10000] range suffix'
+  },
+  {
+    input: 'asset[.]',
+    expected: 'asset[.]',
+    description: 'Malformed suffix [.] - should not be parsed'
+  },
+  {
+    input: 'asset[..]',
+    expected: 'asset[..]',
+    description: 'Malformed suffix [..] - should not be parsed'
+  },
+  {
+    input: 'asset[1.2.3]',
+    expected: 'asset[1.2.3]',
+    description: 'Malformed suffix [1.2.3] - should not be parsed'
+  },
+  {
+    input: 'asset[1..2]',
+    expected: 'asset[1..2]',
+    description: 'Malformed suffix [1..2] (two dots) - should not be parsed'
+  },
+  {
+    input: 'asset[...5]',
+    expected: 'asset[...5]',
+    description: 'Malformed suffix [...5] (missing start) - should not be parsed'
   }
 ];
 
@@ -43,7 +83,7 @@ let passed = 0;
 let failed = 0;
 
 testCases.forEach((testCase, index) => {
-  const result = testCase.input.replace(/\[\d+\]$/, '');
+  const result = testCase.input.replace(/\[(?:\d+|\d+\.\.\.\d+)\]$/, '');
   const success = result === testCase.expected;
   
   console.log(`[${index + 1}] ${testCase.description}`);
