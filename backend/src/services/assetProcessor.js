@@ -239,7 +239,7 @@ class AssetProcessor {
         
         // Get asset name - try direct name first, then lookup by asset_id
         let assetName = asset.name;
-        let assetId = null;
+        let assetId = null;  // Will be set from asset_id lookup or from assetRecord below
 
         if (!assetName && asset.asset_id) {
           // Parse asset_id to remove [vout] suffix if present
@@ -300,6 +300,7 @@ class AssetProcessor {
         }
 
         // Record transfer
+        // Priority for assetId: parsed asset_id from vout (if available) > assetRecord.assetId > assetName fallback
         await this.recordAssetTransfer({
           txid: tx.txid,
           assetId: assetId || assetRecord?.assetId || assetName,
