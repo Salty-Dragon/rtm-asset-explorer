@@ -48,6 +48,7 @@ export function ExportDialog({
     // Map frontend type to backend type
     const backendType = exportType === 'standard' ? 'asset' : exportType
     
+    // Note: assetName prop contains the asset identifier, which maps to assetId in the backend
     const exportData: ExportRequest = {
       type: backendType,
       assetId: assetName,
