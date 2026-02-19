@@ -229,7 +229,6 @@ class AssetProcessor {
           continue;
         }
         
-        const assetName = asset.name;
         const amount = asset.amount || 0;
         const recipient = vout.scriptPubKey.addresses?.[0];
 
@@ -238,8 +237,30 @@ class AssetProcessor {
           continue;
         }
         
+        // Get asset name - try direct name first, then lookup by asset_id
+        let assetName = asset.name;
+        let assetId = null;  // Will be set from asset_id lookup or from assetRecord below
+
+        if (!assetName && asset.asset_id) {
+          // Parse asset_id to remove [vout] suffix if present
+          // Example: "05ec6f38...2514a[0]" -> "05ec6f38...2514a"
+          assetId = asset.asset_id.replace(/\[\d+\]$/, '');
+          
+          logger.info(`[ASSET] No name in vout, looking up asset by ID: ${assetId}`);
+          
+          // Look up asset in database by assetId (creation txid)
+          const assetRecord = await Asset.findOne({ assetId });
+          
+          if (assetRecord) {
+            assetName = assetRecord.name;
+            logger.info(`[ASSET] ✓ Resolved asset name from ID: ${assetId} -> ${assetName}`);
+          } else {
+            logger.warn(`[ASSET] ✗ Asset not found in database for ID: ${assetId}`);
+          }
+        }
+
         if (!assetName) {
-          logger.warn(`No asset name in tx ${tx.txid}, vout ${vout.n}`);
+          logger.warn(`[ASSET] ✗ No asset name available for tx ${tx.txid}, vout ${vout.n} (asset_id: ${asset.asset_id || 'missing'})`);
           continue;
         }
 
@@ -279,9 +300,10 @@ class AssetProcessor {
         }
 
         // Record transfer
+        // Priority for assetId: parsed asset_id from vout (if available) > assetRecord.assetId > assetName fallback
         await this.recordAssetTransfer({
           txid: tx.txid,
-          assetId: assetRecord?.assetId || assetName,
+          assetId: assetId || assetRecord?.assetId || assetName,
           assetName,
           from: sender,
           to: recipient,
