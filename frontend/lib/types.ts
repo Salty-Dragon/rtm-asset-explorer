@@ -289,16 +289,20 @@ export interface CreatorStat {
 // ============================================
 
 export interface ExportRequest {
-  assetName: string
-  type: 'standard' | 'provenance' | 'legal'
-  options: {
-    includeTransactions: boolean
-    includeMedia: boolean
-  }
+  type: 'asset' | 'address' | 'multi' | 'legal' | 'provenance'
+  assetId?: string
+  address?: string
+  assetIds?: string[]
+  addresses?: string[]
+  includeTransactions: boolean
+  includeAddresses?: boolean
+  includeMedia: boolean
+  retention?: number
   legalInfo?: {
     caseReference: string
     court: string
     purpose: string
+    requestingParty?: string
   }
 }
 

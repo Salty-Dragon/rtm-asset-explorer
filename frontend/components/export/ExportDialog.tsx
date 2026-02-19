@@ -45,13 +45,15 @@ export function ExportDialog({
   const requestExportMutation = useRequestExport()
 
   const handleSubmit = async () => {
+    // Map frontend type to backend type
+    const backendType = exportType === 'standard' ? 'asset' : exportType
+    
+    // Note: assetName prop contains the asset identifier, which maps to assetId in the backend
     const exportData: ExportRequest = {
-      assetName,
-      type: exportType,
-      options: {
-        includeTransactions,
-        includeMedia,
-      },
+      type: backendType,
+      assetId: assetName,
+      includeTransactions,
+      includeMedia,
     }
 
     if (exportType === 'legal') {
@@ -79,7 +81,7 @@ export function ExportDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="max-h-[80vh] overflow-y-auto space-y-6 py-4">
           {/* Export Type Selection */}
           <div className="space-y-3">
             <Label>Export Type</Label>
@@ -97,6 +99,21 @@ export function ExportDialog({
                 </div>
               </div>
 
+              {/* Standard Export Details */}
+              {exportType === 'standard' && (
+                <div className="ml-8 space-y-2 rounded-lg border p-4 bg-muted/50">
+                  <p className="text-sm font-medium">Includes:</p>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• Asset metadata and properties</li>
+                    <li>• Full transfer history</li>
+                    <li>• Current ownership information</li>
+                    <li>• Associated IPFS content metadata</li>
+                    <li>• Transaction details</li>
+                    <li className="pt-2 font-medium text-foreground">Formats: JSON, CSV, and PDF in a ZIP archive</li>
+                  </ul>
+                </div>
+              )}
+
               <div className="flex items-start space-x-3 rounded-lg border p-4">
                 <RadioGroupItem value="provenance" id="provenance" />
                 <div className="flex-1">
@@ -109,6 +126,21 @@ export function ExportDialog({
                   </p>
                 </div>
               </div>
+
+              {/* Provenance Report Details */}
+              {exportType === 'provenance' && (
+                <div className="ml-8 space-y-2 rounded-lg border p-4 bg-muted/50">
+                  <p className="text-sm font-medium">Includes:</p>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• Complete ownership history</li>
+                    <li>• Chain of custody documentation</li>
+                    <li>• Transfer verification data</li>
+                    <li>• Timestamp verification</li>
+                    <li>• Blockchain proof of ownership</li>
+                    <li className="pt-2 font-medium text-foreground">Formats: JSON, CSV, and PDF in a ZIP archive</li>
+                  </ul>
+                </div>
+              )}
 
               <div className="flex items-start space-x-3 rounded-lg border p-4">
                 <RadioGroupItem value="legal" id="legal" />
