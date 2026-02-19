@@ -242,9 +242,12 @@ class AssetProcessor {
         let assetId = null;  // Will be set from asset_id lookup or from assetRecord below
 
         if (!assetName && asset.asset_id) {
-          // Parse asset_id to remove [vout] suffix if present
-          // Example: "05ec6f38...2514a[0]" -> "05ec6f38...2514a"
-          assetId = asset.asset_id.replace(/\[\d+\]$/, '');
+          // Parse asset_id to remove suffix if present
+          // Handles both simple ([0], [1], etc.) and range ([1...50], [51...9999], etc.) formats
+          // Examples:
+          //   "05ec6f38...2514a[0]" -> "05ec6f38...2514a"
+          //   "05ec6f38...2514a[1...50]" -> "05ec6f38...2514a"
+          assetId = asset.asset_id.replace(/\[[\d.]+\]$/, '');
           
           logger.info(`[ASSET] No name in vout, looking up asset by ID: ${assetId}`);
           
