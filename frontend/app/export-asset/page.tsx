@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Download, FileText, Scale, Shield, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
@@ -296,7 +296,7 @@ export default function ExportAssetPage() {
             <div>
               <h4 className="font-semibold mb-2">Cost & Payment</h4>
               <p className="text-sm text-muted-foreground">
-                All exports cost $2.00 USD, paid in Litecoin. You'll receive a payment address after submitting your request.
+                All exports cost $2.00 USD, paid in Litecoin. You&apos;ll receive a payment address after submitting your request.
               </p>
             </div>
             <div>
