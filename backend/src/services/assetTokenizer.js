@@ -3,23 +3,74 @@ import { logger } from '../utils/logger.js';
 
 class AssetTokenizer {
   constructor() {
-    this.remoteHost = process.env.REMOTE_RAPTOREUMD_HOST || process.env.RAPTOREUMD_HOST || '127.0.0.1';
-    this.remotePort = process.env.REMOTE_RAPTOREUMD_PORT || process.env.RAPTOREUMD_PORT || 10225;
-    this.remoteUser = process.env.REMOTE_RAPTOREUMD_USER || process.env.RAPTOREUMD_USER || 'rtm_explorer';
-    this.remotePassword = process.env.REMOTE_RAPTOREUMD_PASSWORD || process.env.RAPTOREUMD_PASSWORD || '';
+    this.apiUrl = process.env.HOT_WALLET_API_URL || 'https://hwa.raptoreum.com/api/v1';
+    this.sharedSecret = process.env.HOT_WALLET_SHARED_SECRET || '';
+    this.apiTimeout = parseInt(process.env.HOT_WALLET_API_TIMEOUT || '30000', 10);
     this.enabled = process.env.ASSET_TOKENIZATION_ENABLED === 'true';
+
+    // Local read-only RPC (for getAssetDetails / getTransaction)
+    this.localHost = process.env.RAPTOREUMD_HOST || '127.0.0.1';
+    this.localPort = process.env.RAPTOREUMD_PORT || 10225;
+    this.localUser = process.env.RAPTOREUMD_USER || 'rtm_explorer';
+    this.localPassword = process.env.RAPTOREUMD_PASSWORD || '';
   }
 
-  async rpcCall(method, params = []) {
+  generateSignature(timestamp, body) {
+    const message = String(timestamp) + JSON.stringify(body);
+    return crypto.createHmac('sha256', this.sharedSecret)
+      .update(message)
+      .digest('hex');
+  }
+
+  async hotWalletApiCall(endpoint, method = 'GET', body = null) {
     if (!this.enabled) {
       logger.warn('Asset tokenization is disabled. Enable with ASSET_TOKENIZATION_ENABLED=true');
       throw new Error('Asset tokenization is disabled');
     }
 
+    if (!this.sharedSecret) {
+      throw new Error('HOT_WALLET_SHARED_SECRET is required when asset tokenization is enabled');
+    }
+
+    const url = `${this.apiUrl}${endpoint}`;
+    const options = {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(this.apiTimeout),
+    };
+
+    if (body !== null) {
+      const timestamp = Math.floor(Date.now() / 1000);
+      const bodyWithoutSignature = { timestamp, ...body };
+      const signature = this.generateSignature(timestamp, bodyWithoutSignature);
+      options.body = JSON.stringify({ ...bodyWithoutSignature, signature });
+    }
+
     try {
-      const auth = Buffer.from(`${this.remoteUser}:${this.remotePassword}`).toString('base64');
-      
-      const response = await fetch(`http://${this.remoteHost}:${this.remotePort}`, {
+      const response = await fetch(url, options);
+
+      if (!response.ok) {
+        throw new Error(`Hot wallet API call failed: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(`Hot wallet API error: ${data.error || 'Unknown error'}`);
+      }
+
+      return data;
+    } catch (error) {
+      logger.error(`Hot wallet API error (${method} ${endpoint}):`, error);
+      throw error;
+    }
+  }
+
+  async localRpcCall(method, params = []) {
+    try {
+      const auth = Buffer.from(`${this.localUser}:${this.localPassword}`).toString('base64');
+
+      const response = await fetch(`http://${this.localHost}:${this.localPort}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -34,34 +85,34 @@ class AssetTokenizer {
       });
 
       if (!response.ok) {
-        throw new Error(`Remote Raptoreumd RPC call failed: ${response.statusText}`);
+        throw new Error(`Local Raptoreumd RPC call failed: ${response.statusText}`);
       }
 
       const data = await response.json();
 
       if (data.error) {
-        throw new Error(`Remote Raptoreumd RPC error: ${data.error.message}`);
+        throw new Error(`Local Raptoreumd RPC error: ${data.error.message}`);
       }
 
       return data.result;
     } catch (error) {
-      logger.error(`Remote Raptoreumd RPC error (${method}):`, error);
+      logger.error(`Local Raptoreumd RPC error (${method}):`, error);
       throw error;
     }
   }
 
   generateTokenName(exportType, exportDate, contentHash) {
-    // Generate 8-character hash from content
+    // Generate 8-character hash from content (uppercase for hot-wallet API compatibility)
     const hash = crypto.createHash('sha256')
       .update(contentHash)
       .digest('hex')
       .substring(0, 8)
-      .toLowerCase();
+      .toUpperCase();
     
     // Format date as YYYYMMDD
     const dateStr = exportDate.toISOString().split('T')[0].replace(/-/g, '');
     
-    // Construct token name: RTM_EXPORTS/TYPE_YYYYMMDD_hash8
+    // Construct token name: RTM_EXPORTS/TYPE_YYYYMMDD_HASH8
     const tokenName = `RTM_EXPORTS/${exportType.toUpperCase()}_${dateStr}_${hash}`;
     
     logger.debug('Generated token name:', tokenName);
@@ -71,46 +122,50 @@ class AssetTokenizer {
   async createExportToken(exportData) {
     const { type, exportId, fileHash } = exportData;
     
-    // Generate unique token name
-    const tokenName = this.generateTokenName(
+    // Generate unique token name and extract the sub-asset name part
+    const fullTokenName = this.generateTokenName(
       type,
       new Date(),
       `${exportId}${fileHash}`
     );
-    
+    // Extract sub-asset name part (strip 'RTM_EXPORTS/' prefix)
+    const tokenPrefix = 'RTM_EXPORTS/';
+    if (!fullTokenName.startsWith(tokenPrefix)) {
+      throw new Error(`Unexpected token name format: ${fullTokenName}`);
+    }
+    const assetName = fullTokenName.slice(tokenPrefix.length);
+
     try {
-      // Create sub-asset (NFT with maxMintCount: 1)
-      // issueuniqueasset "asset_name" [asset_tags] "ipfs_hash" to_address [update_address] [owner_address] [initial_quantity]
-      const ownerAddress = process.env.EXPORT_TOKEN_OWNER_ADDRESS || await this.getNewAddress();
-      
-      logger.info(`Creating export token: ${tokenName}`);
-      
-      const txid = await this.rpcCall('issueuniqueasset', [
-        tokenName,
-        [], // No tags
-        '', // Empty referenceHash (RPC API requires this parameter; IPFS no longer used)
-        ownerAddress,
-        '', // No specific update address
-        ownerAddress, // Owner address
-        1 // Initial quantity (NFT)
-      ]);
-      
-      logger.info(`Export token created: ${tokenName} (txid: ${txid})`);
-      
+      logger.info(`Creating export token: ${assetName}`);
+
+      const response = await this.hotWalletApiCall('/subasset/create', 'POST', {
+        exportId,
+        assetName,
+        type,
+        metadata: { description: 'Export verification token' }
+      });
+
+      const { requestId, assetName: onChainName, txid } = response.data;
+      if (!onChainName || !txid) {
+        throw new Error('Hot wallet API response missing required fields: assetName, txid');
+      }
+
+      logger.info(`Export token created: ${onChainName} (txid: ${txid})`);
+
       return {
-        assetName: tokenName,
+        assetName: onChainName,
         txid,
-        ownerAddress
+        requestId
       };
     } catch (error) {
-      logger.error(`Error creating export token ${tokenName}:`, error);
+      logger.error(`Error creating export token ${assetName}:`, error);
       throw error;
     }
   }
 
   async getAssetDetails(assetName) {
     try {
-      return await this.rpcCall('getassetdetailsbyname', [assetName]);
+      return await this.localRpcCall('getassetdetailsbyname', [assetName]);
     } catch (error) {
       logger.warn(`Asset not found: ${assetName}`);
       return null;
@@ -147,12 +202,8 @@ class AssetTokenizer {
     }
   }
 
-  async getNewAddress() {
-    return await this.rpcCall('getnewaddress');
-  }
-
   async getTransaction(txid) {
-    return await this.rpcCall('getrawtransaction', [txid, true]);
+    return await this.localRpcCall('getrawtransaction', [txid, true]);
   }
 
   async checkHealth() {
@@ -164,13 +215,11 @@ class AssetTokenizer {
     }
 
     try {
-      const info = await this.rpcCall('getblockchaininfo');
+      const response = await this.hotWalletApiCall('/health');
       return {
         status: 'connected',
-        message: 'Remote Raptoreumd connection healthy',
-        blocks: info.blocks,
-        headers: info.headers,
-        chain: info.chain
+        message: 'Hot wallet API connection healthy',
+        ...response.data
       };
     } catch (error) {
       return {
