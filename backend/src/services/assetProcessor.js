@@ -244,20 +244,18 @@ class AssetProcessor {
         if (!assetName && asset.asset_id) {
           // Parse asset_id to remove [vout] suffix if present
           // Example: "05ec6f38...2514a[0]" -> "05ec6f38...2514a"
-          const rawAssetId = asset.asset_id.replace(/\[\d+\]$/, '');
-          assetId = rawAssetId;
+          assetId = asset.asset_id.replace(/\[\d+\]$/, '');
           
           logger.info(`[ASSET] No name in vout, looking up asset by ID: ${assetId}`);
           
           // Look up asset in database by assetId (creation txid)
-          const assetRecord = await Asset.findOne({ assetId: rawAssetId });
+          const assetRecord = await Asset.findOne({ assetId });
           
           if (assetRecord) {
             assetName = assetRecord.name;
-            assetId = assetRecord.assetId;
-            logger.info(`[ASSET] ✓ Resolved asset name from ID: ${rawAssetId} -> ${assetName}`);
+            logger.info(`[ASSET] ✓ Resolved asset name from ID: ${assetId} -> ${assetName}`);
           } else {
-            logger.warn(`[ASSET] ✗ Asset not found in database for ID: ${rawAssetId}`);
+            logger.warn(`[ASSET] ✗ Asset not found in database for ID: ${assetId}`);
           }
         }
 
