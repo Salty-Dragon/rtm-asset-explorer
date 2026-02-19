@@ -1,15 +1,13 @@
 'use client'
 
-import { useState, use } from 'react'
+import { use } from 'react'
 import { useAsset } from '@/hooks/useApi'
 import { AssetDetail } from '@/components/assets/AssetDetail'
-import { ExportDialog } from '@/components/export/ExportDialog'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { ErrorMessage } from '@/components/shared/ErrorMessage'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 
 export default function AssetDetailPage({
   params,
@@ -17,13 +15,7 @@ export default function AssetDetailPage({
   params: Promise<{ assetId: string }>
 }) {
   const { assetId } = use(params)
-  const router = useRouter()
-  const [exportDialogOpen, setExportDialogOpen] = useState(false)
   const { data, isLoading, error } = useAsset(assetId)
-
-  const handleExportCreated = (exportId: string) => {
-    router.push(`/export/${exportId}`)
-  }
 
   if (isLoading) {
     return (
@@ -67,18 +59,7 @@ export default function AssetDetailPage({
       </div>
 
       {/* Asset Detail */}
-      <AssetDetail
-        asset={asset}
-        onExport={() => setExportDialogOpen(true)}
-      />
-
-      {/* Export Dialog */}
-      <ExportDialog
-        open={exportDialogOpen}
-        onClose={() => setExportDialogOpen(false)}
-        assetName={asset.name}
-        onExportCreated={handleExportCreated}
-      />
+      <AssetDetail asset={asset} />
     </div>
   )
 }

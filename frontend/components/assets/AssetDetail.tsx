@@ -19,11 +19,10 @@ import type { Asset } from '@/lib/types'
 
 interface AssetDetailProps {
   asset: Asset
-  onExport?: () => void
   className?: string
 }
 
-export function AssetDetail({ asset, onExport, className }: AssetDetailProps) {
+export function AssetDetail({ asset, className }: AssetDetailProps) {
   // Detect file type from IPFS hash if available
   const fileType = asset.hasIpfs && asset.ipfsHash 
     ? detectFileType(asset.ipfsHash)
@@ -225,15 +224,17 @@ export function AssetDetail({ asset, onExport, className }: AssetDetailProps) {
             </div>
 
             {/* Export Button */}
-            {onExport && (
-              <>
-                <Separator />
-                <Button onClick={onExport} className="w-full" size="lg">
-                  <Download className="mr-2 h-4 w-4" />
-                  Export Asset
-                </Button>
-              </>
-            )}
+            <Separator />
+            <Button asChild className="w-full" size="lg">
+              <Link 
+                href={`/export-asset?assetId=${encodeURIComponent(asset.assetId)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export Asset
+              </Link>
+            </Button>
           </CardContent>
         </Card>
       </div>

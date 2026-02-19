@@ -69,13 +69,13 @@ class AssetTokenizer {
   }
 
   async createExportToken(exportData) {
-    const { type, exportId, ipfsHash, fileHash } = exportData;
+    const { type, exportId, fileHash } = exportData;
     
     // Generate unique token name
     const tokenName = this.generateTokenName(
       type,
       new Date(),
-      `${exportId}${ipfsHash}${fileHash}`
+      `${exportId}${fileHash}`
     );
     
     try {
@@ -88,7 +88,7 @@ class AssetTokenizer {
       const txid = await this.rpcCall('issueuniqueasset', [
         tokenName,
         [], // No tags
-        ipfsHash, // Store IPFS hash in referenceHash field
+        '', // Empty referenceHash (RPC API requires this parameter; IPFS no longer used)
         ownerAddress,
         '', // No specific update address
         ownerAddress, // Owner address

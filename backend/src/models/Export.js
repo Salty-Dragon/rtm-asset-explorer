@@ -70,8 +70,8 @@ const exportSchema = new mongoose.Schema({
   
   // Results
   fileHash: String,
-  ipfsHash: String,
-  ipfsPinned: { type: Boolean, default: false },
+  ipfsHash: { type: String, required: false }, // Optional - IPFS no longer used
+  ipfsPinned: { type: Boolean, default: false, required: false }, // Optional - IPFS no longer used
   signature: String,
   assetName: String, // Blockchain token name (RTM_EXPORTS/...)
   blockchainTxid: String,
