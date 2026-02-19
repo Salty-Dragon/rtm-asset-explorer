@@ -247,7 +247,7 @@ class AssetProcessor {
           // Examples:
           //   "05ec6f38...2514a[0]" -> "05ec6f38...2514a"
           //   "05ec6f38...2514a[1...50]" -> "05ec6f38...2514a"
-          assetId = asset.asset_id.replace(/\[[\d.]+\]$/, '');
+          assetId = asset.asset_id.replace(/\[(?:\d+|\d+\.\.\.\d+)\]$/, '');
           
           logger.info(`[ASSET] No name in vout, looking up asset by ID: ${assetId}`);
           

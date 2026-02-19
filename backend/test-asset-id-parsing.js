@@ -49,6 +49,31 @@ const testCases = [
     input: 'abc123def456[1...10000]',
     expected: 'abc123def456',
     description: 'Asset ID with [1...10000] range suffix'
+  },
+  {
+    input: 'asset[.]',
+    expected: 'asset[.]',
+    description: 'Malformed suffix [.] - should not be parsed'
+  },
+  {
+    input: 'asset[..]',
+    expected: 'asset[..]',
+    description: 'Malformed suffix [..] - should not be parsed'
+  },
+  {
+    input: 'asset[1.2.3]',
+    expected: 'asset[1.2.3]',
+    description: 'Malformed suffix [1.2.3] - should not be parsed'
+  },
+  {
+    input: 'asset[1..2]',
+    expected: 'asset[1..2]',
+    description: 'Malformed suffix [1..2] (two dots) - should not be parsed'
+  },
+  {
+    input: 'asset[...5]',
+    expected: 'asset[...5]',
+    description: 'Malformed suffix [...5] (missing start) - should not be parsed'
   }
 ];
 
@@ -58,7 +83,7 @@ let passed = 0;
 let failed = 0;
 
 testCases.forEach((testCase, index) => {
-  const result = testCase.input.replace(/\[[\d.]+\]$/, '');
+  const result = testCase.input.replace(/\[(?:\d+|\d+\.\.\.\d+)\]$/, '');
   const success = result === testCase.expected;
   
   console.log(`[${index + 1}] ${testCase.description}`);
