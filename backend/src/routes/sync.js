@@ -2,6 +2,7 @@ import express from 'express';
 import SyncState from '../models/SyncState.js';
 import FutureOutput from '../models/FutureOutput.js';
 import blockchainService from '../services/blockchain.js';
+import assetProcessor from '../services/assetProcessor.js';
 import { cacheMiddleware } from '../middleware/cache.js';
 import { logger } from '../utils/logger.js';
 
@@ -180,5 +181,66 @@ router.get('/futures/address/:address',
       next(error);
     }
 });
+
+/**
+ * POST /api/sync/test-transaction - Manually test transaction processing
+ */
+router.post('/test-transaction',
+  async (req, res, next) => {
+    try {
+      const { txid } = req.body;
+      
+      if (!txid) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'txid is required' }
+        });
+      }
+      
+      logger.info(`Manual transaction test requested for ${txid}`);
+      
+      // Fetch transaction from blockchain
+      const tx = await blockchainService.getRawTransaction(txid, true);
+      
+      if (!tx) {
+        return res.status(404).json({
+          success: false,
+          error: { message: 'Transaction not found on blockchain' }
+        });
+      }
+      
+      // Check if transaction is confirmed (has blockhash)
+      if (!tx.blockhash) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'Transaction is not yet confirmed (in mempool)' }
+        });
+      }
+      
+      // Get block info
+      const blockHash = tx.blockhash;
+      const block = await blockchainService.getBlock(blockHash, 1);
+      const blockHeight = block.height;
+      const blockTime = new Date(block.time * 1000);
+      
+      logger.info(`Processing transaction ${txid} from block ${blockHeight}`);
+      
+      // Process the transaction
+      const result = await assetProcessor.handleAssetTransfer(tx, blockHeight, blockTime, blockHash);
+      
+      res.json({
+        success: true,
+        data: {
+          txid,
+          blockHeight,
+          blockTime,
+          result
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 export default router;

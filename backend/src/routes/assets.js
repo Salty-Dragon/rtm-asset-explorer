@@ -214,7 +214,7 @@ router.get('/by-parent/:parentName',
 
 // GET /api/assets/:assetId/transfers - Get transfer history for an asset
 router.get('/:assetId/transfers',
-  cacheMiddleware(30),
+  cacheMiddleware(0),  // No cache for real-time transfer data
   validate(z.object({
     page: z.string().regex(/^\d+$/).transform(Number).optional().default('1'),
     limit: z.string().regex(/^\d+$/).transform(Number).optional().default('50')
@@ -364,7 +364,7 @@ router.get('/:assetId/transfers',
 
 // GET /api/assets/name/:assetName/transfers - Get transfer history by asset name
 router.get('/name/:assetName/transfers',
-  cacheMiddleware(30),
+  cacheMiddleware(0),  // No cache for real-time transfer data
   validate(z.object({
     page: z.string().regex(/^\d+$/).transform(Number).optional().default('1'),
     limit: z.string().regex(/^\d+$/).transform(Number).optional().default('50')
