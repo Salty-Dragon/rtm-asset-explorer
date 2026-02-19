@@ -209,6 +209,14 @@ router.post('/test-transaction',
         });
       }
       
+      // Check if transaction is confirmed (has blockhash)
+      if (!tx.blockhash) {
+        return res.status(400).json({
+          success: false,
+          error: { message: 'Transaction is not yet confirmed (in mempool)' }
+        });
+      }
+      
       // Get block info
       const blockHash = tx.blockhash;
       const block = await blockchainService.getBlock(blockHash, 1);

@@ -482,7 +482,7 @@ class SyncDaemon {
             logger.info(`[TX] ✓ Calling assetProcessor.handleAssetTransfer for ${tx.txid}`);
             try {
               const result = await assetProcessor.handleAssetTransfer(tx, blockHeight, blockTime, blockHash);
-              logger.info(`[TX] ✓ handleAssetTransfer result:`, result);
+              logger.info(`[TX] ✓ handleAssetTransfer result:`, JSON.stringify(result));
             } catch (transferError) {
               logger.error(`[TX] ✗ Error in handleAssetTransfer for ${tx.txid}:`, transferError);
               throw transferError;
