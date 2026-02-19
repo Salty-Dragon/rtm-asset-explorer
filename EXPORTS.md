@@ -9,7 +9,6 @@ The Raptoreum Asset Explorer export system provides cryptographically signed, bl
 - **Security**: Cryptographically signed and tokenized on the Raptoreum blockchain
 - **Verification**: Verifiable via on-chain sub-assets under `RTM_EXPORTS/`
 - **Multiple Formats**: Every export includes JSON, CSV, and PDF formats
-- **Permanent Storage**: Uploaded to IPFS for permanent decentralized storage
 - **Legal Compliance**: Includes Certificate of Authenticity for legal use cases
 
 ## Export Types
@@ -87,22 +86,16 @@ Export files generated in all three formats:
 - **PDF**: Human-readable formatted report
 - All packaged in a ZIP archive
 
-### Step 7: IPFS Upload
-- ZIP archive uploaded to IPFS
-- IPFS hash generated for permanent reference
-- Optional: IPFS media downloads (if requested)
-
-### Step 8: Blockchain Tokenization
+### Step 7: Blockchain Tokenization
 - Sub-asset created on remote Raptoreumd instance
 - Token name follows convention: `RTM_EXPORTS/[TYPE]_[DATE]_[HASH]`
-- IPFS hash stored in referenceHash field
 - Unique NFT (maxMintCount: 1)
+- Cryptographically signed for verification
 
-### Step 9: Delivery
+### Step 8: Delivery
 User receives:
 - Download link (expires based on retention setting)
 - Verification token for authenticity checks
-- IPFS hash for permanent access
 - Blockchain token name for verification
 
 ## Export Contents

@@ -57,17 +57,6 @@ PAYMENT_CHECK_INTERVAL_MS=60000
 
 **Note:** If disabled, payment verification will not work but the system will still function for testing.
 
-#### IPFS Storage
-
-```env
-IPFS_ENABLED=true
-IPFS_HOST=127.0.0.1
-IPFS_PORT=5001
-IPFS_GATEWAY_URL=https://ipfs.io/ipfs/
-```
-
-**Note:** If disabled, IPFS upload will be skipped but exports will still be generated locally.
-
 #### Blockchain Tokenization
 
 ```env
@@ -173,7 +162,6 @@ backend/
 │   │   ├── pricingService.js   # USD/LTC pricing
 │   │   ├── exportGenerator.js  # File generation
 │   │   ├── exportSigner.js     # Digital signatures
-│   │   ├── ipfsService.js      # IPFS upload
 │   │   ├── assetTokenizer.js   # Blockchain tokens
 │   │   ├── paymentMonitor.js   # Payment monitoring
 │   │   └── queueProcessor.js   # Queue management
@@ -208,7 +196,6 @@ For development without external dependencies:
 1. Keep external services disabled in `.env`:
    ```env
    LITECOIN_RPC_ENABLED=false
-   IPFS_ENABLED=false
    ASSET_TOKENIZATION_ENABLED=false
    ```
 
@@ -218,7 +205,7 @@ For development without external dependencies:
    - Sign exports
    - Provide download links
 
-3. Payment verification, IPFS upload, and blockchain tokenization will be skipped.
+3. Payment verification and blockchain tokenization will be skipped.
 
 ## Production Deployment
 
@@ -226,13 +213,12 @@ For production deployment:
 
 1. **Enable all external services**
 2. **Set up Litecoin pruned node** for payment processing
-3. **Configure IPFS node** for permanent storage
-4. **Set up remote Raptoreumd** with sufficient RTM for token creation
-5. **Generate strong RPC passwords**
-6. **Configure firewall** to restrict RPC access
-7. **Set up monitoring** for payment monitor and queue processor
-8. **Configure backup** for export files and keys
-9. **Set appropriate retention periods** based on storage capacity
+3. **Set up remote Raptoreumd** with sufficient RTM for token creation
+4. **Generate strong RPC passwords**
+5. **Configure firewall** to restrict RPC access
+6. **Set up monitoring** for payment monitor and queue processor
+7. **Configure backup** for export files and keys
+8. **Set appropriate retention periods** based on storage capacity
 
 ## Monitoring
 
@@ -258,12 +244,6 @@ The export system provides several monitoring endpoints:
 - Verify MongoDB connection
 - Check Redis connection
 - Ensure sufficient disk space
-
-### IPFS Upload Fails
-
-- Verify IPFS daemon is running
-- Check IPFS API port is accessible
-- Ensure sufficient IPFS storage space
 
 ### Blockchain Token Creation Fails
 

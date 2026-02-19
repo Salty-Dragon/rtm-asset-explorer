@@ -971,7 +971,6 @@ Check export processing status.
     "verification": {
       "assetName": "RTM_EXPORTS/ASSET_20260214_a3f2c1b9",
       "txid": "abc123...",
-      "ipfsHash": "QmX...",
       "signature": "3045..."
     },
     "expiresAt": "2026-02-21T12:00:00Z"
@@ -1000,12 +999,10 @@ Verify a tokenized export.
     "exportType": "asset",
     "blockHeight": 123456,
     "txid": "abc123...",
-    "ipfsHash": "QmX...",
     "fileHash": "sha256:...",
     "signatureValid": true,
     "verification": {
       "onChain": "https://explorer.raptoreum.com/tx/abc123...",
-      "ipfs": "https://ipfs.io/ipfs/QmX...",
       "blockExplorer": "https://assets.raptoreum.com/verify/..."
     }
   }
