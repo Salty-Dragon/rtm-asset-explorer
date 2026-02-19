@@ -79,7 +79,7 @@ router.get('/:address/assets',
     try {
       const { address, limit, offset, type } = req.validated;
 
-      const filter = { currentOwner: address };
+      const filter = { $or: [{ currentOwner: address }, { creator: address }] };
       if (type) filter.type = type;
 
       const assets = await Asset.find(filter)
