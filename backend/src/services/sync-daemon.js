@@ -429,6 +429,9 @@ class SyncDaemon {
     try {
       const txType = tx.type || 0;
       
+      // LOG: Every transaction
+      logger.info(`[TX] Processing tx ${tx.txid} (type: ${txType}) at block ${blockHeight}`);
+      
       // Route based on transaction type
       switch (txType) {
         case 8: // NewAssetTx - Asset creation
@@ -449,6 +452,22 @@ class SyncDaemon {
           
         case 0: // Standard transaction - Check for asset transfers
         default:
+          // LOG: Check transaction structure
+          if (tx.vout && tx.vout.length > 0) {
+            logger.info(`[TX] Transaction ${tx.txid} has ${tx.vout.length} outputs`);
+            
+            // Log each vout for debugging
+            tx.vout.forEach((vout, index) => {
+              const scriptType = vout.scriptPubKey?.type;
+              const hasAsset = !!vout.scriptPubKey?.asset;
+              logger.debug(`[TX]   vout[${index}]: type=${scriptType}, hasAsset=${hasAsset}`);
+              
+              if (hasAsset) {
+                logger.info(`[TX]   ✓ Asset detected in vout[${index}]:`, JSON.stringify(vout.scriptPubKey.asset));
+              }
+            });
+          }
+          
           // Check if any vout has asset transfer - check multiple possible indicators
           const hasAssetTransfer = tx.vout?.some(vout => 
             vout.scriptPubKey?.type === 'transferasset' ||
@@ -456,15 +475,26 @@ class SyncDaemon {
             (vout.scriptPubKey?.type === 'pubkeyhash' && vout.scriptPubKey?.asset)
           );
           
+          // LOG: Detection result
+          logger.info(`[TX] Asset transfer detected: ${hasAssetTransfer} for tx ${tx.txid}`);
+          
           if (hasAssetTransfer) {
-            logger.debug(`Detected asset transfer in tx ${tx.txid} at block ${blockHeight}`);
-            await assetProcessor.handleAssetTransfer(tx, blockHeight, blockTime, blockHash);
+            logger.info(`[TX] ✓ Calling assetProcessor.handleAssetTransfer for ${tx.txid}`);
+            try {
+              const result = await assetProcessor.handleAssetTransfer(tx, blockHeight, blockTime, blockHash);
+              logger.info(`[TX] ✓ handleAssetTransfer result:`, result);
+            } catch (transferError) {
+              logger.error(`[TX] ✗ Error in handleAssetTransfer for ${tx.txid}:`, transferError);
+              throw transferError;
+            }
+          } else {
+            logger.debug(`[TX] No asset transfer in ${tx.txid}`);
           }
           break;
       }
       
     } catch (error) {
-      logger.error(`Error processing transaction ${tx.txid}:`, error);
+      logger.error(`[TX] ✗ Error processing transaction ${tx.txid}:`, error);
       // Don't throw - continue processing other transactions
     }
   }

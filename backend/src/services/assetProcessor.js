@@ -198,6 +198,8 @@ class AssetProcessor {
    */
   async handleAssetTransfer(tx, blockHeight, blockTime, blockHash) {
     try {
+      logger.info(`[ASSET] handleAssetTransfer called for tx ${tx.txid} at block ${blockHeight}`);
+      
       // Find asset vouts - check multiple possible structures
       const assetVouts = tx.vout?.filter(vout => {
         const scriptPubKey = vout.scriptPubKey;
@@ -209,12 +211,14 @@ class AssetProcessor {
                (scriptPubKey.type === 'pubkeyhash' && scriptPubKey.asset);
       }) || [];
 
+      logger.info(`[ASSET] Found ${assetVouts.length} asset vout(s) in tx ${tx.txid}`);
+
       if (assetVouts.length === 0) {
-        logger.debug(`No asset vouts found in tx ${tx.txid}`);
+        logger.debug(`[ASSET] No asset vouts found in tx ${tx.txid}`);
         return null;
       }
 
-      logger.info(`Processing ${assetVouts.length} asset transfer(s) in tx ${tx.txid}`);
+      logger.info(`[ASSET] Processing ${assetVouts.length} asset transfer(s) in tx ${tx.txid}`);
       const transfers = [];
 
       for (const vout of assetVouts) {
@@ -269,9 +273,9 @@ class AssetProcessor {
             timestamp: blockTime
           };
           await assetRecord.save();
-          logger.info(`Updated asset ${assetName} transferCount to ${assetRecord.transferCount}`);
+          logger.info(`[ASSET] ✓ Updated asset ${assetName} transferCount to ${assetRecord.transferCount}`);
         } else {
-          logger.warn(`Asset record not found for ${assetName} in transfer tx ${tx.txid}`);
+          logger.warn(`[ASSET] Asset record not found for ${assetName} in transfer tx ${tx.txid}`);
         }
 
         // Record transfer
@@ -288,11 +292,12 @@ class AssetProcessor {
         });
 
         transfers.push({ assetName, amount, from: sender, to: recipient });
-        logger.info(`Recorded transfer: ${assetName} from ${sender || 'unknown'} to ${recipient}, amount: ${amount}`);
+        logger.info(`[ASSET] ✓ Recorded transfer: ${assetName} from ${sender || 'unknown'} to ${recipient}, amount: ${amount}`);
       }
 
       // Record transaction
       if (transfers.length > 0) {
+        logger.info(`[ASSET] Recording transaction for ${transfers.length} transfer(s)`);
         await this.recordAssetTransaction(tx, blockHeight, blockTime, 'transfer', {
           assetId: transfers[0].assetName,
           assetName: transfers[0].assetName,
@@ -300,11 +305,13 @@ class AssetProcessor {
           to: transfers[0].to,
           amount: transfers[0].amount
         }, blockHash);
+        logger.info(`[ASSET] ✓ Transaction recorded successfully for tx ${tx.txid}`);
       }
 
+      logger.info(`[ASSET] ✓ handleAssetTransfer completed for ${tx.txid}, processed ${transfers.length} transfer(s)`);
       return transfers;
     } catch (error) {
-      logger.error(`Error handling asset transfer for ${tx.txid}:`, error);
+      logger.error(`[ASSET] ✗ Error handling asset transfer for ${tx.txid}:`, error);
       throw error;
     }
   }

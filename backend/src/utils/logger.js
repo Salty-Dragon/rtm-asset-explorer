@@ -2,7 +2,7 @@ import winston from 'winston';
 import path from 'path';
 import fs from 'fs';
 
-const logLevel = process.env.LOG_LEVEL || 'info';
+const logLevel = process.env.LOG_LEVEL || 'debug';
 const logDir = process.env.LOG_DIR || 'logs';
 
 // Ensure log directory exists
