@@ -276,7 +276,7 @@ cp backend/.env.example backend/.env
 - `MONGODB_URI` - Include your MongoDB credentials with authentication
 - `REDIS_PASSWORD` - Set a strong Redis password
 - `RAPTOREUMD_PASSWORD` - Your local node RPC password
-- `REMOTE_RAPTOREUMD_*` - Remote node configuration for asset creation
+- `HOT_WALLET_SHARED_SECRET` - Shared secret for hot wallet API authentication
 - `LITECOIN_RPC_PASSWORD` - Litecoin node credentials
 - `SESSION_SECRET` - Generate with: `openssl rand -hex 32`
 - `JWT_SECRET` - Generate with: `openssl rand -hex 32`
@@ -1021,12 +1021,10 @@ LITECOIN_RPC_PORT=9332
 LITECOIN_RPC_USER=ltc_user
 LITECOIN_RPC_PASS=secure_password
 
-# Remote Raptoreumd (for asset creation)
-REMOTE_RAPTOREUMD_HOST=remote.server.com
-REMOTE_RAPTOREUMD_PORT=10225
-REMOTE_RAPTOREUMD_USER=rtm_asset_creator
-REMOTE_RAPTOREUMD_PASS=secure_password
-REMOTE_RAPTOREUM_OWNER_ADDRESS=RxxxxOwnerAddress
+# Hot Wallet API (for asset creation)
+HOT_WALLET_API_URL=https://hwa.raptoreum.com/api/v1
+HOT_WALLET_SHARED_SECRET=your_shared_secret
+HOT_WALLET_API_TIMEOUT=30000
 EXPORT_HOLDER_ADDRESS=RxxxxHolderAddress
 
 # Export Signing
