@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Download, FileText, Scale, Shield, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
@@ -15,7 +15,7 @@ import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { ErrorMessage } from '@/components/shared/ErrorMessage'
 import type { ExportRequest } from '@/lib/types'
 
-export default function ExportAssetPage() {
+function ExportAssetPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const assetId = searchParams.get('assetId') || ''
@@ -315,5 +315,17 @@ export default function ExportAssetPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function ExportAssetPage() {
+  return (
+    <Suspense fallback={
+      <div className="container py-12">
+        <LoadingSpinner text="Loading export form..." />
+      </div>
+    }>
+      <ExportAssetPageContent />
+    </Suspense>
   )
 }
