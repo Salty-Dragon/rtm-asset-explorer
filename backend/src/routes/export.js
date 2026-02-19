@@ -228,7 +228,9 @@ router.get('/download/:exportId', exportRateLimit, async (req, res) => {
       return res.status(410).json({
         success: false,
         error: 'Export has expired',
-        message: 'Export file has been deleted after expiration'
+        message: 'Export file has been deleted after expiration. Verify the export on-chain using the blockchain token.',
+        assetName: exportRecord.assetName,
+        verifyUrl: exportRecord.assetName ? `/api/export/verify/${exportRecord.assetName}` : null
       });
     }
     
@@ -239,7 +241,9 @@ router.get('/download/:exportId', exportRateLimit, async (req, res) => {
       return res.status(404).json({
         success: false,
         error: 'Export file not found',
-        message: 'Export file is no longer available'
+        message: 'Export file is no longer available. The export can still be verified on-chain using the blockchain token.',
+        assetName: exportRecord.assetName,
+        verifyUrl: exportRecord.assetName ? `/api/export/verify/${exportRecord.assetName}` : null
       });
     }
     

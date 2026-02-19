@@ -88,7 +88,7 @@ class AssetTokenizer {
       const txid = await this.rpcCall('issueuniqueasset', [
         tokenName,
         [], // No tags
-        '', // Empty referenceHash (IPFS no longer used)
+        '', // Empty referenceHash (RPC API requires this parameter; IPFS no longer used)
         ownerAddress,
         '', // No specific update address
         ownerAddress, // Owner address
