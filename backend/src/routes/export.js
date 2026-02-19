@@ -8,7 +8,6 @@ import litecoinClient from '../services/litecoinClient.js';
 import pricingService from '../services/pricingService.js';
 import exportSigner from '../services/exportSigner.js';
 import assetTokenizer from '../services/assetTokenizer.js';
-import ipfsService from '../services/ipfsService.js';
 
 const router = express.Router();
 
@@ -175,7 +174,6 @@ router.get('/status/:exportId', async (req, res) => {
       response.data.result = {
         assetName: exportRecord.assetName,
         blockchainTxid: exportRecord.blockchainTxid,
-        ipfsHash: exportRecord.ipfsHash,
         fileHash: exportRecord.fileHash,
         downloadUrl: `/api/export/download/${exportId}`,
         verifyUrl: `/api/export/verify/${exportRecord.assetName}`,
@@ -230,9 +228,7 @@ router.get('/download/:exportId', exportRateLimit, async (req, res) => {
       return res.status(410).json({
         success: false,
         error: 'Export has expired',
-        ipfsHash: exportRecord.ipfsHash,
-        ipfsUrl: ipfsService.getGatewayUrl(exportRecord.ipfsHash),
-        message: 'File can still be accessed via IPFS'
+        message: 'Export file has been deleted after expiration'
       });
     }
     
@@ -243,9 +239,7 @@ router.get('/download/:exportId', exportRateLimit, async (req, res) => {
       return res.status(404).json({
         success: false,
         error: 'Export file not found',
-        ipfsHash: exportRecord.ipfsHash,
-        ipfsUrl: ipfsService.getGatewayUrl(exportRecord.ipfsHash),
-        message: 'File can still be accessed via IPFS'
+        message: 'Export file is no longer available'
       });
     }
     

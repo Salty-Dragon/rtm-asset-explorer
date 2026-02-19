@@ -3,7 +3,6 @@ import { logger } from '../utils/logger.js';
 import Export from '../models/Export.js';
 import exportGenerator from './exportGenerator.js';
 import exportSigner from './exportSigner.js';
-import ipfsService from './ipfsService.js';
 import assetTokenizer from './assetTokenizer.js';
 
 class QueueProcessor {
@@ -132,18 +131,7 @@ class QueueProcessor {
       exportRecord.signature = signature;
       await exportRecord.save();
 
-      // Step 3: Upload to IPFS (60%)
-      await job.progress(60);
-      exportRecord.progress = 60;
-      exportRecord.progressMessage = 'Uploading to IPFS';
-      await exportRecord.save();
-
-      const ipfsResult = await ipfsService.uploadFile(filePath, { pin: true });
-      exportRecord.ipfsHash = ipfsResult.hash;
-      exportRecord.ipfsPinned = true;
-      await exportRecord.save();
-
-      // Step 4: Create blockchain token (80%)
+      // Step 3: Create blockchain token (80%)
       await job.progress(80);
       exportRecord.progress = 80;
       exportRecord.progressMessage = 'Creating blockchain token';
@@ -152,7 +140,6 @@ class QueueProcessor {
       const tokenResult = await assetTokenizer.createExportToken({
         type: exportRecord.type,
         exportId: exportRecord.exportId,
-        ipfsHash: exportRecord.ipfsHash,
         fileHash: exportRecord.fileHash
       });
 
@@ -180,7 +167,6 @@ class QueueProcessor {
         success: true,
         exportId,
         assetName: tokenResult.assetName,
-        ipfsHash: ipfsResult.hash,
         fileSize: size
       };
     } catch (error) {
