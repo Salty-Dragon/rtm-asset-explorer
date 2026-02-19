@@ -96,4 +96,7 @@ async function testAddressAssets() {
   }
 }
 
-testAddressAssets();
+testAddressAssets().catch(error => {
+  console.error('Unhandled error:', error);
+  process.exit(1);
+});
