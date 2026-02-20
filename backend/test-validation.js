@@ -204,31 +204,31 @@ try {
   const pricingService = (await import('./src/services/pricingService.js')).default;
   
   // Test payment validation with variance
-  const expectedLTC = 0.025;
+  const expectedAmount = 0.025;
   
   // Within tolerance (+0.5%)
-  const valid1 = pricingService.isPaymentAmountValid(0.02512, expectedLTC);
+  const valid1 = pricingService.isPaymentAmountValid(0.02512, expectedAmount);
   if (!valid1) {
     throw new Error('Valid payment within tolerance rejected');
   }
   console.log('✓ Payment within +0.5% tolerance accepted');
   
   // Within tolerance (-0.5%)
-  const valid2 = pricingService.isPaymentAmountValid(0.02488, expectedLTC);
+  const valid2 = pricingService.isPaymentAmountValid(0.02488, expectedAmount);
   if (!valid2) {
     throw new Error('Valid payment within tolerance rejected');
   }
   console.log('✓ Payment within -0.5% tolerance accepted');
   
   // Outside tolerance (+2%)
-  const valid3 = pricingService.isPaymentAmountValid(0.0255, expectedLTC);
+  const valid3 = pricingService.isPaymentAmountValid(0.0255, expectedAmount);
   if (valid3) {
     throw new Error('Invalid payment outside tolerance accepted');
   }
   console.log('✓ Payment outside +2% tolerance rejected');
   
   // Outside tolerance (-2%)
-  const valid4 = pricingService.isPaymentAmountValid(0.0245, expectedLTC);
+  const valid4 = pricingService.isPaymentAmountValid(0.0245, expectedAmount);
   if (valid4) {
     throw new Error('Invalid payment outside tolerance accepted');
   }

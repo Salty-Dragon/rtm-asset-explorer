@@ -312,7 +312,7 @@ export interface ExportResponse {
   payment: {
     address: string
     amount: number
-    currency: 'LTC'
+    currency: 'RTM'
     amountUsd: number
     expiresAt: string
   }
@@ -332,7 +332,7 @@ export interface ExportStatus {
   payment: {
     address: string
     amount: number
-    currency: 'LTC'
+    currency: 'RTM'
     paid: boolean
     paidAt?: string
     txid?: string

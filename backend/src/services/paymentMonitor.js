@@ -1,7 +1,5 @@
 import { logger } from '../utils/logger.js';
 import Export from '../models/Export.js';
-import litecoinClient from './litecoinClient.js';
-import pricingService from './pricingService.js';
 
 class PaymentMonitor {
   constructor() {
@@ -73,50 +71,11 @@ class PaymentMonitor {
   }
 
   async checkExportPayment(exportRecord) {
-    const { exportId, paymentAddress, paymentAmountLTC } = exportRecord;
-    
+    const { exportId } = exportRecord;
+
     try {
-      logger.debug(`Checking payment for export ${exportId}`);
-      
-      // Check if payment has been received
-      const paymentStatus = await litecoinClient.checkPayment(
-        paymentAddress,
-        paymentAmountLTC,
-        0 // Check unconfirmed transactions
-      );
-
-      if (paymentStatus.paid) {
-        logger.info(`Payment received for export ${exportId}! TXID: ${paymentStatus.txid}`);
-        
-        // Validate payment amount with variance tolerance
-        const isValid = pricingService.isPaymentAmountValid(
-          paymentStatus.received,
-          paymentAmountLTC
-        );
-
-        if (!isValid) {
-          logger.warn(`Payment amount outside tolerance for ${exportId}: received ${paymentStatus.received} LTC, expected ${paymentAmountLTC} LTC`);
-          
-          exportRecord.status = 'failed';
-          exportRecord.errorMessage = `Payment amount outside tolerance: received ${paymentStatus.received} LTC, expected ${paymentAmountLTC} LTC`;
-          await exportRecord.save();
-          return;
-        }
-
-        // Update export record
-        exportRecord.status = 'queued';
-        exportRecord.paymentConfirmed = true;
-        exportRecord.paymentConfirmedAt = new Date();
-        exportRecord.paymentTxid = paymentStatus.txid;
-        await exportRecord.save();
-
-        logger.info(`Export ${exportId} moved to queue`);
-
-        // Trigger queue processing
-        await this.queueExportProcessing(exportRecord);
-      } else {
-        logger.debug(`No payment yet for export ${exportId} (received: ${paymentStatus.received} LTC)`);
-      }
+      logger.debug(`Payment check for export ${exportId}: no payment processor configured`);
+      // Payment processing will be handled once RTM payment support is added
     } catch (error) {
       logger.error(`Error checking payment for export ${exportId}:`, error);
     }

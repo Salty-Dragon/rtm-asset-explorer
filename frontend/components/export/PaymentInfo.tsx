@@ -10,7 +10,7 @@ import { formatUSD } from '@/lib/formatters'
 interface PaymentInfoProps {
   address: string
   amount: number
-  currency: 'LTC'
+  currency: 'RTM'
   amountUsd: number
   expiresAt: string
   className?: string
@@ -101,9 +101,6 @@ export function PaymentInfo({
         <div className="text-sm text-muted-foreground">
           <p className="mb-2">
             Send exactly <strong>{amount} {currency}</strong> to the address above.
-          </p>
-          <p className="text-xs">
-            Note: Raptoreum (RTM) payment support coming soon. For now, we accept LTC only.
           </p>
         </div>
       </CardContent>

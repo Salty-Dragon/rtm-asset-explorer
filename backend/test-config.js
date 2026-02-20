@@ -35,7 +35,6 @@ try {
 
 console.log('\n[3] Checking export system configuration...');
 console.log('  External services:');
-console.log(`    Litecoin: ${process.env.LITECOIN_RPC_ENABLED === 'true' ? 'enabled' : 'disabled'}`);
 console.log(`    IPFS: ${process.env.IPFS_ENABLED === 'true' ? 'enabled' : 'disabled'}`);
 console.log(`    Asset Tokenization: ${process.env.ASSET_TOKENIZATION_ENABLED === 'true' ? 'enabled' : 'disabled'}`);
 console.log('  Export settings:');
