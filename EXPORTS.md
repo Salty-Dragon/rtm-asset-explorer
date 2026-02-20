@@ -5,7 +5,7 @@
 The Raptoreum Asset Explorer export system provides cryptographically signed, blockchain-verified exports for legal compliance, court documentation, and data verification purposes.
 
 **Key Features:**
-- **Cost**: All exports cost $2.00 USD (paid in Litecoin)
+- **Cost**: All exports cost $2.00 USD (paid in Raptoreum/RTM)
 - **Security**: Cryptographically signed and tokenized on the Raptoreum blockchain
 - **Verification**: Verifiable via on-chain sub-assets under `RTM_EXPORTS/`
 - **Multiple Formats**: Every export includes JSON, CSV, and PDF formats
@@ -54,23 +54,23 @@ Provenance/ownership chain export:
 
 ## Payment Process
 
-The export system uses Litecoin for payment processing to ensure decentralized, verifiable transactions:
+The export system uses Raptoreum (RTM) for payment processing, leveraging the existing Raptoreum daemon connection:
 
 ### Step 1: Initiate Export Request
 User submits export request via API with desired type and parameters.
 
 ### Step 2: Payment Address Generated
-System generates a unique, single-use Litecoin payment address for the request.
+System generates a unique, single-use Raptoreum payment address for the request.
 
 ### Step 3: Payment Window
 - User has 30 minutes to complete payment
-- Payment amount: $2.00 USD equivalent in LTC
+- Payment amount: $2.00 USD equivalent in RTM
 - ±1% variance accepted for price fluctuations
 - Real-time exchange rate from CoinGecko API
 
 ### Step 4: Payment Confirmation
-- System monitors Litecoin blockchain for payment
-- Confirmation required before processing begins
+- System monitors Raptoreum blockchain for payment
+- Minimum 1 confirmation required before processing begins
 - Payment status updated in real-time
 
 ### Step 5: Export Processing
@@ -479,7 +479,7 @@ For detailed API endpoint documentation, see [API.md](API.md#export-endpoints).
    ```
 
 2. **Pay Invoice**:
-   Send $2.00 USD in LTC to provided address within 30 minutes.
+   Send $2.00 USD in RTM to provided address within 30 minutes.
 
 3. **Check Status**:
    ```bash

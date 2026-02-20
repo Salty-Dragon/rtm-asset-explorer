@@ -4,7 +4,7 @@ This guide explains how to set up and configure the tokenized export system for 
 
 ## Overview
 
-The export system generates cryptographically signed, blockchain-verified exports in multiple formats (JSON, CSV, PDF). It requires payment in Litecoin and creates blockchain tokens for verification.
+The export system generates cryptographically signed, blockchain-verified exports in multiple formats (JSON, CSV, PDF). It requires payment in Raptoreum (RTM) and creates blockchain tokens for verification.
 
 ## Quick Start
 
@@ -44,18 +44,19 @@ The system will automatically generate RSA-4096 keys on first startup if they do
 
 ### 3. External Services (Optional but Recommended)
 
-#### Litecoin Payment Processing
+#### RTM Payment Processing
+
+RTM payment processing uses the existing Raptoreum daemon connection (no additional setup needed):
 
 ```env
-LITECOIN_RPC_ENABLED=true
-LITECOIN_RPC_HOST=127.0.0.1
-LITECOIN_RPC_PORT=9332
-LITECOIN_RPC_USER=your_litecoin_user
-LITECOIN_RPC_PASSWORD=your_litecoin_password
+RAPTOREUMD_HOST=127.0.0.1
+RAPTOREUMD_PORT=10225
+RAPTOREUMD_USER=your_rtm_user
+RAPTOREUMD_PASSWORD=your_rtm_password
 PAYMENT_CHECK_INTERVAL_MS=60000
 ```
 
-**Note:** If disabled, payment verification will not work but the system will still function for testing.
+**Note:** The Raptoreum daemon must be running and have a wallet available for generating payment addresses.
 
 #### Blockchain Tokenization
 
@@ -158,8 +159,8 @@ backend/
 │   ├── models/
 │   │   └── Export.js           # Export database model
 │   ├── services/
-│   │   ├── litecoinClient.js   # Litecoin RPC client
-│   │   ├── pricingService.js   # USD/LTC pricing
+│   │   ├── rtm-payment.js      # RTM payment service
+│   │   ├── pricingService.js   # USD/RTM pricing via CoinGecko
 │   │   ├── exportGenerator.js  # File generation
 │   │   ├── exportSigner.js     # Digital signatures
 │   │   ├── assetTokenizer.js   # Blockchain tokens
@@ -193,26 +194,23 @@ Store sensitive credentials in `.env`:
 
 For development without external dependencies:
 
-1. Keep external services disabled in `.env`:
-   ```env
-   LITECOIN_RPC_ENABLED=false
-   ASSET_TOKENIZATION_ENABLED=false
-   ```
+1. Use environment variables to point to a local or test Raptoreum daemon.
 
 2. The system will still:
    - Accept export requests
+   - Generate RTM payment addresses
    - Generate files locally
    - Sign exports
    - Provide download links
 
-3. Payment verification and blockchain tokenization will be skipped.
+3. Set `ASSET_TOKENIZATION_ENABLED=false` to skip blockchain tokenization during development.
 
 ## Production Deployment
 
 For production deployment:
 
 1. **Enable all external services**
-2. **Set up Litecoin pruned node** for payment processing
+2. **Ensure Raptoreum daemon is running** with a wallet for payment address generation
 3. **Set up remote Raptoreumd** with sufficient RTM for token creation
 4. **Generate strong RPC passwords**
 5. **Configure firewall** to restrict RPC access
@@ -233,8 +231,8 @@ The export system provides several monitoring endpoints:
 
 ### Export Stuck in "Pending Payment"
 
-- Check Litecoin RPC connection
-- Verify payment was sent to correct address
+- Check Raptoreum daemon RPC connection
+- Verify payment was sent to correct RTM address
 - Check payment monitor logs
 - Ensure payment amount is within variance tolerance
 

@@ -157,7 +157,7 @@ Request professional asset documentation:
 - **Provenance**: Complete ownership chain with verification
 - **Legal**: Court-ready documentation with case information
 
-Payment via LTC (Raptoreum support coming soon).
+Payment via RTM (Raptoreum).
 
 ## Design System
 
