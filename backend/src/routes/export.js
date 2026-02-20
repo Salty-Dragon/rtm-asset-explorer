@@ -66,6 +66,19 @@ router.post('/request', exportRateLimit, async (req, res) => {
       });
     }
 
+    // Check Litecoin RPC availability before any DB writes or external calls
+    if (!litecoinClient.enabled) {
+      return res.status(503).json({
+        success: false,
+        error: 'Payment service unavailable',
+        message: 'Litecoin RPC service is not enabled. Set LITECOIN_RPC_ENABLED=true in backend/.env to enable paid exports.',
+        details: {
+          service: 'litecoin-rpc',
+          required: 'LITECOIN_RPC_ENABLED=true'
+        }
+      });
+    }
+
     // Generate export ID
     const exportId = Export.generateExportId();
     
@@ -122,6 +135,21 @@ router.post('/request', exportRateLimit, async (req, res) => {
         success: false,
         error: 'Validation error',
         details: error.errors
+      });
+    }
+
+    // Any error here from litecoin is a connection failure (disabled case is
+    // already handled by the pre-flight check above)
+    if (error.message && error.message.startsWith('Litecoin RPC')) {
+      logger.error('Litecoin RPC connection error creating export request:', error);
+      return res.status(503).json({
+        success: false,
+        error: 'Payment service unreachable',
+        message: 'Litecoin RPC service is enabled but could not be reached. Check your Litecoin node connection.',
+        details: {
+          service: 'litecoin-rpc',
+          cause: error.message
+        }
       });
     }
     
@@ -366,14 +394,17 @@ router.get('/health', async (req, res) => {
     ]);
     
     const allHealthy = 
-      litecoinHealth.status === 'connected' &&
+      (litecoinHealth.status === 'connected' || litecoinHealth.status === 'disabled') &&
       (ipfsHealth.status === 'connected' || ipfsHealth.status === 'disabled') &&
       (tokenizerHealth.status === 'connected' || tokenizerHealth.status === 'disabled');
+    
+    const paidExportsAvailable = litecoinHealth.status === 'connected';
     
     res.json({
       success: true,
       data: {
         status: allHealthy ? 'healthy' : 'degraded',
+        paidExportsAvailable,
         services: {
           litecoin: litecoinHealth,
           ipfs: ipfsHealth,
