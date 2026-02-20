@@ -1,5 +1,7 @@
 import { logger } from '../utils/logger.js';
 import Export from '../models/Export.js';
+import rtmPaymentService from './rtm-payment.js';
+import pricingService from './pricingService.js';
 
 class PaymentMonitor {
   constructor() {
@@ -74,8 +76,20 @@ class PaymentMonitor {
     const { exportId } = exportRecord;
 
     try {
-      logger.debug(`Payment check for export ${exportId}: no payment processor configured`);
-      // Payment processing will be handled once RTM payment support is added
+      const receivedAmount = await rtmPaymentService.getReceivedAmount(exportRecord.paymentAddress);
+
+      logger.debug(`Export ${exportId}: received ${receivedAmount} RTM, expected ${exportRecord.paymentAmountRTM} RTM`);
+
+      if (receivedAmount > 0 && pricingService.isPaymentAmountValid(receivedAmount, exportRecord.paymentAmountRTM)) {
+        logger.info(`Payment confirmed for export ${exportId}: ${receivedAmount} RTM received`);
+
+        exportRecord.paymentConfirmed = true;
+        exportRecord.paymentConfirmedAt = new Date();
+        exportRecord.status = 'payment_confirmed';
+        await exportRecord.save();
+
+        await this.queueExportProcessing(exportRecord);
+      }
     } catch (error) {
       logger.error(`Error checking payment for export ${exportId}:`, error);
     }

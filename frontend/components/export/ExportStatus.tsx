@@ -135,7 +135,7 @@ export function ExportStatus({ status, className }: ExportStatusProps) {
           address={status.payment.address}
           amount={status.payment.amount}
           currency={status.payment.currency}
-          amountUsd={0} // TODO: Calculate from API
+          amountUsd={status.payment.amountUsd}
           expiresAt={status.payment.expiresAt}
         />
       )}

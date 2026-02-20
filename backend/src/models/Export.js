@@ -35,6 +35,14 @@ const exportSchema = new mongoose.Schema({
     required: true,
     default: 2.00
   },
+  paymentAmountRTM: {
+    type: Number,
+    required: true
+  },
+  paymentCurrency: {
+    type: String,
+    default: 'RTM'
+  },
   paymentExpiration: {
     type: Date,
     required: true,

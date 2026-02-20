@@ -5,6 +5,7 @@ import { logger } from '../utils/logger.js';
 import { rateLimit } from '../middleware/rateLimit.js';
 import Export from '../models/Export.js';
 import pricingService from '../services/pricingService.js';
+import rtmPaymentService from '../services/rtm-payment.js';
 import exportSigner from '../services/exportSigner.js';
 import assetTokenizer from '../services/assetTokenizer.js';
 
@@ -65,11 +66,64 @@ router.post('/request', exportRateLimit, async (req, res) => {
       });
     }
 
-    // Payment service not yet configured - RTM payment support coming soon
-    return res.status(503).json({
-      success: false,
-      error: 'Payment service unavailable',
-      message: 'Payment processing is not currently configured. RTM payment support coming soon.'
+    // Get export pricing (USD + RTM equivalent)
+    const pricing = await pricingService.getExportPrice();
+
+    // Generate a unique RTM payment address
+    const paymentAddress = await rtmPaymentService.generatePaymentAddress();
+
+    // Payment window: 30 minutes
+    const paymentExpiration = new Date(Date.now() + 30 * 60 * 1000);
+
+    // Create export record
+    const exportId = Export.generateExportId();
+    const exportRecord = new Export({
+      exportId,
+      type: validatedData.type,
+      status: 'pending_payment',
+      paymentAddress,
+      paymentAmountUSD: pricing.usd,
+      paymentAmountRTM: parseFloat(pricing.rtm.toFixed(8)),
+      paymentCurrency: 'RTM',
+      paymentExpiration,
+      paymentConfirmed: false,
+      requestData: {
+        assetId: validatedData.assetId,
+        assetIds: validatedData.assetIds,
+        address: validatedData.address,
+        addresses: validatedData.addresses,
+        includeTransactions: validatedData.includeTransactions,
+        includeAddresses: validatedData.includeAddresses,
+        includeMedia: validatedData.includeMedia,
+        retention: validatedData.retention,
+        legalInfo: validatedData.legalInfo
+      },
+      requestIp: req.ip,
+      userAgent: req.headers['user-agent']
+    });
+
+    await exportRecord.save();
+
+    logger.info(`Export request created: ${exportId}, payment address: ${paymentAddress}, amount: ${exportRecord.paymentAmountRTM} RTM ($${pricing.usd} USD)`);
+
+    return res.status(201).json({
+      success: true,
+      data: {
+        exportId,
+        status: 'pending_payment',
+        payment: {
+          address: paymentAddress,
+          amount: parseFloat(pricing.rtm.toFixed(8)),
+          currency: 'RTM',
+          amountUsd: pricing.usd,
+          expiresAt: paymentExpiration.toISOString()
+        },
+        createdAt: exportRecord.createdAt
+      },
+      meta: {
+        timestamp: new Date().toISOString(),
+        requestId: req.id
+      }
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -112,7 +166,10 @@ router.get('/status/:exportId', async (req, res) => {
         createdAt: exportRecord.createdAt,
         payment: {
           address: exportRecord.paymentAddress,
-          confirmed: exportRecord.paymentConfirmed,
+          amount: exportRecord.paymentAmountRTM,
+          currency: exportRecord.paymentCurrency || 'RTM',
+          amountUsd: exportRecord.paymentAmountUSD,
+          paid: exportRecord.paymentConfirmed,
           txid: exportRecord.paymentTxid,
           expiresAt: exportRecord.paymentExpiration
         }
@@ -326,7 +383,8 @@ router.get('/health', async (req, res) => {
       success: true,
       data: {
         status: allHealthy ? 'healthy' : 'degraded',
-        paidExportsAvailable: false,
+        paidExportsAvailable: true,
+        paymentCurrency: 'RTM',
         services: {
           ipfs: ipfsHealth,
           assetTokenizer: tokenizerHealth

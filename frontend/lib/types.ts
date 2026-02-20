@@ -333,6 +333,7 @@ export interface ExportStatus {
     address: string
     amount: number
     currency: 'RTM'
+    amountUsd: number
     paid: boolean
     paidAt?: string
     txid?: string
