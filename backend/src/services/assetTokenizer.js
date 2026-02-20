@@ -112,8 +112,9 @@ class AssetTokenizer {
     // Format date as YYYYMMDD
     const dateStr = exportDate.toISOString().split('T')[0].replace(/-/g, '');
     
-    // Construct token name: RTM_EXPORTS/TYPE_YYYYMMDD_HASH8
-    const tokenName = `RTM_EXPORTS/${exportType.toUpperCase()}_${dateStr}_${hash}`;
+    // Construct token name with SPACES in the sub-asset name (underscores not allowed in sub-assets)
+    // Full name: RTM_EXPORTS/TYPE YYYYMMDD HASH8
+    const tokenName = `RTM_EXPORTS/${exportType.toUpperCase()} ${dateStr} ${hash}`;
     
     logger.debug('Generated token name:', tokenName);
     return tokenName;
