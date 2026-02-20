@@ -20,14 +20,30 @@ export function ExportStatus({ status, className }: ExportStatusProps) {
   const getStatusIcon = () => {
     switch (status.status) {
       case 'pending_payment':
-        return <Clock className="h-5 w-5 text-warning" />
+        return (
+          <div className="rounded-lg bg-warning/10 p-2">
+            <Clock className="h-5 w-5 text-warning animate-pulse" />
+          </div>
+        )
       case 'processing':
-        return <Loader2 className="h-5 w-5 animate-spin text-info" />
+        return (
+          <div className="rounded-lg bg-info/10 p-2">
+            <Loader2 className="h-5 w-5 animate-spin text-info" />
+          </div>
+        )
       case 'completed':
-        return <CheckCircle className="h-5 w-5 text-success" />
+        return (
+          <div className="rounded-lg bg-success/10 p-2">
+            <CheckCircle className="h-5 w-5 text-success" />
+          </div>
+        )
       case 'failed':
       case 'expired':
-        return <AlertCircle className="h-5 w-5 text-error" />
+        return (
+          <div className="rounded-lg bg-error/10 p-2">
+            <AlertCircle className="h-5 w-5 text-error" />
+          </div>
+        )
       default:
         return null
     }
@@ -50,11 +66,11 @@ export function ExportStatus({ status, className }: ExportStatusProps) {
   }
 
   return (
-    <div className={cn('space-y-6', className)}>
+    <div className={cn('space-y-6 animate-fade-in', className)}>
       {/* Status Card */}
-      <Card>
+      <Card className="border-border hover:border-accent/50 transition-colors">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-3">
             {getStatusIcon()}
             Export Status
           </CardTitle>
@@ -79,9 +95,9 @@ export function ExportStatus({ status, className }: ExportStatusProps) {
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">{status.progress.step}</span>
-                <span className="font-medium">{status.progress.percentage}%</span>
+                <span className="font-medium text-info">{status.progress.percentage}%</span>
               </div>
-              <Progress value={status.progress.percentage} />
+              <Progress value={status.progress.percentage} className="[&>div]:bg-info" />
               {status.queuePosition !== undefined && status.queuePosition > 0 && (
                 <p className="text-sm text-muted-foreground">
                   Queue position: {status.queuePosition}
@@ -92,7 +108,7 @@ export function ExportStatus({ status, className }: ExportStatusProps) {
 
           {/* Download Button (for completed status) */}
           {status.status === 'completed' && status.downloadUrl && (
-            <Button asChild className="w-full" size="lg">
+            <Button asChild className="w-full bg-accent hover:bg-accent/90 text-white transition-colors" size="lg">
               <a href={status.downloadUrl} download>
                 <Download className="mr-2 h-4 w-4" />
                 Download Export
@@ -102,7 +118,11 @@ export function ExportStatus({ status, className }: ExportStatusProps) {
 
           {/* Error Message (for failed status) */}
           {status.status === 'failed' && status.error && (
-            <div className="rounded-lg border border-error/20 bg-error/10 p-4 text-sm text-error">
+            <div className="rounded-lg border border-error/30 bg-error/10 p-4 text-sm text-error">
+              <div className="flex items-center gap-2 mb-1 font-medium">
+                <AlertCircle className="h-4 w-4" />
+                Export Failed
+              </div>
               {status.error}
             </div>
           )}
@@ -122,9 +142,14 @@ export function ExportStatus({ status, className }: ExportStatusProps) {
 
       {/* Verification Info (for completed status) */}
       {status.status === 'completed' && status.verification && (
-        <Card>
+        <Card className="border-success/30 hover:border-success/50 transition-colors">
           <CardHeader>
-            <CardTitle className="text-base">Blockchain Verification</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2">
+              <div className="rounded-lg bg-success/10 p-2">
+                <CheckCircle className="h-4 w-4 text-success" />
+              </div>
+              Blockchain Verification
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
@@ -145,7 +170,7 @@ export function ExportStatus({ status, className }: ExportStatusProps) {
                 <code className="text-sm font-mono">{status.verification.ipfsHash}</code>
               </div>
             )}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 rounded-lg bg-success/10 p-3">
               <CheckCircle className="h-4 w-4 text-success" />
               <span className="text-sm text-success font-medium">
                 Verified on Blockchain

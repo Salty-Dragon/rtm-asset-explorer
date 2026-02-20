@@ -57,10 +57,10 @@ function ExportAssetPageContent() {
   }
 
   return (
-    <div className="container py-8">
+    <div className="container py-8 animate-fade-in">
       {/* Back Button */}
       <div className="mb-6">
-        <Button asChild variant="ghost">
+        <Button asChild variant="ghost" className="hover:text-accent transition-colors">
           <Link href={assetId ? `/assets/${assetId}` : '/'}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             {assetId ? 'Back to Asset' : 'Back to Home'}
@@ -70,14 +70,21 @@ function ExportAssetPageContent() {
 
       {/* Title */}
       <div className="mb-8">
-        <h1 className="mb-2 text-4xl font-bold">Export Asset</h1>
-        <p className="text-lg text-muted-foreground">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="rounded-lg bg-accent/10 p-3">
+            <Download className="h-6 w-6 text-accent" />
+          </div>
+          <h1 className="text-4xl font-bold">
+            Export <span className="text-accent">Asset</span>
+          </h1>
+        </div>
+        <p className="text-lg text-muted-foreground pl-1">
           Export detailed information and provenance data for blockchain verification
         </p>
       </div>
 
       <div className="mx-auto max-w-4xl">
-        <Card>
+        <Card className="border-border hover:border-accent/50 transition-colors">
           <CardHeader>
             <CardTitle>Create Export</CardTitle>
             <CardDescription>
@@ -106,15 +113,18 @@ function ExportAssetPageContent() {
                   <RadioGroup 
                     value={exportType} 
                     onValueChange={(value: string) => setExportType(value as 'standard' | 'provenance' | 'legal')}
+                    className="space-y-2"
                   >
-                    <div className="flex items-start space-x-3 rounded-lg border p-4">
+                    <div className={`flex items-start space-x-3 rounded-lg border p-4 cursor-pointer transition-colors ${exportType === 'standard' ? 'border-accent bg-accent/5' : 'hover:border-accent/50 hover:bg-accent/5'}`}>
                       <RadioGroupItem value="standard" id="standard" />
                       <div className="flex-1">
                         <Label htmlFor="standard" className="flex items-center gap-2 cursor-pointer">
-                          <FileText className="h-4 w-4" />
+                          <div className="rounded-md bg-info/10 p-1.5">
+                            <FileText className="h-4 w-4 text-info" />
+                          </div>
                           <span className="font-semibold">Standard Export</span>
                         </Label>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground mt-1">
                           Basic asset information and transaction history
                         </p>
                       </div>
@@ -122,8 +132,8 @@ function ExportAssetPageContent() {
 
                     {/* Standard Export Details */}
                     {exportType === 'standard' && (
-                      <div className="ml-8 space-y-2 rounded-lg border p-4 bg-muted/50">
-                        <p className="text-sm font-medium">Includes:</p>
+                      <div className="ml-8 space-y-2 rounded-lg border border-info/20 p-4 bg-info/5 animate-slide-up">
+                        <p className="text-sm font-medium text-info">Includes:</p>
                         <ul className="text-sm text-muted-foreground space-y-1">
                           <li>• Asset metadata and properties</li>
                           <li>• Full transfer history</li>
@@ -137,14 +147,16 @@ function ExportAssetPageContent() {
                       </div>
                     )}
 
-                    <div className="flex items-start space-x-3 rounded-lg border p-4">
+                    <div className={`flex items-start space-x-3 rounded-lg border p-4 cursor-pointer transition-colors ${exportType === 'provenance' ? 'border-accent bg-accent/5' : 'hover:border-accent/50 hover:bg-accent/5'}`}>
                       <RadioGroupItem value="provenance" id="provenance" />
                       <div className="flex-1">
                         <Label htmlFor="provenance" className="flex items-center gap-2 cursor-pointer">
-                          <Shield className="h-4 w-4" />
+                          <div className="rounded-md bg-success/10 p-1.5">
+                            <Shield className="h-4 w-4 text-success" />
+                          </div>
                           <span className="font-semibold">Provenance Report</span>
                         </Label>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground mt-1">
                           Complete ownership chain with verification data
                         </p>
                       </div>
@@ -152,8 +164,8 @@ function ExportAssetPageContent() {
 
                     {/* Provenance Report Details */}
                     {exportType === 'provenance' && (
-                      <div className="ml-8 space-y-2 rounded-lg border p-4 bg-muted/50">
-                        <p className="text-sm font-medium">Includes:</p>
+                      <div className="ml-8 space-y-2 rounded-lg border border-success/20 p-4 bg-success/5 animate-slide-up">
+                        <p className="text-sm font-medium text-success">Includes:</p>
                         <ul className="text-sm text-muted-foreground space-y-1">
                           <li>• Complete ownership history</li>
                           <li>• Chain of custody documentation</li>
@@ -167,14 +179,16 @@ function ExportAssetPageContent() {
                       </div>
                     )}
 
-                    <div className="flex items-start space-x-3 rounded-lg border p-4">
+                    <div className={`flex items-start space-x-3 rounded-lg border p-4 cursor-pointer transition-colors ${exportType === 'legal' ? 'border-accent bg-accent/5' : 'hover:border-accent/50 hover:bg-accent/5'}`}>
                       <RadioGroupItem value="legal" id="legal" />
                       <div className="flex-1">
                         <Label htmlFor="legal" className="flex items-center gap-2 cursor-pointer">
-                          <Scale className="h-4 w-4" />
+                          <div className="rounded-md bg-warning/10 p-1.5">
+                            <Scale className="h-4 w-4 text-warning" />
+                          </div>
                           <span className="font-semibold">Legal Documentation</span>
                         </Label>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground mt-1">
                           Court-ready documentation with case information
                         </p>
                       </div>
@@ -211,8 +225,8 @@ function ExportAssetPageContent() {
 
                 {/* Legal Information (only for legal type) */}
                 {exportType === 'legal' && (
-                  <div className="space-y-3 rounded-lg border p-4 bg-muted/50">
-                    <Label>Legal Case Information</Label>
+                  <div className="space-y-3 rounded-lg border border-warning/20 p-4 bg-warning/5 animate-slide-up">
+                    <Label className="text-warning">Legal Case Information</Label>
                     <div className="space-y-3">
                       <div>
                         <Label htmlFor="caseReference" className="text-sm">
@@ -262,10 +276,11 @@ function ExportAssetPageContent() {
                 )}
 
                 {/* Submit Button */}
-                <div className="flex justify-end gap-3 pt-4">
+                <div className="flex justify-end gap-3 pt-4 border-t border-border">
                   <Button
                     onClick={handleSubmit}
                     size="lg"
+                    className="bg-accent hover:bg-accent/90 text-white transition-colors"
                     disabled={
                       requestExportMutation.isPending ||
                       (exportType === 'legal' &&
@@ -277,7 +292,10 @@ function ExportAssetPageContent() {
                     ) : (
                       <>
                         <Download className="mr-2 h-4 w-4" />
-                        Request Export ($2.00 USD)
+                        Request Export{' '}
+                        <span className="ml-1 rounded-md bg-white/20 px-1.5 py-0.5 text-xs font-semibold">
+                          $2.00 USD
+                        </span>
                       </>
                     )}
                   </Button>
@@ -288,25 +306,30 @@ function ExportAssetPageContent() {
         </Card>
 
         {/* Info Card */}
-        <Card className="mt-6">
+        <Card className="mt-6 border-border hover:border-accent/50 transition-colors">
           <CardHeader>
-            <CardTitle>About Exports</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <div className="rounded-lg bg-accent/10 p-2">
+                <Shield className="h-4 w-4 text-accent" />
+              </div>
+              About Exports
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <h4 className="font-semibold mb-2">Cost & Payment</h4>
+            <div className="rounded-lg bg-accent/5 p-4">
+              <h4 className="font-semibold mb-2 text-accent">Cost & Payment</h4>
               <p className="text-sm text-muted-foreground">
                 All exports cost $2.00 USD, paid in Litecoin. You&apos;ll receive a payment address after submitting your request.
               </p>
             </div>
-            <div>
-              <h4 className="font-semibold mb-2">Security & Verification</h4>
+            <div className="rounded-lg bg-success/5 p-4">
+              <h4 className="font-semibold mb-2 text-success">Security & Verification</h4>
               <p className="text-sm text-muted-foreground">
                 All exports are cryptographically signed and tokenized on the Raptoreum blockchain for permanent verification.
               </p>
             </div>
-            <div>
-              <h4 className="font-semibold mb-2">Formats</h4>
+            <div className="rounded-lg bg-info/5 p-4">
+              <h4 className="font-semibold mb-2 text-info">Formats</h4>
               <p className="text-sm text-muted-foreground">
                 Every export includes JSON, CSV, and PDF formats packaged in a ZIP archive for maximum compatibility.
               </p>
