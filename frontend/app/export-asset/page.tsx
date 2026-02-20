@@ -319,7 +319,7 @@ function ExportAssetPageContent() {
             <div className="rounded-lg bg-accent/5 p-4">
               <h4 className="font-semibold mb-2 text-accent">Cost & Payment</h4>
               <p className="text-sm text-muted-foreground">
-                All exports cost $2.00 USD, paid in Litecoin. You&apos;ll receive a payment address after submitting your request.
+                All exports cost $2.00 USD, paid in Raptoreum (RTM). You&apos;ll receive a payment address after submitting your request.
               </p>
             </div>
             <div className="rounded-lg bg-success/5 p-4">

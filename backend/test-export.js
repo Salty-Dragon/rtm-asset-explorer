@@ -105,10 +105,9 @@ async function testExportRequest() {
     console.log(`  Export ID: ${data.data.exportId}`);
     console.log(`  Type: ${data.data.type}`);
     console.log(`  Status: ${data.data.status}`);
-    console.log(`  Payment Address: ${data.data.payment.address}`);
-    console.log(`  Amount (USD): $${data.data.payment.amountUSD}`);
-    console.log(`  Amount (LTC): ${data.data.payment.amountLTC} LTC`);
-    console.log(`  Expires: ${data.data.payment.expiresAt}`);
+    console.log(`  Payment Address: ${data.data.payment?.address || 'N/A'}`);
+    console.log(`  Amount (USD): $${data.data.payment?.amountUSD || 'N/A'}`);
+    console.log(`  Expires: ${data.data.payment?.expiresAt || 'N/A'}`);
     
     return data.data.exportId;
   } catch (error) {
@@ -167,7 +166,6 @@ async function testExportHealth() {
     
     console.log('✓ Export system health check completed');
     console.log(`  Overall Status: ${data.data.status}`);
-    console.log(`  Litecoin: ${data.data.services.litecoin.status} - ${data.data.services.litecoin.message}`);
     console.log(`  IPFS: ${data.data.services.ipfs.status} - ${data.data.services.ipfs.message}`);
     console.log(`  Asset Tokenizer: ${data.data.services.assetTokenizer.status} - ${data.data.services.assetTokenizer.message}`);
   } catch (error) {
@@ -209,7 +207,7 @@ async function runTests() {
     console.log('='.repeat(60));
     console.log('✓ All basic tests completed');
     console.log('\nNote: To test the complete flow:');
-    console.log('1. Send payment to the provided Litecoin address');
+    console.log('1. Send payment to the provided RTM address');
     console.log('2. Wait for payment confirmation (~1 minute)');
     console.log('3. Check status again to see processing progress');
     console.log('4. Download the export when completed');

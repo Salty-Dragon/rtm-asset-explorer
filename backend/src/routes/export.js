@@ -4,7 +4,6 @@ import { z } from 'zod';
 import { logger } from '../utils/logger.js';
 import { rateLimit } from '../middleware/rateLimit.js';
 import Export from '../models/Export.js';
-import litecoinClient from '../services/litecoinClient.js';
 import pricingService from '../services/pricingService.js';
 import exportSigner from '../services/exportSigner.js';
 import assetTokenizer from '../services/assetTokenizer.js';
@@ -66,68 +65,11 @@ router.post('/request', exportRateLimit, async (req, res) => {
       });
     }
 
-    // Check Litecoin RPC availability before any DB writes or external calls
-    if (!litecoinClient.enabled) {
-      return res.status(503).json({
-        success: false,
-        error: 'Payment service unavailable',
-        message: 'Litecoin RPC service is not enabled. Set LITECOIN_RPC_ENABLED=true in backend/.env to enable paid exports.',
-        details: {
-          service: 'litecoin-rpc',
-          required: 'LITECOIN_RPC_ENABLED=true'
-        }
-      });
-    }
-
-    // Generate export ID
-    const exportId = Export.generateExportId();
-    
-    // Get current price
-    const pricing = await pricingService.getExportPrice();
-    
-    // Generate payment address
-    const paymentAddress = await litecoinClient.getNewAddress(`export_${exportId}`);
-    
-    // Calculate payment expiration (30 minutes)
-    const paymentExpiration = new Date(Date.now() + 30 * 60 * 1000);
-    
-    // Create export record
-    const exportRecord = new Export({
-      exportId,
-      type: validatedData.type,
-      status: 'pending_payment',
-      paymentAddress,
-      paymentAmountUSD: pricing.usd,
-      paymentAmountLTC: pricing.ltc,
-      paymentExpiration,
-      requestData: validatedData,
-      requestIp: req.ip,
-      userAgent: req.get('user-agent')
-    });
-    
-    await exportRecord.save();
-    
-    logger.info(`Export request created: ${exportId} (type: ${validatedData.type})`);
-    
-    res.json({
-      success: true,
-      data: {
-        exportId,
-        type: validatedData.type,
-        status: 'pending_payment',
-        payment: {
-          address: paymentAddress,
-          amountUSD: pricing.usd,
-          amountLTC: pricing.ltc,
-          expiresAt: paymentExpiration.toISOString(),
-          expiresIn: 1800 // seconds
-        },
-        statusUrl: `/api/export/status/${exportId}`
-      },
-      meta: {
-        timestamp: new Date().toISOString(),
-        requestId: req.id
-      }
+    // Payment service not yet configured - RTM payment support coming soon
+    return res.status(503).json({
+      success: false,
+      error: 'Payment service unavailable',
+      message: 'Payment processing is not currently configured. RTM payment support coming soon.'
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -138,21 +80,6 @@ router.post('/request', exportRateLimit, async (req, res) => {
       });
     }
 
-    // Any error here from litecoin is a connection failure (disabled case is
-    // already handled by the pre-flight check above)
-    if (error.message && error.message.startsWith('Litecoin RPC')) {
-      logger.error('Litecoin RPC connection error creating export request:', error);
-      return res.status(503).json({
-        success: false,
-        error: 'Payment service unreachable',
-        message: 'Litecoin RPC service is enabled but could not be reached. Check your Litecoin node connection.',
-        details: {
-          service: 'litecoin-rpc',
-          cause: error.message
-        }
-      });
-    }
-    
     logger.error('Error creating export request:', error);
     res.status(500).json({
       success: false,
@@ -185,7 +112,6 @@ router.get('/status/:exportId', async (req, res) => {
         createdAt: exportRecord.createdAt,
         payment: {
           address: exportRecord.paymentAddress,
-          amountLTC: exportRecord.paymentAmountLTC,
           confirmed: exportRecord.paymentConfirmed,
           txid: exportRecord.paymentTxid,
           expiresAt: exportRecord.paymentExpiration
@@ -387,26 +313,21 @@ router.get('/public-key', async (req, res) => {
 // GET /api/export/health - Export system health check
 router.get('/health', async (req, res) => {
   try {
-    const [litecoinHealth, ipfsHealth, tokenizerHealth] = await Promise.all([
-      litecoinClient.checkHealth(),
+    const [ipfsHealth, tokenizerHealth] = await Promise.all([
       ipfsService.checkHealth(),
       assetTokenizer.checkHealth()
     ]);
     
     const allHealthy = 
-      (litecoinHealth.status === 'connected' || litecoinHealth.status === 'disabled') &&
       (ipfsHealth.status === 'connected' || ipfsHealth.status === 'disabled') &&
       (tokenizerHealth.status === 'connected' || tokenizerHealth.status === 'disabled');
-    
-    const paidExportsAvailable = litecoinHealth.status === 'connected';
     
     res.json({
       success: true,
       data: {
         status: allHealthy ? 'healthy' : 'degraded',
-        paidExportsAvailable,
+        paidExportsAvailable: false,
         services: {
-          litecoin: litecoinHealth,
           ipfs: ipfsHealth,
           assetTokenizer: tokenizerHealth
         }

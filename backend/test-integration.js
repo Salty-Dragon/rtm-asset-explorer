@@ -18,9 +18,6 @@ try {
   const Export = (await import('./src/models/Export.js')).default;
   console.log('✓ Export model imported');
   
-  const litecoinClient = (await import('./src/services/litecoinClient.js')).default;
-  console.log('✓ Litecoin client imported');
-  
   const pricingService = (await import('./src/services/pricingService.js')).default;
   console.log('✓ Pricing service imported');
   
@@ -74,11 +71,6 @@ try {
 console.log('\n[3] Testing service configuration...');
 
 try {
-  const litecoinClient = (await import('./src/services/litecoinClient.js')).default;
-  console.log('✓ Litecoin client configured');
-  console.log(`  Enabled: ${process.env.LITECOIN_RPC_ENABLED || 'false'}`);
-  console.log(`  Host: ${process.env.LITECOIN_RPC_HOST || '127.0.0.1'}`);
-  
   const ipfsService = (await import('./src/services/ipfsService.js')).default;
   console.log('✓ IPFS service configured');
   console.log(`  Enabled: ${process.env.IPFS_ENABLED || 'false'}`);
@@ -151,6 +143,6 @@ console.log('\n' + '='.repeat(60));
 console.log('Test Summary');
 console.log('='.repeat(60));
 console.log('✓ All basic tests passed');
-console.log('\nNote: External services (Litecoin, IPFS, Raptoreumd) are');
+console.log('\nNote: External services (IPFS, Raptoreumd) are');
 console.log('disabled by default. Enable them in .env to test full flow.');
 console.log('='.repeat(60));

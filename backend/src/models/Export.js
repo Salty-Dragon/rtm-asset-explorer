@@ -35,10 +35,6 @@ const exportSchema = new mongoose.Schema({
     required: true,
     default: 2.00
   },
-  paymentAmountLTC: {
-    type: Number,
-    required: true
-  },
   paymentExpiration: {
     type: Date,
     required: true,
