@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Checkbox } from '@/components/ui/checkbox'
-import { useRequestExport } from '@/hooks/useApi'
+import { useRequestExport, useExportPrice } from '@/hooks/useApi'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { ErrorMessage } from '@/components/shared/ErrorMessage'
 import type { ExportRequest } from '@/lib/types'
@@ -43,6 +43,10 @@ export function ExportDialog({
   })
 
   const requestExportMutation = useRequestExport()
+  const { data: priceData, isLoading: isPriceLoading } = useExportPrice()
+  const exportPriceUSD = priceData?.data?.usd ?? null
+  const exportPriceRTM = priceData?.data?.rtm ?? null
+  const priceLabel = isPriceLoading ? '...' : exportPriceUSD !== null ? `$${exportPriceUSD.toFixed(2)} USD` : '$?.?? USD'
 
   const handleSubmit = async () => {
     // Map frontend type to backend type
@@ -254,10 +258,15 @@ export function ExportDialog({
             ) : (
               <>
                 <Download className="mr-2 h-4 w-4" />
-                Request Export ($2.00 USD)
+                Request Export ({priceLabel})
               </>
             )}
           </Button>
+          {exportPriceUSD !== null && exportPriceRTM !== null && (
+            <p className="text-xs text-muted-foreground">
+              ${exportPriceUSD.toFixed(2)} USD = {exportPriceRTM.toLocaleString(undefined, { maximumFractionDigits: 2 })} RTM
+            </p>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -288,6 +288,12 @@ export interface CreatorStat {
 // Export Types
 // ============================================
 
+export interface ExportPrice {
+  usd: number
+  rtm: number
+  timestamp: string
+}
+
 export interface ExportRequest {
   type: 'asset' | 'address' | 'multi' | 'legal' | 'provenance'
   assetId?: string

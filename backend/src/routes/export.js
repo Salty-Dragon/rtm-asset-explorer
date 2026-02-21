@@ -383,6 +383,27 @@ router.get('/public-key', async (req, res) => {
   }
 });
 
+// GET /api/export/price - Get current export pricing
+router.get('/price', async (req, res) => {
+  try {
+    const pricing = await pricingService.getExportPrice();
+    res.json({
+      success: true,
+      data: {
+        usd: pricing.usd,
+        rtm: Math.round(pricing.rtm * 100) / 100,
+        timestamp: pricing.timestamp
+      }
+    });
+  } catch (error) {
+    logger.error('Error fetching export price:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch export price'
+    });
+  }
+});
+
 // GET /api/export/health - Export system health check
 router.get('/health', async (req, res) => {
   try {

@@ -16,6 +16,7 @@ import type {
   GlobalStats,
   AssetStats,
   CreatorStats,
+  ExportPrice,
   ExportRequest,
   ExportResponse,
   ExportStatus,
@@ -243,6 +244,16 @@ export function useTopCreators(limit = 10) {
 export function useRequestExport() {
   return useMutation({
     mutationFn: (data: ExportRequest) => api.requestExport(data),
+  })
+}
+
+export function useExportPrice() {
+  return useQuery({
+    queryKey: ['export', 'price'],
+    queryFn: () => api.getExportPrice(),
+    staleTime: 60 * 1000, // 1 minute - price changes with RTM market
+    gcTime: 2 * 60 * 1000,
+    retry: 2,
   })
 }
 
