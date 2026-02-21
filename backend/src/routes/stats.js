@@ -96,8 +96,8 @@ router.get('/global',
         totalNFTs,
         totalFungible,
         totalTransactions,
-        totalAddresses,
-        totalBlocks,
+        totalAddressesResult,
+        assetBlockHeights,
         assetsWithIpfs,
         topCreatorsDocs,
         recentAssetsDocs
@@ -107,8 +107,24 @@ router.get('/global',
         Asset.countDocuments({ type: 'fungible' }),
         // Count AssetTransfer documents as these represent actual asset transactions
         AssetTransfer.countDocuments(),
-        Address.countDocuments(),
-        Block.countDocuments(),
+        // Count distinct addresses (from + to) in AssetTransfer collection
+        AssetTransfer.aggregate([
+          {
+            $project: {
+              addresses: {
+                $filter: {
+                  input: ['$from', '$to'],
+                  as: 'addr',
+                  cond: { $and: [{ $ne: ['$$addr', null] }, { $ne: ['$$addr', ''] }] }
+                }
+              }
+            }
+          },
+          { $unwind: '$addresses' },
+          { $group: { _id: '$addresses' } },
+          { $count: 'total' }
+        ]),
+        AssetTransfer.distinct('blockHeight'),
         Asset.countDocuments({ ipfsHash: { $exists: true, $ne: '' } }),
         Asset.aggregate([
           { $group: { _id: '$creator', assetCount: { $sum: 1 } } },
@@ -117,6 +133,9 @@ router.get('/global',
         ]),
         Asset.find().sort({ createdAt: -1 }).limit(10).lean()
       ]);
+
+      const totalAddresses = totalAddressesResult[0]?.total ?? 0;
+      const totalBlocks = assetBlockHeights.length;
 
       const topCreators = topCreatorsDocs.map(c => ({
         address: c._id || '',
