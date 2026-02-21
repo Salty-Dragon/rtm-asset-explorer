@@ -41,9 +41,8 @@ class AssetTokenizer {
 
     if (body !== null) {
       const timestamp = Math.floor(Date.now() / 1000);
-      const bodyWithoutSignature = { timestamp, ...body };
-      const signature = this.generateSignature(timestamp, bodyWithoutSignature);
-      options.body = JSON.stringify({ ...bodyWithoutSignature, signature });
+      const signature = this.generateSignature(timestamp, body);
+      options.body = JSON.stringify({ timestamp, ...body, signature });
     }
 
     try {
