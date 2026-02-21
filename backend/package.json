@@ -25,6 +25,7 @@
   "author": "Salty-Dragon",
   "license": "MIT",
   "dependencies": {
+    "adm-zip": "^0.5.16",
     "archiver": "^7.0.1",
     "bull": "^4.16.5",
     "compression": "^1.7.4",
