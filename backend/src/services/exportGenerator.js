@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { createWriteStream } from 'fs';
+import AdmZip from 'adm-zip';
 import { createObjectCsvWriter } from 'csv-writer';
 import PDFDocument from 'pdfkit';
 import archiver from 'archiver';
@@ -9,6 +10,8 @@ import Asset from '../models/Asset.js';
 import Transaction from '../models/Transaction.js';
 import Address from '../models/Address.js';
 import AssetTransfer from '../models/AssetTransfer.js';
+
+const SIGNATURE_DISPLAY_LENGTH = 32;
 
 class ExportGenerator {
   constructor() {
@@ -231,13 +234,7 @@ class ExportGenerator {
         createdAt: exportRecord.createdAt,
         version: '1.0'
       },
-      verification: {
-        assetName: exportRecord.assetName || null,
-        txid: exportRecord.blockchainTxid || null,
-        ipfsHash: exportRecord.ipfsHash || null,
-        signature: exportRecord.signature || null,
-        fileHash: exportRecord.fileHash || null
-      },
+      verification: 'See verification.json in this archive',
       data
     };
     
@@ -374,16 +371,93 @@ class ExportGenerator {
       }
       
       doc.moveDown();
-      
-      // Verification section
-      if (exportRecord.assetName) {
-        doc.fontSize(14).text('Blockchain Verification', { underline: true });
+
+      // Asset Information section
+      if (data.asset) {
+        doc.fontSize(14).text('Asset Information', { underline: true });
         doc.fontSize(10).moveDown(0.5);
-        doc.text(`Token Asset: ${exportRecord.assetName}`);
-        doc.text(`Transaction ID: ${exportRecord.blockchainTxid || 'Pending'}`);
-        doc.text(`IPFS Hash: ${exportRecord.ipfsHash || 'Pending'}`);
+        doc.text(`Name: ${data.asset.name}`);
+        doc.text(`Type: ${data.asset.type}`);
+        doc.text(`Creator: ${data.asset.creator || 'Unknown'}`);
+        doc.text(`Current Owner: ${data.asset.currentOwner || 'Unknown'}`);
+        doc.text(`Created: ${data.asset.createdAt}`);
+        doc.text(`Creation TX: ${data.asset.createdTxid}`);
+        if (data.asset.ipfsHash) doc.text(`IPFS Hash: ${data.asset.ipfsHash}`);
         doc.moveDown();
       }
+
+      // Address Information section
+      if (data.address) {
+        doc.fontSize(14).text('Address Information', { underline: true });
+        doc.fontSize(10).moveDown(0.5);
+        doc.text(`Address: ${data.address.address}`);
+        doc.text(`Balance: ${data.address.balance || 0}`);
+        doc.text(`Transaction Count: ${data.address.transactionCount || 0}`);
+        doc.moveDown();
+      }
+
+      // Assets section (multi type)
+      if (data.assets && data.assets.length > 0) {
+        doc.fontSize(14).text('Assets', { underline: true });
+        doc.fontSize(10).moveDown(0.5);
+        data.assets.forEach((asset, i) => {
+          doc.fontSize(9);
+          doc.text(`${i + 1}. ${asset.name} (${asset.type})`);
+          doc.text(`   Owner: ${asset.currentOwner || 'Unknown'}  |  Transfers: ${asset.transferCount || 0}`);
+          doc.moveDown(0.3);
+        });
+        doc.moveDown();
+      }
+
+      // Ownership Chain section (provenance type)
+      if (data.ownershipChain && data.ownershipChain.length > 0) {
+        doc.fontSize(14).text('Ownership Chain', { underline: true });
+        doc.fontSize(10).moveDown(0.5);
+        data.ownershipChain.forEach((transfer, i) => {
+          doc.fontSize(9);
+          doc.text(`#${transfer.sequence || i + 1} — ${transfer.timestamp}`);
+          doc.text(`   From: ${transfer.from}  →  To: ${transfer.to}`);
+          doc.text(`   TXID: ${transfer.txid}`);
+          doc.moveDown(0.3);
+        });
+        doc.moveDown();
+      }
+
+      // Transaction History section
+      if (data.transactions && data.transactions.length > 0) {
+        doc.fontSize(14).text('Transaction History', { underline: true });
+        doc.fontSize(10).moveDown(0.5);
+        doc.text(`Total transactions: ${data.transactions.length}`);
+        doc.moveDown(0.5);
+
+        const displayTxs = data.transactions.slice(0, 50);
+        displayTxs.forEach((tx, i) => {
+          if (doc.y > doc.page.height - 100) {
+            doc.addPage();
+          }
+          doc.fontSize(9);
+          doc.text(`${i + 1}. TXID: ${tx.txid}`);
+          doc.text(`   From: ${tx.from || 'N/A'}  →  To: ${tx.to || 'N/A'}`);
+          doc.text(`   Amount: ${tx.amount || 0}  |  Block: ${tx.blockHeight}  |  Date: ${tx.timestamp}`);
+          doc.moveDown(0.3);
+        });
+
+        if (data.transactions.length > 50) {
+          doc.text(`... and ${data.transactions.length - 50} more transactions (see data.csv for full list)`);
+        }
+        doc.moveDown();
+      }
+
+      // Verification section - always render
+      doc.fontSize(14).text('Blockchain Verification', { underline: true });
+      doc.fontSize(10).moveDown(0.5);
+      doc.text(`Token Asset: ${exportRecord.assetName || 'See verification.json'}`);
+      doc.text(`Transaction ID: ${exportRecord.blockchainTxid || 'See verification.json'}`);
+      doc.text(`File Hash: ${exportRecord.fileHash || 'See verification.json'}`);
+      doc.text(`Signature: ${exportRecord.signature ? exportRecord.signature.substring(0, SIGNATURE_DISPLAY_LENGTH) + '...' : 'See verification.json'}`);
+      doc.moveDown();
+      doc.fontSize(8).text('Note: Complete verification data is available in verification.json included in this archive.');
+      doc.moveDown();
       
       // Footer
       doc.fontSize(8).text(
@@ -463,6 +537,16 @@ class ExportGenerator {
       
       archive.finalize();
     });
+  }
+
+  async appendVerificationToZip(filePath, verificationData) {
+    const zip = new AdmZip(filePath);
+    zip.addFile(
+      'verification.json',
+      Buffer.from(JSON.stringify(verificationData, null, 2), 'utf8')
+    );
+    zip.writeZip(filePath);
+    logger.info(`Verification data appended to ZIP: ${filePath}`);
   }
 
   async deleteExport(exportId) {

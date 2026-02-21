@@ -148,6 +148,21 @@ class QueueProcessor {
       exportRecord.blockchainConfirmed = false; // Will be confirmed later
       await exportRecord.save();
 
+      // Step 4: Append verification data to ZIP (90%)
+      await job.progress(90);
+      exportRecord.progress = 90;
+      exportRecord.progressMessage = 'Appending verification data';
+      await exportRecord.save();
+
+      await exportGenerator.appendVerificationToZip(exportRecord.filePath, {
+        assetName: exportRecord.assetName,
+        txid: exportRecord.blockchainTxid,
+        ipfsHash: exportRecord.ipfsHash || null,
+        signature: exportRecord.signature,
+        fileHash: exportRecord.fileHash,
+        generatedAt: new Date().toISOString()
+      });
+
       // Step 5: Complete (100%)
       await job.progress(100);
       exportRecord.status = 'completed';
