@@ -126,7 +126,7 @@ export default function StatsPage() {
                         <Layers className="h-6 w-6 text-accent" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Total Blocks</p>
+                        <p className="text-sm text-muted-foreground">Asset Blocks</p>
                         <p className="text-2xl font-bold">{formatNumber(stats.totalBlocks)}</p>
                       </div>
                     </div>
