@@ -17,6 +17,13 @@ interface ExportStatusProps {
 }
 
 export function ExportStatus({ status, className }: ExportStatusProps) {
+  console.log('ExportStatus received:', {
+    status: status.status,
+    hasDownloadUrl: !!status.downloadUrl,
+    downloadUrl: status.downloadUrl,
+    fullStatus: status
+  });
+
   const getStatusIcon = () => {
     switch (status.status) {
       case 'pending_payment':
@@ -67,6 +74,23 @@ export function ExportStatus({ status, className }: ExportStatusProps) {
 
   return (
     <div className={cn('space-y-6 animate-fade-in', className)}>
+      {/* Debug Info (development only) */}
+      {process.env.NODE_ENV === 'development' && (
+        <Card className="border-warning bg-warning/5">
+          <CardHeader>
+            <CardTitle className="text-sm">🐛 Debug Info</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-xs">
+            <div>Status: <code>{status.status}</code></div>
+            <div>Has downloadUrl: <code>{String(!!status.downloadUrl)}</code></div>
+            <div>downloadUrl value: <code>{status.downloadUrl || 'undefined'}</code></div>
+            <div className="max-h-40 overflow-auto">
+              <pre>{JSON.stringify(status, null, 2)}</pre>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Status Card */}
       <Card className="border-border hover:border-accent/50 transition-colors">
         <CardHeader>
@@ -114,6 +138,28 @@ export function ExportStatus({ status, className }: ExportStatusProps) {
                 Download Export
               </a>
             </Button>
+          )}
+
+          {/* TEMPORARY DEBUG: Always show for completed, even if downloadUrl is missing */}
+          {status.status === 'completed' && !status.downloadUrl && (
+            <div className="rounded-lg border border-warning/30 bg-warning/5 p-4">
+              <div className="text-sm font-medium text-warning mb-2">
+                ⚠️ Download URL Missing
+              </div>
+              <div className="text-xs text-muted-foreground mb-2">
+                The export is completed but downloadUrl is not in the response.
+              </div>
+              <Button
+                asChild
+                className="w-full bg-warning hover:bg-warning/90"
+                size="lg"
+              >
+                <a href={`/api/export/download/${status.exportId}`} download>
+                  <Download className="mr-2 h-4 w-4" />
+                  Try Manual Download
+                </a>
+              </Button>
+            </div>
           )}
 
           {/* Error Message (for failed status) */}
