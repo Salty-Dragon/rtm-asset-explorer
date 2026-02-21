@@ -154,7 +154,7 @@ export function ExportStatus({ status, className }: ExportStatusProps) {
                 className="w-full bg-warning hover:bg-warning/90"
                 size="lg"
               >
-                <a href={`/api/export/download/${status.exportId}`} download>
+                <a href={`/api/v1/export/download/${status.exportId}`} download>
                   <Download className="mr-2 h-4 w-4" />
                   Try Manual Download
                 </a>
