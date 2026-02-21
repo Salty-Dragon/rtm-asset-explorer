@@ -383,7 +383,7 @@ function ExportAssetPageContent() {
                 </li>
               </ul>
               <p className="mt-2 text-sm text-muted-foreground">
-                The public key is always retrievable directly from the API at <code className="text-xs font-mono">/api/export/public-key</code> and is included inside every export ZIP as <code className="text-xs font-mono">public_key.pem</code>.
+                The public key is always retrievable directly from the API at <code className="text-xs font-mono">/api/v1/export/public-key</code> and is included inside every export ZIP as <code className="text-xs font-mono">public_key.pem</code>.
               </p>
             </div>
             <div className="rounded-lg bg-info/5 p-4">
@@ -395,7 +395,7 @@ function ExportAssetPageContent() {
                 Once you have the public key, you can verify any export&apos;s authenticity using standard tools:
               </p>
               <pre className="text-xs font-mono bg-muted rounded p-3 mt-2 overflow-x-auto whitespace-pre-wrap break-all">{`# 1. Get the public key (or use the one inside your export ZIP)
-curl https://assets.raptoreum.com/api/export/public-key -o public_key.pem
+curl https://assets.raptoreum.com/api/v1/export/public-key -o public_key.pem
 
 # 2. Extract the file hash and hex-encoded signature from verification.json inside the ZIP
 #    "fileHash": "sha256:<fileHash>"

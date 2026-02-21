@@ -990,7 +990,7 @@ Users can verify export authenticity by:
 
 **Public Key Distribution:**
 - Published in this SECURITY.md document
-- Available via API endpoint: `/api/export/public-key`
+- Available via API endpoint: `/api/v1/export/public-key`
 - Included in export ZIP files
 - Versioned for key rotation
 

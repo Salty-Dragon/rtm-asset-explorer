@@ -137,7 +137,7 @@ Note: Asset name should be URL-encoded (e.g., `RTM_EXPORTS%2FASSET_20260214_hash
 ### Get Public Key
 
 ```bash
-GET /api/export/public-key
+GET /api/v1/export/public-key
 ```
 
 ### Health Check

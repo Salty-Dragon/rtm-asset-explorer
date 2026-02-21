@@ -99,7 +99,7 @@ The complete tokenized export system has been successfully implemented for the R
 ✅ GET /api/export/status/:exportId - Check status
 ✅ GET /api/export/download/:exportId - Download files
 ✅ GET /api/export/verify/:assetName - Verify authenticity
-✅ GET /api/export/public-key - Get public key
+✅ GET /api/v1/export/public-key - Get public key
 ✅ GET /api/export/health - System health check
 
 ## Configuration
