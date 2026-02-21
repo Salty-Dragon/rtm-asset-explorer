@@ -944,49 +944,33 @@ All exports are digitally signed using the Raptoreum Asset Explorer signing key 
 ```
 
 **Signature Implementation:**
-```javascript
-// services/export-signing.js
-import crypto from 'crypto';
-import fs from 'fs';
 
-export class ExportSigner {
-  constructor(privateKeyPath) {
-    this.privateKey = fs.readFileSync(privateKeyPath, 'utf8');
-  }
-  
-  signExport(exportData) {
-    const sign = crypto.createSign('RSA-SHA256');
-    sign.update(JSON.stringify(exportData));
-    const signature = sign.sign(this.privateKey, 'hex');
-    
-    return {
-      data: exportData,
-      signature: signature,
-      algorithm: 'RSA-SHA256',
-      keyId: 'export-signing-key-v1'
-    };
-  }
-}
-
-export function verifyExportSignature(exportData, signature, publicKey) {
-  try {
-    const verify = crypto.createVerify('RSA-SHA256');
-    verify.update(JSON.stringify(exportData));
-    return verify.verify(publicKey, signature, 'hex');
-  } catch (error) {
-    console.error('Signature verification failed:', error);
-    return false;
-  }
-}
+The export ZIP file is signed directly using RSA-SHA256 over the raw file bytes (`signFile(filePath)`), equivalent to:
+```bash
+openssl dgst -sha256 -sign private_key.pem -out signature.bin export.zip
+xxd -p signature.bin | tr -d '\n'  # hex string stored in verification.json
 ```
 
 **Signature Verification:**
 
-Users can verify export authenticity by:
+Users can verify export authenticity using standard tools:
+```bash
+# 1. Get the public key (or use the one inside your export ZIP)
+curl https://assets.raptoreum.com/api/v1/export/public-key -o public_key.pem
+
+# 2. Extract the hex signature from verification.json inside the ZIP
+#    "signature": "<signatureHex>"
+#    Convert it to a binary file:
+echo "<signatureHex>" | xxd -r -p > signature.bin
+
+# 3. Verify the ZIP directly
+openssl dgst -sha256 -verify public_key.pem -signature signature.bin export.zip
+```
+
+Or by:
 1. **Checking on-chain token asset** (RTM_EXPORTS/...)
 2. **Verifying IPFS content hash** matches
-3. **Validating digital signature** with public key
-4. **Using verification endpoint**: `/api/export/verify/:assetName`
+3. **Using verification endpoint**: `/api/export/verify/:assetName`
 
 **Public Key Distribution:**
 - Published in this SECURITY.md document

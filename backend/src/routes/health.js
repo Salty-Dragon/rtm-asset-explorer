@@ -69,8 +69,8 @@ router.get('/signer', signerHealthRateLimit, async (req, res) => {
     }
 
     // Test signature
-    const testData = 'health-check-' + Date.now();
-    const signature = await exportSigner.signExport(testData);
+    const testData = Buffer.from('health-check-' + Date.now());
+    const signature = await exportSigner.signData(testData);
     const verified = await exportSigner.verifySignature(testData, signature);
 
     if (verified) {

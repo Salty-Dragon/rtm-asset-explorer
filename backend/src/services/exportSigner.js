@@ -145,26 +145,6 @@ class ExportSigner {
     }
   }
 
-  async signExport(fileHash) {
-    if (!this.initialized) {
-      await this.initialize();
-    }
-
-    try {
-      const sign = crypto.createSign('SHA256');
-      sign.update(fileHash);
-      sign.end();
-
-      // Sign with private key (handles both encrypted and unencrypted)
-      const signature = sign.sign(this.privateKey, 'hex');
-      
-      return signature;
-    } catch (error) {
-      logger.error('Failed to sign export:', error.message);
-      throw new Error('Export signing failed');
-    }
-  }
-
   async signData(data) {
     await this.ensureKeys();
     
