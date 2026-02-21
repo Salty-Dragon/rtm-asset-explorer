@@ -2,7 +2,7 @@
 
 import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Download, FileText, Scale, Shield, ArrowLeft } from 'lucide-react'
+import { Download, FileText, Scale, Shield, ArrowLeft, Key, ExternalLink, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -335,10 +335,75 @@ function ExportAssetPageContent() {
                 </p>
             </div>
             <div className="rounded-lg bg-success/5 p-4">
-              <h4 className="font-semibold mb-2 text-success">Security & Verification</h4>
+              <h4 className="font-semibold mb-2 text-success flex items-center gap-2">
+                <CheckCircle className="h-4 w-4" />
+                Cryptographic Signing
+              </h4>
               <p className="text-sm text-muted-foreground">
-                All exports are cryptographically signed and tokenized on the Raptoreum blockchain for permanent verification.
+                Every export is digitally signed using an RSA-4096 private key held by the Raptoreum Asset Explorer server. The SHA-256 hash of the entire ZIP archive is computed and signed, producing a unique signature that is stored both inside the ZIP (<code className="text-xs font-mono">verification.json</code>) and recorded on the Raptoreum blockchain. This means any tampering with the export files — even a single byte — will invalidate the signature, giving you mathematically verifiable proof that the data is exactly as it was when it left our server.
               </p>
+            </div>
+            <div className="rounded-lg bg-accent/5 p-4">
+              <h4 className="font-semibold mb-2 text-accent flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Blockchain Tokenization
+              </h4>
+              <p className="text-sm text-muted-foreground">
+                Each completed export is tokenized as a unique non-fungible asset on the Raptoreum blockchain under the <code className="text-xs font-mono">RTM_EXPORTS/</code> namespace. The token permanently records the export&apos;s file hash and IPFS content address on-chain, providing an immutable, censorship-resistant audit trail. Because the token is a unique on-chain asset, its existence and content can be independently verified by anyone without trusting our server.
+              </p>
+            </div>
+            <div className="rounded-lg bg-warning/5 p-4">
+              <h4 className="font-semibold mb-2 text-warning flex items-center gap-2">
+                <Key className="h-4 w-4" />
+                Verify the Signing Key
+              </h4>
+              <p className="text-sm text-muted-foreground">
+                The RSA-4096 public signing key has itself been tokenized on the Raptoreum blockchain, so you can independently confirm you have the correct key before verifying any signature. View the key token on:
+              </p>
+              <ul className="mt-2 space-y-1 text-sm">
+                <li>
+                  <a
+                    href="https://explorer.raptoreum.com/asset/960540b4f08f4d51f9b890995ee501be2bd49430b5f76aab4ba5238673d1d4c0"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-warning hover:underline font-medium"
+                  >
+                    Raptoreum Block Explorer <ExternalLink className="h-3 w-3" />
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="https://assets.raptoreum.com/assets/960540b4f08f4d51f9b890995ee501be2bd49430b5f76aab4ba5238673d1d4c0"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-warning hover:underline font-medium"
+                  >
+                    RTM Asset Explorer <ExternalLink className="h-3 w-3" />
+                  </a>
+                </li>
+              </ul>
+              <p className="mt-2 text-sm text-muted-foreground">
+                The public key is always retrievable directly from the API at <code className="text-xs font-mono">/api/export/public-key</code> and is included inside every export ZIP as <code className="text-xs font-mono">public_key.pem</code>.
+              </p>
+            </div>
+            <div className="rounded-lg bg-info/5 p-4">
+              <h4 className="font-semibold mb-2 text-info flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                How to Verify a Signature
+              </h4>
+              <p className="text-sm text-muted-foreground">
+                Once you have the public key, you can verify any export&apos;s authenticity using standard tools:
+              </p>
+              <pre className="text-xs font-mono bg-muted rounded p-3 mt-2 overflow-x-auto whitespace-pre-wrap break-all">{`# 1. Get the public key (or use the one inside your export ZIP)
+curl https://assets.raptoreum.com/api/export/public-key -o public_key.pem
+
+# 2. Extract the file hash and hex-encoded signature from verification.json inside the ZIP
+#    "fileHash": "sha256:<fileHash>"
+#    "signature": "<signatureHex>"
+
+# 3. Verify with OpenSSL
+echo "<signatureHex>" | xxd -r -p > signature.bin
+echo -n "<fileHash>" | openssl dgst -sha256 -verify public_key.pem -signature signature.bin`}</pre>
             </div>
             <div className="rounded-lg bg-info/5 p-4">
               <h4 className="font-semibold mb-2 text-info">Formats</h4>
