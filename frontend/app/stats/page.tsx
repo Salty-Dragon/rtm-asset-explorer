@@ -2,12 +2,14 @@
 
 import { useGlobalStats, useBlockchainInfo } from '@/hooks/useApi'
 import { Card, CardContent } from '@/components/ui/card'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { ErrorMessage } from '@/components/shared/ErrorMessage'
 import { formatNumber, formatHashRate, formatDifficulty } from '@/lib/formatters'
 import {
   BarChart3,
   FileImage,
+  Info,
   Layers,
   Hash,
   Users,
@@ -25,6 +27,7 @@ export default function StatsPage() {
   const blockchain = blockchainData?.data
 
   return (
+    <TooltipProvider>
     <div className="container py-8">
       <div className="mb-8">
         <h1 className="mb-2 text-3xl font-bold">Statistics</h1>
@@ -58,7 +61,17 @@ export default function StatsPage() {
                         <FileImage className="h-6 w-6 text-accent" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Total Assets</p>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <p className="text-sm text-muted-foreground flex items-center gap-1 cursor-default w-fit">
+                              Total Assets
+                              <Info className="h-3 w-3 opacity-50" />
+                            </p>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-[220px] text-center">
+                            The total number of assets created on the Raptoreum blockchain, including fungible tokens and NFTs.
+                          </TooltipContent>
+                        </Tooltip>
                         <p className="text-2xl font-bold">{formatNumber(stats.totalAssets)}</p>
                       </div>
                     </div>
@@ -71,7 +84,17 @@ export default function StatsPage() {
                         <ImageIcon className="h-6 w-6 text-accent" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">NFTs</p>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <p className="text-sm text-muted-foreground flex items-center gap-1 cursor-default w-fit">
+                              NFTs
+                              <Info className="h-3 w-3 opacity-50" />
+                            </p>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-[220px] text-center">
+                            The number of non-fungible tokens (NFTs) — unique, indivisible assets on the blockchain.
+                          </TooltipContent>
+                        </Tooltip>
                         <p className="text-2xl font-bold">{formatNumber(stats.totalNFTs)}</p>
                       </div>
                     </div>
@@ -84,7 +107,17 @@ export default function StatsPage() {
                         <Layers className="h-6 w-6 text-accent" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Fungible Assets</p>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <p className="text-sm text-muted-foreground flex items-center gap-1 cursor-default w-fit">
+                              Fungible Assets
+                              <Info className="h-3 w-3 opacity-50" />
+                            </p>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-[220px] text-center">
+                            The number of fungible assets — divisible tokens that can be held and transferred in any amount.
+                          </TooltipContent>
+                        </Tooltip>
                         <p className="text-2xl font-bold">{formatNumber(stats.totalFungible)}</p>
                       </div>
                     </div>
@@ -97,7 +130,17 @@ export default function StatsPage() {
                         <Hash className="h-6 w-6 text-accent" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Transactions</p>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <p className="text-sm text-muted-foreground flex items-center gap-1 cursor-default w-fit">
+                              Transactions
+                              <Info className="h-3 w-3 opacity-50" />
+                            </p>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-[220px] text-center">
+                            The total number of asset-related transactions recorded, including creations, mints, and transfers.
+                          </TooltipContent>
+                        </Tooltip>
                         <p className="text-2xl font-bold">{formatNumber(stats.totalTransactions)}</p>
                       </div>
                     </div>
@@ -113,7 +156,17 @@ export default function StatsPage() {
                         <Users className="h-6 w-6 text-accent" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Total Addresses</p>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <p className="text-sm text-muted-foreground flex items-center gap-1 cursor-default w-fit">
+                              Total Addresses
+                              <Info className="h-3 w-3 opacity-50" />
+                            </p>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-[220px] text-center">
+                            The number of unique wallet addresses that have participated in asset transactions.
+                          </TooltipContent>
+                        </Tooltip>
                         <p className="text-2xl font-bold">{formatNumber(stats.totalAddresses)}</p>
                       </div>
                     </div>
@@ -126,7 +179,17 @@ export default function StatsPage() {
                         <Layers className="h-6 w-6 text-accent" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Asset Blocks</p>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <p className="text-sm text-muted-foreground flex items-center gap-1 cursor-default w-fit">
+                              Asset Blocks
+                              <Info className="h-3 w-3 opacity-50" />
+                            </p>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-[220px] text-center">
+                            The number of blocks which contain an asset transaction such as creation, minting, and transfers.
+                          </TooltipContent>
+                        </Tooltip>
                         <p className="text-2xl font-bold">{formatNumber(stats.totalBlocks)}</p>
                       </div>
                     </div>
@@ -139,7 +202,17 @@ export default function StatsPage() {
                         <ImageIcon className="h-6 w-6 text-accent" />
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Assets with IPFS</p>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <p className="text-sm text-muted-foreground flex items-center gap-1 cursor-default w-fit">
+                              Assets with IPFS
+                              <Info className="h-3 w-3 opacity-50" />
+                            </p>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-[220px] text-center">
+                            The number of assets that have associated IPFS metadata or media content linked to them.
+                          </TooltipContent>
+                        </Tooltip>
                         <p className="text-2xl font-bold">{formatNumber(stats.assetsWithIpfs)}</p>
                       </div>
                     </div>
@@ -215,5 +288,6 @@ export default function StatsPage() {
         </div>
       )}
     </div>
+    </TooltipProvider>
   )
 }
