@@ -14,6 +14,7 @@ import type {
   GlobalStats,
   AssetStats,
   CreatorStats,
+  ExportPrice,
   ExportRequest,
   ExportResponse,
   ExportStatus,
@@ -193,6 +194,10 @@ class RaptoreumAPI {
 
   async requestExport(data: ExportRequest): Promise<ApiResponse<ExportResponse>> {
     return this.post('/export/request', data)
+  }
+
+  async getExportPrice(): Promise<ApiResponse<ExportPrice>> {
+    return this.get('/export/price')
   }
 
   async getExportStatus(exportId: string): Promise<ApiResponse<ExportStatus>> {

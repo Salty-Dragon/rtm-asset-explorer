@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useRequestExport } from '@/hooks/useApi'
+import { useRequestExport, useExportPrice } from '@/hooks/useApi'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { ErrorMessage } from '@/components/shared/ErrorMessage'
 import type { ExportRequest } from '@/lib/types'
@@ -30,6 +30,10 @@ function ExportAssetPageContent() {
   })
 
   const requestExportMutation = useRequestExport()
+  const { data: priceData, isLoading: isPriceLoading } = useExportPrice()
+  const exportPriceUSD = priceData?.data?.usd ?? null
+  const exportPriceRTM = priceData?.data?.rtm ?? null
+  const priceLabel = isPriceLoading ? '...' : exportPriceUSD !== null ? `$${exportPriceUSD.toFixed(2)} USD` : '$?.?? USD'
 
   const handleSubmit = async () => {
     // Map frontend type to backend type
@@ -294,12 +298,18 @@ function ExportAssetPageContent() {
                         <Download className="mr-2 h-4 w-4" />
                         Request Export{' '}
                         <span className="ml-1 rounded-md bg-white/20 px-1.5 py-0.5 text-xs font-semibold">
-                          $2.00 USD
+                          {priceLabel}
                         </span>
                       </>
                     )}
                   </Button>
                 </div>
+                {/* Price indicator */}
+                {exportPriceUSD !== null && exportPriceRTM !== null && (
+                  <p className="text-xs text-muted-foreground text-right pt-1">
+                    ${exportPriceUSD.toFixed(2)} USD = {exportPriceRTM.toLocaleString(undefined, { maximumFractionDigits: 2 })} RTM
+                  </p>
+                )}
               </>
             )}
           </CardContent>
@@ -319,8 +329,10 @@ function ExportAssetPageContent() {
             <div className="rounded-lg bg-accent/5 p-4">
               <h4 className="font-semibold mb-2 text-accent">Cost & Payment</h4>
               <p className="text-sm text-muted-foreground">
-                All exports cost $2.00 USD, paid in Raptoreum (RTM). You&apos;ll receive a payment address after submitting your request.
-              </p>
+                  {exportPriceUSD !== null && exportPriceRTM !== null
+                    ? `All exports cost $${exportPriceUSD.toFixed(2)} USD (${exportPriceRTM.toLocaleString(undefined, { maximumFractionDigits: 2 })} RTM), and are only payable with RTM. You'll receive a payment address after submitting your request.`
+                    : "All exports are paid in Raptoreum (RTM). You'll receive a payment address after submitting your request."}
+                </p>
             </div>
             <div className="rounded-lg bg-success/5 p-4">
               <h4 className="font-semibold mb-2 text-success">Security & Verification</h4>
