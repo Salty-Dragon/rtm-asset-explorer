@@ -8,6 +8,7 @@ import { logger } from '../utils/logger.js';
 import Asset from '../models/Asset.js';
 import Transaction from '../models/Transaction.js';
 import Address from '../models/Address.js';
+import AssetTransfer from '../models/AssetTransfer.js';
 
 class ExportGenerator {
   constructor() {
@@ -94,12 +95,9 @@ class ExportGenerator {
     
     let transactions = [];
     if (includeTransactions) {
-      transactions = await Transaction.find({
-        $or: [
-          { 'vout.assetId': assetId },
-          { 'vin.assetId': assetId }
-        ]
-      }).sort({ timestamp: -1 }).lean();
+      transactions = await AssetTransfer.find({ assetId })
+        .sort({ timestamp: -1 })
+        .lean();
     }
     
     return {
@@ -125,8 +123,8 @@ class ExportGenerator {
     if (includeTransactions) {
       transactions = await Transaction.find({
         $or: [
-          { 'vout.addresses': address },
-          { 'vin.addresses': address }
+          { 'outputs.address': address },
+          { 'inputs.address': address }
         ]
       }).sort({ timestamp: -1 }).lean();
     }
@@ -187,12 +185,9 @@ class ExportGenerator {
     }
     
     // Get all transactions for provenance chain
-    const transactions = await Transaction.find({
-      $or: [
-        { 'vout.assetId': assetId },
-        { 'vin.assetId': assetId }
-      ]
-    }).sort({ timestamp: 1 }).lean(); // Chronological order
+    const transactions = await AssetTransfer.find({ assetId })
+      .sort({ timestamp: 1 })
+      .lean(); // Chronological order
     
     // Build ownership chain
     const ownershipChain = this.buildOwnershipChain(transactions);
@@ -217,8 +212,8 @@ class ExportGenerator {
         txid: tx.txid,
         timestamp: tx.timestamp,
         blockHeight: tx.blockHeight,
-        from: tx.vin?.[0]?.addresses?.[0] || 'Mint',
-        to: tx.vout?.[0]?.addresses?.[0] || 'Unknown'
+        from: tx.from || 'Mint',
+        to: tx.to || 'Unknown'
       };
       chain.push(transfer);
     }
@@ -274,9 +269,9 @@ class ExportGenerator {
           txid: tx.txid,
           timestamp: tx.timestamp,
           blockHeight: tx.blockHeight,
-          from: tx.vin?.[0]?.addresses?.[0] || 'N/A',
-          to: tx.vout?.[0]?.addresses?.[0] || 'N/A',
-          amount: tx.vout?.[0]?.value || 0
+          from: tx.from || 'N/A',
+          to: tx.to || 'N/A',
+          amount: tx.amount || 0
         }));
         break;
       
@@ -291,7 +286,7 @@ class ExportGenerator {
           txid: tx.txid,
           timestamp: tx.timestamp,
           type: 'transfer',
-          amount: tx.vout?.[0]?.value || 0
+          amount: tx.outputs?.[0]?.amount || 0
         }));
         break;
       
