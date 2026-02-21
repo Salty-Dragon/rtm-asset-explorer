@@ -190,6 +190,22 @@ router.get('/status/:exportId', async (req, res) => {
         verifyUrl: `/api/export/verify/${exportRecord.assetName}`,
         expiresAt: exportRecord.expiresAt
       };
+
+      // Also add downloadUrl to top level for frontend compatibility
+      response.data.downloadUrl = `/api/export/download/${exportId}`;
+
+      // Add verification data if available
+      if (exportRecord.assetName && exportRecord.blockchainTxid) {
+        response.data.verification = {
+          assetName: exportRecord.assetName,
+          txid: exportRecord.blockchainTxid,
+          blockHeight: exportRecord.blockHeight || null,
+          blockHash: exportRecord.blockHash || null,
+          ipfsHash: exportRecord.ipfsHash || null,
+          timestamp: exportRecord.createdAt.toISOString(),
+          verified: !!(exportRecord.blockHeight && exportRecord.blockHash)
+        };
+      }
     }
     
     // Add error details if failed
