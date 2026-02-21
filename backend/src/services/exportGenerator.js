@@ -10,6 +10,7 @@ import Asset from '../models/Asset.js';
 import Transaction from '../models/Transaction.js';
 import Address from '../models/Address.js';
 import AssetTransfer from '../models/AssetTransfer.js';
+import ipfsService from './ipfsService.js';
 
 const SIGNATURE_DISPLAY_LENGTH = 32;
 
@@ -39,14 +40,21 @@ class ExportGenerator {
       
       // Generate files
       const jsonPath = await this.generateJSON(tempDir, data, exportRecord);
-      const csvPath = await this.generateCSV(tempDir, data, type);
+      const csvPaths = await this.generateCSV(tempDir, data, type);
       const pdfPath = await this.generatePDF(tempDir, data, exportRecord);
       
+      const allFilePaths = [jsonPath, ...(Array.isArray(csvPaths) ? csvPaths : [csvPaths]), pdfPath];
+
       // Create ZIP archive
       const zipPath = await this.createZipArchive(
         tempDir,
-        [jsonPath, csvPath, pdfPath],
-        exportRecord
+        allFilePaths,
+        exportRecord,
+        async (archive) => {
+          if (requestData.includeMedia && data.asset?.ipfsHash) {
+            await this.downloadAndAddIPFSMedia(tempDir, data.asset.ipfsHash, archive);
+          }
+        }
       );
       
       // Move ZIP to final location
@@ -98,9 +106,12 @@ class ExportGenerator {
     
     let transactions = [];
     if (includeTransactions) {
-      transactions = await AssetTransfer.find({ assetId })
-        .sort({ timestamp: -1 })
-        .lean();
+      transactions = await AssetTransfer.find({
+        $or: [
+          { assetId: requestData.assetId },
+          { assetName: requestData.assetId }
+        ]
+      }).sort({ timestamp: -1 }).lean();
     }
     
     return {
@@ -245,90 +256,165 @@ class ExportGenerator {
   }
 
   async generateCSV(tempDir, data, type) {
-    const csvPath = path.join(tempDir, 'data.csv');
-    
     // Flatten data for CSV format based on type
-    let records = [];
-    let headers = [];
     
     switch (type) {
       case 'asset':
-      case 'legal':
-        headers = [
-          { id: 'txid', title: 'Transaction ID' },
-          { id: 'timestamp', title: 'Timestamp' },
-          { id: 'blockHeight', title: 'Block Height' },
-          { id: 'from', title: 'From' },
-          { id: 'to', title: 'To' },
-          { id: 'amount', title: 'Amount' }
-        ];
-        records = (data.transactions || []).map(tx => ({
+      case 'legal': {
+        // asset_info.csv — single row of asset properties
+        const assetInfoPath = path.join(tempDir, 'asset_info.csv');
+        const assetInfoWriter = createObjectCsvWriter({
+          path: assetInfoPath,
+          header: [
+            { id: 'assetId', title: 'Asset ID' },
+            { id: 'name', title: 'Name' },
+            { id: 'type', title: 'Type' },
+            { id: 'creator', title: 'Creator' },
+            { id: 'currentOwner', title: 'Current Owner' },
+            { id: 'createdAt', title: 'Created At' },
+            { id: 'createdTxid', title: 'Creation TXID' },
+            { id: 'createdBlockHeight', title: 'Created Block Height' },
+            { id: 'totalSupply', title: 'Total Supply' },
+            { id: 'circulatingSupply', title: 'Circulating Supply' },
+            { id: 'decimals', title: 'Decimals' },
+            { id: 'ipfsHash', title: 'IPFS Hash' },
+            { id: 'ipfsVerified', title: 'IPFS Verified' },
+            { id: 'transferCount', title: 'Transfer Count' },
+            { id: 'isUnique', title: 'Is Unique' },
+            { id: 'maxMintCount', title: 'Max Mint Count' },
+            { id: 'mintCount', title: 'Mint Count' },
+            { id: 'updatable', title: 'Updatable' },
+            { id: 'isSubAsset', title: 'Is Sub-Asset' },
+            { id: 'parentAssetName', title: 'Parent Asset Name' },
+            { id: 'tags', title: 'Tags' },
+            { id: 'categories', title: 'Categories' }
+          ]
+        });
+        const asset = data.asset || {};
+        await assetInfoWriter.writeRecords([{
+          assetId: asset.assetId || '',
+          name: asset.name || '',
+          type: asset.type || '',
+          creator: asset.creator || '',
+          currentOwner: asset.currentOwner || '',
+          createdAt: asset.createdAt || '',
+          createdTxid: asset.createdTxid || '',
+          createdBlockHeight: asset.createdBlockHeight || '',
+          totalSupply: asset.totalSupply ?? '',
+          circulatingSupply: asset.circulatingSupply ?? '',
+          decimals: asset.decimals ?? '',
+          ipfsHash: asset.ipfsHash || '',
+          ipfsVerified: asset.ipfsVerified ?? '',
+          transferCount: asset.transferCount ?? '',
+          isUnique: asset.isUnique ?? '',
+          maxMintCount: asset.maxMintCount ?? '',
+          mintCount: asset.mintCount ?? '',
+          updatable: asset.updatable ?? '',
+          isSubAsset: asset.isSubAsset ?? '',
+          parentAssetName: asset.parentAssetName || '',
+          tags: (asset.tags || []).join('; '),
+          categories: (asset.categories || []).join('; ')
+        }]);
+        logger.debug(`asset_info.csv generated: ${assetInfoPath}`);
+
+        // transactions.csv — one row per transaction
+        const txPath = path.join(tempDir, 'transactions.csv');
+        const txWriter = createObjectCsvWriter({
+          path: txPath,
+          header: [
+            { id: 'txid', title: 'Transaction ID' },
+            { id: 'timestamp', title: 'Timestamp' },
+            { id: 'blockHeight', title: 'Block Height' },
+            { id: 'from', title: 'From' },
+            { id: 'to', title: 'To' },
+            { id: 'amount', title: 'Amount' },
+            { id: 'type', title: 'Type' }
+          ]
+        });
+        const txRecords = (data.transactions || []).map(tx => ({
           txid: tx.txid,
           timestamp: tx.timestamp,
           blockHeight: tx.blockHeight,
           from: tx.from || 'N/A',
           to: tx.to || 'N/A',
-          amount: tx.amount || 0
+          amount: tx.amount || 0,
+          type: tx.type || 'N/A'
         }));
-        break;
+        await txWriter.writeRecords(txRecords);
+        logger.debug(`transactions.csv generated: ${txPath}`);
+
+        return [assetInfoPath, txPath];
+      }
       
-      case 'address':
-        headers = [
+      case 'address': {
+        const csvPath = path.join(tempDir, 'data.csv');
+        const headers = [
           { id: 'txid', title: 'Transaction ID' },
           { id: 'timestamp', title: 'Timestamp' },
           { id: 'type', title: 'Type' },
           { id: 'amount', title: 'Amount' }
         ];
-        records = (data.transactions || []).map(tx => ({
+        const records = (data.transactions || []).map(tx => ({
           txid: tx.txid,
           timestamp: tx.timestamp,
           type: 'transfer',
           amount: tx.outputs?.[0]?.amount || 0
         }));
-        break;
+        const csvWriter = createObjectCsvWriter({ path: csvPath, header: headers });
+        await csvWriter.writeRecords(records);
+        logger.debug(`CSV file generated: ${csvPath}`);
+        return csvPath;
+      }
       
-      case 'multi':
-        headers = [
+      case 'multi': {
+        const csvPath = path.join(tempDir, 'data.csv');
+        const headers = [
           { id: 'assetId', title: 'Asset ID' },
           { id: 'name', title: 'Name' },
           { id: 'owner', title: 'Current Owner' },
           { id: 'transfers', title: 'Transfers' }
         ];
-        records = (data.assets || []).map(asset => ({
+        const records = (data.assets || []).map(asset => ({
           assetId: asset.assetId,
           name: asset.name,
           owner: asset.currentOwner,
           transfers: asset.transferCount || 0
         }));
-        break;
+        const csvWriter = createObjectCsvWriter({ path: csvPath, header: headers });
+        await csvWriter.writeRecords(records);
+        logger.debug(`CSV file generated: ${csvPath}`);
+        return csvPath;
+      }
       
-      case 'provenance':
-        headers = [
+      case 'provenance': {
+        const csvPath = path.join(tempDir, 'data.csv');
+        const headers = [
           { id: 'sequence', title: 'Sequence' },
           { id: 'timestamp', title: 'Timestamp' },
           { id: 'from', title: 'From' },
           { id: 'to', title: 'To' },
           { id: 'txid', title: 'Transaction ID' }
         ];
-        records = (data.ownershipChain || []).map((transfer, idx) => ({
+        const records = (data.ownershipChain || []).map((transfer, idx) => ({
           sequence: idx + 1,
           timestamp: transfer.timestamp,
           from: transfer.from,
           to: transfer.to,
           txid: transfer.txid
         }));
-        break;
+        const csvWriter = createObjectCsvWriter({ path: csvPath, header: headers });
+        await csvWriter.writeRecords(records);
+        logger.debug(`CSV file generated: ${csvPath}`);
+        return csvPath;
+      }
+
+      default: {
+        const csvPath = path.join(tempDir, 'data.csv');
+        const csvWriter = createObjectCsvWriter({ path: csvPath, header: [] });
+        await csvWriter.writeRecords([]);
+        return csvPath;
+      }
     }
-    
-    const csvWriter = createObjectCsvWriter({
-      path: csvPath,
-      header: headers
-    });
-    
-    await csvWriter.writeRecords(records);
-    logger.debug(`CSV file generated: ${csvPath}`);
-    
-    return csvPath;
   }
 
   async generatePDF(tempDir, data, exportRecord) {
@@ -376,13 +462,41 @@ class ExportGenerator {
       if (data.asset) {
         doc.fontSize(14).text('Asset Information', { underline: true });
         doc.fontSize(10).moveDown(0.5);
+        doc.text(`Asset ID: ${data.asset.assetId}`);
         doc.text(`Name: ${data.asset.name}`);
         doc.text(`Type: ${data.asset.type}`);
         doc.text(`Creator: ${data.asset.creator || 'Unknown'}`);
         doc.text(`Current Owner: ${data.asset.currentOwner || 'Unknown'}`);
         doc.text(`Created: ${data.asset.createdAt}`);
         doc.text(`Creation TX: ${data.asset.createdTxid}`);
+        doc.text(`Created Block Height: ${data.asset.createdBlockHeight ?? 'N/A'}`);
+        doc.text(`Total Supply: ${data.asset.totalSupply ?? 'N/A'}`);
+        doc.text(`Circulating Supply: ${data.asset.circulatingSupply ?? 'N/A'}`);
+        doc.text(`Decimals: ${data.asset.decimals ?? 'N/A'}`);
+        doc.text(`Transfer Count: ${data.asset.transferCount ?? 'N/A'}`);
+        doc.text(`Is Unique: ${data.asset.isUnique ?? 'N/A'}`);
+        doc.text(`Max Mint Count: ${data.asset.maxMintCount ?? 'N/A'}`);
+        doc.text(`Mint Count: ${data.asset.mintCount ?? 'N/A'}`);
+        doc.text(`Updatable: ${data.asset.updatable ?? 'N/A'}`);
         if (data.asset.ipfsHash) doc.text(`IPFS Hash: ${data.asset.ipfsHash}`);
+        doc.text(`IPFS Verified: ${data.asset.ipfsVerified ?? 'N/A'}`);
+        doc.text(`Tags: ${data.asset.tags?.join(', ') || 'None'}`);
+        doc.text(`Categories: ${data.asset.categories?.join(', ') || 'None'}`);
+        doc.text(`Is Sub-Asset: ${data.asset.isSubAsset ?? 'N/A'}`);
+        doc.text(`Parent Asset: ${data.asset.parentAssetName || 'N/A'}`);
+        if (data.asset.metadata) {
+          const md = data.asset.metadata;
+          if (md.name) doc.text(`Metadata Name: ${md.name}`);
+          if (md.description) doc.text(`Metadata Description: ${md.description}`);
+          if (md.image) doc.text(`Metadata Image: ${md.image}`);
+          if (md.attributes && md.attributes.length > 0) {
+            doc.moveDown(0.3);
+            doc.text('Metadata Attributes:', { underline: false });
+            md.attributes.forEach(attr => {
+              doc.text(`  ${attr.trait_type}: ${attr.value}`);
+            });
+          }
+        }
         doc.moveDown();
       }
 
@@ -443,8 +557,13 @@ class ExportGenerator {
         });
 
         if (data.transactions.length > 50) {
-          doc.text(`... and ${data.transactions.length - 50} more transactions (see data.csv for full list)`);
+          doc.text(`... and ${data.transactions.length - 50} more transactions (see transactions.csv for full list)`);
         }
+        doc.moveDown();
+      } else if (data.transactions) {
+        doc.fontSize(14).text('Transaction History', { underline: true });
+        doc.fontSize(10).moveDown(0.5);
+        doc.text('No transactions recorded for this asset.');
         doc.moveDown();
       }
 
@@ -514,7 +633,7 @@ class ExportGenerator {
     doc.addPage();
   }
 
-  async createZipArchive(tempDir, filePaths, exportRecord) {
+  async createZipArchive(tempDir, filePaths, exportRecord, beforeFinalize) {
     const zipPath = path.join(tempDir, 'export.zip');
     
     return new Promise((resolve, reject) => {
@@ -534,8 +653,19 @@ class ExportGenerator {
         const fileName = path.basename(filePath);
         archive.file(filePath, { name: fileName });
       });
-      
-      archive.finalize();
+
+      // Run optional async callback (e.g. add IPFS media) before finalizing
+      const finalize = async () => {
+        try {
+          if (typeof beforeFinalize === 'function') {
+            await beforeFinalize(archive);
+          }
+          archive.finalize();
+        } catch (err) {
+          reject(err);
+        }
+      };
+      finalize();
     });
   }
 
@@ -561,6 +691,85 @@ class ExportGenerator {
       return false;
     }
   }
+  async downloadAndAddIPFSMedia(tempDir, ipfsHash, archive) {
+    const mediaDir = path.join(tempDir, 'media');
+    await fs.mkdir(mediaDir, { recursive: true });
+
+    try {
+      // Step 1: Try local IPFS API (primary source)
+      const exists = await ipfsService.checkExists(ipfsHash);
+
+      if (exists) {
+        const contentBuffer = await ipfsService.getContent(ipfsHash);
+        const mediaFilePath = path.join(mediaDir, `${ipfsHash}`);
+        await fs.writeFile(mediaFilePath, Buffer.from(contentBuffer));
+        archive.directory(mediaDir, 'media');
+        logger.info(`IPFS media downloaded from local cluster: ${ipfsHash}`);
+      } else {
+        // Step 2: Try local gateway as HTTP fallback (still private, NOT public internet)
+        const gatewayUrl = ipfsService.getGatewayUrl(ipfsHash);
+        let response;
+        try {
+          response = await fetch(gatewayUrl, { signal: AbortSignal.timeout(15000) });
+        } catch (fetchErr) {
+          const isTimeout = fetchErr.name === 'TimeoutError' || fetchErr.name === 'AbortError';
+          const errMsg = isTimeout
+            ? `IPFS gateway request timed out after 15 seconds.\nHash: ${ipfsHash}\nAttempted: ${gatewayUrl}\n`
+            : `IPFS gateway request failed.\nHash: ${ipfsHash}\nAttempted: ${gatewayUrl}\nError: ${fetchErr.message}\n`;
+          await fs.writeFile(path.join(mediaDir, 'download_failed.txt'), errMsg);
+          archive.directory(mediaDir, 'media');
+          logger.warn(`IPFS gateway fetch failed for ${ipfsHash}: ${fetchErr.message}`);
+          return;
+        }
+        if (response.ok) {
+          const contentBuffer = await response.arrayBuffer();
+          const contentType = response.headers.get('content-type') || '';
+          const ext = getExtensionFromContentType(contentType);
+          const mediaFilePath = path.join(mediaDir, `${ipfsHash}${ext}`);
+          await fs.writeFile(mediaFilePath, Buffer.from(contentBuffer));
+          archive.directory(mediaDir, 'media');
+          logger.info(`IPFS media downloaded from local gateway: ${ipfsHash}`);
+        } else {
+          await fs.writeFile(
+            path.join(mediaDir, 'download_failed.txt'),
+            `IPFS content not found on local cluster.\nHash: ${ipfsHash}\nAttempted: ${gatewayUrl}\n`
+          );
+          archive.directory(mediaDir, 'media');
+          logger.warn(`IPFS media not found on local cluster: ${ipfsHash}`);
+        }
+      }
+    } catch (err) {
+      await fs.writeFile(
+        path.join(mediaDir, 'download_failed.txt'),
+        `IPFS content download failed.\nHash: ${ipfsHash}\nError: ${err.message}\n`
+      ).catch((writeErr) => {
+        logger.error(`Failed to write IPFS download failure notice for ${ipfsHash}:`, writeErr.message);
+      });
+      try { archive.directory(mediaDir, 'media'); } catch (_) {}
+      logger.warn(`IPFS media download error for ${ipfsHash}:`, err.message);
+    }
+  }
+
+}
+
+function getExtensionFromContentType(contentType) {
+  const type = contentType.split(';')[0].trim().toLowerCase();
+  const map = {
+    'image/jpeg': '.jpg',
+    'image/jpg': '.jpg',
+    'image/png': '.png',
+    'image/gif': '.gif',
+    'image/webp': '.webp',
+    'image/svg+xml': '.svg',
+    'video/mp4': '.mp4',
+    'video/webm': '.webm',
+    'audio/mpeg': '.mp3',
+    'audio/ogg': '.ogg',
+    'application/json': '.json',
+    'text/plain': '.txt',
+    'application/octet-stream': ''
+  };
+  return map[type] || '';
 }
 
 export default new ExportGenerator();
