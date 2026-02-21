@@ -13,8 +13,8 @@ async function testSigning() {
 
     // Test signing
     console.log('[2] Testing signature...');
-    const testData = 'test-export-data-' + Date.now();
-    const signature = await exportSigner.signExport(testData);
+    const testData = Buffer.from('test-export-data-' + Date.now());
+    const signature = await exportSigner.signData(testData);
     console.log('✓ Signature created:', signature.substring(0, 32) + '...\n');
 
     // Test verification

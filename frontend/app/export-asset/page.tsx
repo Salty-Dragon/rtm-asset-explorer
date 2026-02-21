@@ -395,15 +395,15 @@ function ExportAssetPageContent() {
                 Once you have the public key, you can verify any export&apos;s authenticity using standard tools:
               </p>
               <pre className="text-xs font-mono bg-muted rounded p-3 mt-2 overflow-x-auto whitespace-pre-wrap break-all">{`# 1. Get the public key (or use the one inside your export ZIP)
-curl https://assets.raptoreum.com/api/export/public-key -o public_key.pem
+curl https://assets.raptoreum.com/api/v1/export/public-key -o public_key.pem
 
-# 2. Extract the file hash and hex-encoded signature from verification.json inside the ZIP
-#    "fileHash": "sha256:<fileHash>"
+# 2. Extract the hex signature from verification.json inside the ZIP
 #    "signature": "<signatureHex>"
-
-# 3. Verify with OpenSSL
+#    Convert it to a binary file:
 echo "<signatureHex>" | xxd -r -p > signature.bin
-echo -n "<fileHash>" | openssl dgst -sha256 -verify public_key.pem -signature signature.bin`}</pre>
+
+# 3. Verify the ZIP directly
+openssl dgst -sha256 -verify public_key.pem -signature signature.bin export.zip`}</pre>
             </div>
             <div className="rounded-lg bg-info/5 p-4">
               <h4 className="font-semibold mb-2 text-info">Formats</h4>
