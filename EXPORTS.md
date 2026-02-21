@@ -227,7 +227,7 @@ Verify this export at:
 https://assets.raptoreum.com/api/export/verify/RTM_EXPORTS/LEGAL_20260214_a3f2c1b9
 
 Public Key: See SECURITY.md or
-https://assets.raptoreum.com/api/export/public-key
+https://assets.raptoreum.com/api/v1/export/public-key
 
 ═══════════════════════════════════════════════════════════
 This certificate provides cryptographic proof that this
