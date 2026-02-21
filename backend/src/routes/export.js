@@ -186,13 +186,13 @@ router.get('/status/:exportId', async (req, res) => {
         assetName: exportRecord.assetName,
         blockchainTxid: exportRecord.blockchainTxid,
         fileHash: exportRecord.fileHash,
-        downloadUrl: `/api/export/download/${exportId}`,
-        verifyUrl: `/api/export/verify/${exportRecord.assetName}`,
+        downloadUrl: `/api/v1/export/download/${exportId}`,
+        verifyUrl: `/api/v1/export/verify/${exportRecord.assetName}`,
         expiresAt: exportRecord.expiresAt
       };
 
       // Also add downloadUrl to top level for frontend compatibility
-      response.data.downloadUrl = `/api/export/download/${exportId}`;
+      response.data.downloadUrl = `/api/v1/export/download/${exportId}`;
 
       // Add verification data if available
       if (exportRecord.assetName && exportRecord.blockchainTxid) {
